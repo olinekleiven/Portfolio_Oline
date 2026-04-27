@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oline Flatabø Kleiven — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: #EDE0CF; color: #2A2620; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+
+    /* Scroll reveal */
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(.16,1,.3,1), transform 0.8s cubic-bezier(.16,1,.3,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-left { opacity: 0; transform: translateX(-40px); transition: opacity 0.9s cubic-bezier(.16,1,.3,1), transform 0.9s cubic-bezier(.16,1,.3,1); }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.35s; }
+    .reveal-delay-4 { transition-delay: 0.5s; }
+
+    /* Custom cursor */
+    * { cursor: none !important; }
+    #cursor { position: fixed; width: 12px; height: 12px; background: #C04B22; border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: transform 0.15s ease, width 0.3s ease, height 0.3s ease, background 0.3s ease; mix-blend-mode: multiply; }
+    #cursor.hover { width: 48px; height: 48px; background: rgba(192,75,34,0.15); }
+    #cursor-ring { position: fixed; width: 40px; height: 40px; border: 1.5px solid rgba(192,75,34,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: all 0.35s cubic-bezier(.16,1,.3,1); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #EDE0CF; }
+    ::-webkit-scrollbar-thumb { background: #C04B22; border-radius: 2px; }
+
+    /* Tweaks panel */
+    #tweaks-panel { position: fixed; bottom: 24px; right: 24px; background: #2A2620; color: #EDE0CF; padding: 20px; border-radius: 12px; width: 240px; z-index: 9000; font-family: 'DM Sans', sans-serif; font-size: 13px; display: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    #tweaks-panel.open { display: block; }
+    #tweaks-panel h4 { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; margin-bottom: 16px; }
+    .tweak-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .tweak-row label { opacity: 0.8; }
+    .tweak-row input[type=color] { width: 28px; height: 28px; border: none; border-radius: 50%; cursor: pointer !important; background: none; padding: 0; }
+    .tweak-row input[type=range] { width: 100px; accent-color: #C04B22; cursor: pointer !important; }
+    .tweak-row select { background: #3A352F; color: #EDE0CF; border: none; border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer !important; }
+  </style>
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
+      <rect width="80" height="56" fill="#f3e9dd"/>
+      <circle cx="40" cy="22" r="10" fill="#C04B22" opacity="0.3"/>
+      <rect x="16" y="36" width="48" height="3" rx="1.5" fill="#2A2620" opacity="0.2"/>
+      <rect x="24" y="42" width="32" height="2" rx="1" fill="#C04B22" opacity="0.4"/>
+    </svg>
+  </template>
+</head>
+<body>
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "#b95d3c",
+      "bg": "#f5ead8",
+      "dark": "#2A2620",
+      "fontHeading": "Playfair Display",
+      "spacing": 1.1
+    }/*EDITMODE-END*/;
+
+    // Scroll progress bar
+    function ScrollProgress({ tweaks }) {
+      const [pct, setPct] = useState(0);
+      useEffect(() => {
+        const h = () => {
+          const el = document.documentElement;
+          setPct((window.scrollY / (el.scrollHeight - el.clientHeight)) * 100);
+        };
+        window.addEventListener('scroll', h);
+        return () => window.removeEventListener('scroll', h);
+      }, []);
+      return (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 9999, background: 'transparent' }}>
+          <div style={{ height: '100%', width: pct + '%', background: tweaks.accent, transition: 'width 0.1s linear', transformOrigin: 'left' }} />
+        </div>
+      );
+    }
+
+    // Text scramble hook
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    function useScramble(text, delay = 400) {
+      const [display, setDisplay] = useState(text);
+      useEffect(() => {
+        let frame = 0, iter = 0;
+        const timeout = setTimeout(() => {
+          const interval = setInterval(() => {
+            setDisplay(text.split('').map((ch, i) => {
+              if (ch === ' ') return ' ';
+              if (i < iter) return text[i];
+              return CHARS[Math.floor(Math.random() * CHARS.length)];
+            }).join(''));
+            iter += 0.4;
+            if (iter >= text.length) clearInterval(interval);
+          }, 40);
+        }, delay);
+        return () => clearTimeout(timeout);
+      }, [text]);
+      return display;
+    }
+
+    // Magnetic button wrapper
+    function MagBtn({ children, style, ...props }) {
+      const ref = useRef(null);
+      const handleMove = (e) => {
+        const r = ref.current.getBoundingClientRect();
+        const x = (e.clientX - r.left - r.width / 2) * 0.25;
+        const y = (e.clientY - r.top - r.height / 2) * 0.25;
+        ref.current.style.transform = `translate(${x}px, ${y}px)`;
+      };
+      const handleLeave = () => { ref.current.style.transform = 'translate(0,0)'; };
+      return (
+        <span ref={ref} className="mag-btn" onMouseMove={handleMove} onMouseLeave={handleLeave} style={{ display: 'inline-block', ...style }}>
+          {React.cloneElement(children, props)}
+        </span>
+      );
+    }
+
+    // Skills marquee ticker
+    const tickerItems = ['Figma', '✦', 'React', '✦', 'User Testing', '✦', 'Prototyping', '✦', 'Interaction Design', '✦', 'HTML / CSS / JS', '✦', 'Python', '✦', 'UX Research', '✦', 'Wireframing', '✦', 'mySQL', '✦'];
+
+    function Ticker({ tweaks }) {
+      const items = [...tickerItems, ...tickerItems];
+      return (
+        <div style={{ overflow: 'hidden', background: tweaks.accent, padding: '14px 0', borderTop: `1px solid ${tweaks.accent}`, borderBottom: `1px solid ${tweaks.accent}` }}>
+          <div className="marquee-track">
+            {items.map((item, i) => (
+              <span key={i} style={{ color: '#fff', fontSize: 13, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', paddingRight: 32, whiteSpace: 'nowrap', opacity: item === '✦' ? 0.5 : 1 }}>{item}</span>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Cursor
+    function Cursor() {
+      useEffect(() => {
+        const cursor = document.getElementById('cursor');
+        const ring = document.getElementById('cursor-ring');
+        let mx = 0, my = 0;
+        const move = (e) => {
+          mx = e.clientX; my = e.clientY;
+          cursor.style.left = mx + 'px';
+          cursor.style.top = my + 'px';
+        };
+        let frame;
+        const smooth = () => {
+          const rx = parseFloat(ring.style.left) || mx;
+          const ry = parseFloat(ring.style.top) || my;
+          ring.style.left = (rx + (mx - rx) * 0.12) + 'px';
+          ring.style.top = (ry + (my - ry) * 0.12) + 'px';
+          frame = requestAnimationFrame(smooth);
+        };
+        const over = () => cursor.classList.add('hover');
+        const out = () => cursor.classList.remove('hover');
+        document.addEventListener('mousemove', move);
+        document.querySelectorAll('a,button,[data-hover]').forEach(el => {
+          el.addEventListener('mouseenter', over);
+          el.addEventListener('mouseleave', out);
+        });
+        frame = requestAnimationFrame(smooth);
+        return () => { document.removeEventListener('mousemove', move); cancelAnimationFrame(frame); };
+      }, []);
+      return null;
+    }
+
+    // Scroll reveal hook
+    function useReveal() {
+      useEffect(() => {
+        const els = document.querySelectorAll('.reveal, .reveal-left');
+        const obs = new IntersectionObserver((entries) => {
+          entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        els.forEach(el => obs.observe(el));
+        return () => obs.disconnect();
+      });
+    }
+
+    // Nav
+    function Nav({ tweaks }) {
+      const [scrolled, setScrolled] = useState(false);
+      useEffect(() => {
+        const h = () => setScrolled(window.scrollY > 60);
+        window.addEventListener('scroll', h);
+        return () => window.removeEventListener('scroll', h);
+      }, []);
+      return (
+        <nav style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+          padding: '20px 48px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: scrolled ? tweaks.bg + 'ee' : 'transparent',
+          backdropFilter: scrolled ? 'blur(12px)' : 'none',
+          transition: 'background 0.4s ease',
+          borderBottom: scrolled ? `1px solid ${tweaks.dark}18` : 'none'
+        }}>
+          <a href="#hero" style={{ fontFamily: tweaks.fontHeading, fontSize: 18, letterSpacing: '-0.02em', color: tweaks.dark, textDecoration: 'none' }}>
+            Oline<span style={{ color: tweaks.accent, fontStyle: 'italic' }}>.</span>
+          </a>
+          <div style={{ display: 'flex', gap: 36 }}>
+            {['Om', 'Erfaring', 'Prosjekter', 'Ferdigheter', 'Verv', 'Kontakt'].map(item => (
+              <a key={item} href={`#${item.toLowerCase()}`} style={{
+                color: tweaks.dark, textDecoration: 'none', fontSize: 13,
+                fontWeight: 500, letterSpacing: '0.04em', opacity: 0.7,
+                transition: 'opacity 0.2s', cursor: 'none'
+              }}
+              onMouseEnter={e => e.target.style.opacity = 1}
+              onMouseLeave={e => e.target.style.opacity = 0.7}
+              >{item}</a>
+            ))}
+          </div>
+        </nav>
+      );
+    }
+
+    // Hero
+    function Hero({ tweaks }) {
+      const scrambled = useScramble('Interaksjonsdesign', 600);
+      const [scrollY, setScrollY] = React.useState(0);
+      React.useEffect(() => {
+        const h = () => setScrollY(window.scrollY);
+        window.addEventListener('scroll', h);
+        return () => window.removeEventListener('scroll', h);
+      }, []);
+      return (
+        <section id="hero" style={{
+          minHeight: '100vh', display: 'flex', flexDirection: 'column',
+          justifyContent: 'flex-end', padding: '0 48px 80px',
+          background: tweaks.bg, position: 'relative', overflow: 'hidden'
+        }}>
+          {/* Parallax portrait */}
+          <div style={{
+            position: 'absolute', top: '50%', right: '6%',
+            transform: `translateY(calc(-50% + ${scrollY * 0.12}px))`,
+            width: 380, height: 380,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            border: `3px solid ${tweaks.accent}40`,
+            boxShadow: `0 0 0 12px ${tweaks.accent}10`,
+            pointerEvents: 'none', transition: 'transform 0.08s linear'
+          }}>
+            <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+          </div>
+
+          <div style={{ maxWidth: 900 }}>
+            <p className="reveal" style={{
+              fontSize: 13, letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: tweaks.accent, fontWeight: 500, marginBottom: 24
+            }}>Oline Flatabø Kleiven</p>
+
+            <h1 className="reveal reveal-delay-1" style={{
+              fontFamily: tweaks.fontHeading, fontSize: 'clamp(52px, 8vw, 110px)',
+              lineHeight: 1.0, letterSpacing: '-0.03em', color: tweaks.dark,
+              marginBottom: 32, fontWeight: 400
+            }}>
+              {scrambled}<br/>
+              <span style={{ fontStyle: 'italic', color: tweaks.accent }}>&</span> utvikling
+            </h1>
+
+            <p className="reveal reveal-delay-2" style={{
+              fontSize: 18, lineHeight: 1.7, maxWidth: 480,
+              color: tweaks.dark, opacity: 0.65, marginBottom: 48,
+              fontWeight: 300
+            }}>
+              Masterstudent ved UiB — bygger grensesnitt der teknologi
+              møter menneskelig forståelse.
+            </p>
+
+            <div className="reveal reveal-delay-3" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <a href="#prosjekter" data-hover style={{
+                background: tweaks.dark, color: tweaks.bg,
+                padding: '14px 32px', borderRadius: 100, textDecoration: 'none',
+                fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
+                transition: 'background 0.2s ease, transform 0.2s', display: 'inline-block'
+              }}
+              onMouseEnter={e => { e.target.style.background = tweaks.accent; e.target.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.target.style.background = tweaks.dark; e.target.style.transform = 'translateY(0)'; }}
+              >Se arbeidet mitt ↓</a>
+
+              <a href="uploads/Oline_CV_2026-c3201b4d.pdf" download="Oline_Kleiven_CV_2026.pdf" data-hover style={{
+                color: tweaks.dark, padding: '14px 32px', borderRadius: 100,
+                textDecoration: 'none', fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
+                border: `1.5px solid ${tweaks.dark}40`, display: 'inline-block',
+                transition: 'border-color 0.2s, transform 0.2s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = tweaks.accent; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = tweaks.dark+'40'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >↓ Last ned CV</a>
+            </div>
+          </div>
+
+          {/* Scroll indicator */}
+          <div style={{
+            position: 'absolute', bottom: 40, right: 48,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8
+          }}>
+            <div style={{
+              width: 1, height: 60,
+              background: `linear-gradient(to bottom, ${tweaks.accent}, transparent)`,
+              animation: 'scrollPulse 2s ease-in-out infinite'
+            }} />
+            <span style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.4, writingMode: 'vertical-lr' }}>scroll</span>
+          </div>
+        </section>
+      );
+    }
+
+    // About
+    function About({ tweaks }) {
+      return (
+        <section id="om" style={{
+          padding: `${72 * tweaks.spacing}px 48px`,
+          background: tweaks.dark, color: tweaks.bg,
+          minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
+        }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+
+            {/* Top row: photo + label */}
+            <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 40 }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${tweaks.accent}60`, flexShrink: 0 }}>
+                <img src="uploads/profilbilde_oline.png" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+              </div>
+              <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
+            </div>
+
+            {/* Main grid: heading + bio left, education right */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start', marginBottom: 0 }}>
+              <div>
+                <h2 className="reveal" style={{
+                  fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 52px)',
+                  lineHeight: 1.15, letterSpacing: '-0.02em', fontWeight: 400, marginBottom: 32
+                }}>
+                  Teknologi som<br/>
+                  <span style={{ fontStyle: 'italic', color: tweaks.accent }}>forstår mennesker</span>
+                </h2>
+                <p className="reveal reveal-delay-1" style={{ fontSize: 16, lineHeight: 1.85, opacity: 0.65, fontWeight: 300 }}>
+                  Bachelorgrad i informasjonsvitenskap, masterstudent i interaksjonsdesign ved UiB.
+                  Eg spesialiserer meg på brukarvennlege løysingar og frontend-utvikling — med
+                  ein blid, engasjert og nysgjerrig tilnærming til alt eg lagar.
+                </p>
+              </div>
+
+              {/* Education */}
+              <div className="reveal reveal-delay-1">
+                <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600, marginBottom: 28 }}>Utdanning</p>
+                {[
+                  { school: 'Universitetet i Bergen', degree: 'Master — Medie og Interaksjonsdesign', period: '2024 –' },
+                  { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2021 – 2024' },
+                  { school: 'Møre Folkehøgskule', degree: 'Ekstremsport', period: '2020 – 2021' },
+                ].map((e, i) => {
+                  const [hov, setHov] = React.useState(false);
+                  return (
+                  <div key={i} data-hover
+                    onMouseEnter={() => setHov(true)}
+                    onMouseLeave={() => setHov(false)}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 16px', borderBottom: `1px solid ${tweaks.bg}15`,
+                      background: hov ? tweaks.bg : 'transparent', borderRadius: 8,
+                      transition: 'background 0.3s ease', margin: '0 -16px' }}>
+                    <div>
+                      <div style={{ fontFamily: tweaks.fontHeading, fontSize: 22, fontWeight: 400, marginBottom: 4, color: hov ? tweaks.dark : tweaks.bg, transition: 'color 0.3s' }}>{e.school}</div>
+                      <div style={{ fontSize: 13, fontStyle: 'italic', color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.6 : 0.5, transition: 'all 0.3s' }}>{e.degree}</div>
+                    </div>
+                    <span style={{ fontSize: 12, flexShrink: 0, marginLeft: 24, marginTop: 4, color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.5 : 0.4, transition: 'all 0.3s' }}>{e.period}</span>
+                  </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // Projects
+    const projects = [
+      {
+        num: '01',
+        title: 'EU Digital Wallet',
+        subtitle: 'Digdir — Sommerstudent 2024',
+        desc: 'Implementerte ein credential-utsteder-teneste basert på EU eIDAS 2.0-standarden. Løysinga let tilsette ta med seg verifiserbare digitale identitetskort i si eiga wallet-app — via Mattr API, ansattporten og OAuth2.',
+        tags: ['Java', 'Spring Boot', 'OAuth2', 'UX', 'eIDAS 2.0'],
+        url: 'https://github.com/felleslosninger/dc24-eu-wallet',
+        color: '#C04B22',
+      },
+      {
+        num: '02',
+        title: 'Snarveg',
+        subtitle: 'Medieteknologi — Universitetet i Bergen',
+        desc: 'Ein webapp som hjelper studentar å navigere studiekvardagen smartare — rask tilgang til viktige ressursar, varslar og verktøy samla på éin stad. Bygd med fokus på enkel navigasjon og lav kognitiv last.',
+        tags: ['React', 'UX Design', 'Prototyping', 'Figma'],
+        url: 'https://snarveg-emzo.vercel.app',
+        color: '#5B7C8A',
+      },
+      {
+        num: '03',
+        title: 'Digitale bursdagskort',
+        subtitle: 'Kreative mini-prosjekt',
+        desc: 'Når vennene mine har bursdag, lagar eg interaktive digitale bursdagskort som mini-prosjekt — animasjonar, minner og personlege bodskap koda frå botn av. Eitt av dei fekk til og med sitt eige vercel-domene!',
+        tags: ['HTML', 'CSS', 'JavaScript', 'Creative Coding'],
+        url: 'https://ida24.vercel.app',
+        color: '#7A8E6F',
+      },
+    ];
+
+    function ProjectCard({ project, tweaks, index }) {
+      const [hovered, setHovered] = useState(false);
+      return (
+        <div
+          data-hover
+          className={`reveal reveal-delay-${index + 1}`}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={{
+            background: hovered ? project.color : '#fff',
+            border: `1px solid ${tweaks.dark}12`,
+            borderRadius: 16,
+            padding: '48px 40px',
+            transition: 'all 0.4s cubic-bezier(.16,1,.3,1)',
+            transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
+            cursor: 'none',
+            position: 'relative', overflow: 'hidden'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+            <span style={{
+              fontFamily: tweaks.fontHeading, fontSize: 48,
+              color: hovered ? 'rgba(255,255,255,0.2)' : project.color + '30',
+              fontWeight: 400, lineHeight: 1,
+              transition: 'color 0.4s'
+            }}>{project.num}</span>
+            {project.url && (
+              <a href={project.url} target="_blank" rel="noopener" data-hover style={{
+                width: 40, height: 40, borderRadius: '50%',
+                background: hovered ? 'rgba(255,255,255,0.2)' : tweaks.dark + '10',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                textDecoration: 'none', color: hovered ? '#fff' : tweaks.dark,
+                fontSize: 16, transition: 'all 0.3s',
+                flexShrink: 0
+              }}>↗</a>
+            )}
+          </div>
+          <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 500, marginBottom: 8, color: hovered ? 'rgba(255,255,255,0.6)' : project.color, transition: 'color 0.4s' }}>{project.subtitle}</p>
+          <h3 style={{
+            fontFamily: tweaks.fontHeading, fontSize: 32,
+            fontWeight: 400, letterSpacing: '-0.02em', marginBottom: 16,
+            color: hovered ? '#fff' : tweaks.dark, transition: 'color 0.4s'
+          }}>{project.title}</h3>
+          <p style={{ fontSize: 15, lineHeight: 1.75, color: hovered ? 'rgba(255,255,255,0.8)' : tweaks.dark, opacity: hovered ? 1 : 0.6, marginBottom: 28, transition: 'all 0.4s' }}>{project.desc}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {project.tags.map(tag => (
+              <span key={tag} style={{
+                padding: '6px 14px', borderRadius: 100,
+                fontSize: 12, fontWeight: 500,
+                background: hovered ? 'rgba(255,255,255,0.15)' : project.color + '12',
+                color: hovered ? '#fff' : project.color,
+                border: `1px solid ${hovered ? 'rgba(255,255,255,0.2)' : project.color + '30'}`,
+                transition: 'all 0.4s'
+              }}>{tag}</span>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function Projects({ tweaks }) {
+      return (
+        <section id="prosjekter" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 64 }}>
+              <div>
+                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Utvalgte prosjekter</p>
+                <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark }}>
+                  Arbeidet mitt
+                </h2>
+              </div>
+              <p className="reveal reveal-delay-2" style={{ fontSize: 14, opacity: 0.5, maxWidth: 200, textAlign: 'right', lineHeight: 1.6 }}>
+                Design, kode og brukervennlighet i praksis
+              </p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+              {projects.map((p, i) => <ProjectCard key={p.num} project={p} tweaks={tweaks} index={i} />)}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Experience
+    const experiences = [
+      {
+        year: '2025',
+        role: 'Sommerstudent',
+        company: 'Statens Vegvesen',
+        fullname: 'Statens Vegvesen',
+        desc: '6 veker med praktisk erfaring i ein stor statleg organisasjon, med fokus på digitale tenester og forvaltning.',
+        color: '#5B7C8A',
+        tags: ['Offentleg sektor', 'Digitale tenester'],
+      },
+      {
+        year: '2024',
+        role: 'Digdir camp — Utvikling',
+        company: 'Digitaliseringsdirektoratet',
+        fullname: 'Digitaliseringsdirektoratet',
+        desc: '8 veker med EU Digital Wallet-prosjektet — implementerte ein verifiable credentials-teneste basert på eIDAS 2.0. Bidrog til frontend, backend (Java/Spring Boot) og UX-design av brukarflyt.',
+        color: '#C04B22',
+        tags: ['Java', 'UX', 'eIDAS 2.0', 'OAuth2'],
+      },
+      {
+        year: '2020–23',
+        role: 'Hjelpepleier',
+        company: 'Leikanger Sjukeheim',
+        fullname: 'Leikanger Sjukeheim',
+        desc: 'Omsorg og praktisk arbeid med pasientar — trena sterke kommunikasjonsferdigheter og evne til å arbeide under press.',
+        color: '#7A8E6F',
+        tags: ['Omsorg', 'Kommunikasjon'],
+      },
+      {
+        year: '2021–22',
+        role: 'Miljøarbeider & Lærarvikar',
+        company: 'Leikanger Ungdomsskule',
+        fullname: 'Leikanger Ungdomsskule',
+        desc: 'Steppa inn som vikar og miljøarbeider for ulike trinn der det trengtest — frå fagleg støtte til oppfølging av elevar i kvardagen.',
+        color: '#C04B22',
+        tags: ['Pedagogikk', 'Tilpassing', 'Miljøarbeid'],
+      },
+    ];
+
+    function Experience({ tweaks }) {
+      return (
+        <section id="erfaring" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Erfaring</p>
+            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 64 }}>
+              Arbeidserfaring
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {experiences.map((exp, i) => <ExperienceRow key={i} exp={exp} tweaks={tweaks} index={i} />)}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    function ExperienceRow({ exp, tweaks, index }) {
+      const [hovered, setHovered] = useState(false);
+      return (
+        <div
+          data-hover
+          className={`reveal reveal-delay-${index + 1}`}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={{
+            display: 'grid', gridTemplateColumns: '200px 1fr auto',
+            alignItems: 'center', gap: 40,
+            padding: '28px 40px',
+            background: hovered ? exp.color : '#F5EAD8',
+            borderBottom: `1px solid ${tweaks.dark}12`,
+            borderRadius: index === 0 ? '12px 12px 0 0' : index === experiences.length - 1 ? '0 0 12px 12px' : 0,
+            transition: 'all 0.3s cubic-bezier(.16,1,.3,1)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: hovered ? 'rgba(255,255,255,0.7)' : exp.color, flexShrink: 0, transition: 'background 0.3s' }} />
+            <span style={{ fontSize: 11, letterSpacing: '0.13em', textTransform: 'uppercase', fontWeight: 600, color: hovered ? 'rgba(255,255,255,0.7)' : exp.color, transition: 'color 0.3s' }}>{exp.company}</span>
+          </div>
+          <div>
+            <h3 style={{ fontFamily: tweaks.fontHeading, fontSize: 26, fontWeight: 400, letterSpacing: '-0.01em', color: hovered ? '#fff' : tweaks.dark, transition: 'color 0.3s', marginBottom: 2 }}>{exp.role}</h3>
+            <p style={{ fontSize: 13, color: hovered ? 'rgba(255,255,255,0.7)' : tweaks.dark, opacity: hovered ? 1 : 0.5, transition: 'all 0.3s' }}>{exp.desc}</p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              {exp.tags.map(tag => (
+                <span key={tag} style={{
+                  padding: '3px 10px', borderRadius: 100, fontSize: 11, fontWeight: 500,
+                  background: hovered ? 'rgba(255,255,255,0.2)' : exp.color + '12',
+                  color: hovered ? '#fff' : exp.color,
+                  border: `1px solid ${hovered ? 'rgba(255,255,255,0.25)' : exp.color + '30'}`,
+                  transition: 'all 0.3s'
+                }}>{tag}</span>
+              ))}
+            </div>
+          </div>
+          <span style={{ fontSize: 13, opacity: hovered ? 0.7 : 0.4, color: hovered ? '#fff' : tweaks.dark, transition: 'all 0.3s', whiteSpace: 'nowrap', alignSelf: 'flex-start', paddingTop: 4 }}>{exp.year}</span>
+        </div>
+      );
+    }
+
+    // Skills
+    const skillGroups = [
+      {
+        category: 'Design',
+        color: '#C04B22',
+        skills: ['Figma', 'Prototyping', 'Wireframing', 'Interaction Design', 'Visual Design']
+      },
+      {
+        category: 'Research',
+        color: '#5B7C8A',
+        skills: ['User Testing', 'Accessibility', 'Personas', 'Information Architecture', 'Usability']
+      },
+      {
+        category: 'Utvikling',
+        color: '#7A8E6F',
+        skills: ['React', 'HTML / CSS / JS', 'Python', 'mySQL', 'Django']
+      },
+    ];
+
+    function Skills({ tweaks }) {
+      return (
+        <section id="ferdigheter" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Kompetanse</p>
+            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 72 }}>
+              Ferdigheter &<br/><span style={{ fontStyle: 'italic' }}>verktøy</span>
+            </h2>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              {skillGroups.map((group, gi) => (
+                <SkillColumn key={group.category} group={group} tweaks={tweaks} gi={gi} />
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    function SkillColumn({ group, tweaks, gi }) {
+      return (
+        <div className={`reveal reveal-delay-${gi + 1}`} style={{
+          padding: '40px 36px',
+          background: '#E8D9C4',
+          borderRadius: 16,
+          border: `1px solid ${tweaks.dark}08`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: group.color }} />
+            <span style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700, color: group.color }}>{group.category}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {group.skills.map((skill) => (
+              <SkillItem key={skill} skill={skill} color={group.color} tweaks={tweaks} />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function SkillItem({ skill, color, tweaks }) {
+      const [hov, setHov] = useState(false);
+      return (
+        <div
+          data-hover
+          onMouseEnter={() => setHov(true)}
+          onMouseLeave={() => setHov(false)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 16px', borderRadius: 10,
+            background: hov ? color : 'transparent',
+            transition: 'background 0.25s ease',
+            margin: '0 -16px'
+          }}
+        >
+          <span style={{
+            fontFamily: tweaks.fontHeading, fontSize: 22, fontWeight: 400,
+            letterSpacing: '-0.01em',
+            color: hov ? '#fff' : tweaks.dark,
+            transition: 'color 0.25s'
+          }}>{skill}</span>
+          <span style={{
+            fontSize: 16, opacity: hov ? 0.7 : 0,
+            color: '#fff', transition: 'opacity 0.25s'
+          }}>→</span>
+        </div>
+      );
+    }
+
+    // Volunteer
+    const volunteerData = [
+      { org: 'Studentradioen i Bergen', role: 'Designer & Frontend-utviklar', sub: 'IT-gruppen', period: '2026 –', color: '#C04B22' },
+      { org: 'UX Bergen', role: 'Styremedlem', sub: 'Fagleg nettverk', period: '2026 –', color: '#5B7C8A' },
+      { org: 'BSI Damefotball', role: 'Leiar', sub: 'Studentidrett', period: '2025 –', color: '#7A8E6F' },
+      { org: 'BSI Damefotball', role: 'So-Me ansvarleg', sub: 'Kommunikasjon', period: '2024 – 2025', color: '#7A8E6F' },
+    ];
+
+    function Volunteer({ tweaks }) {
+      return (
+        <section id="verv" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500, paddingLeft: 8 }}>Engasjement</p>
+            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 72, paddingLeft: 16 }}>
+              Frivillige<br/><span style={{ fontStyle: 'italic' }}>verv</span>
+            </h2>
+            <VolunteerBubbles tweaks={tweaks} />
+          </div>
+        </section>
+      );
+    }
+
+    const bubbleData = [
+      {
+        org: 'Studentradioen i Bergen',
+        role: 'Designer & Frontend-utviklar',
+        sub: 'IT-gruppen',
+        period: '2026 –',
+        color: '#C04B22',
+        size: 210,
+        x: 2, y: 5,
+      },
+      {
+        org: 'UX Bergen',
+        role: 'Styremedlem',
+        sub: 'Fagleg nettverk for UX-profesjonelle',
+        period: '2026 –',
+        color: '#5B7C8A',
+        size: 195,
+        x: 24, y: 48,
+      },
+      {
+        org: 'BSI Damefotball',
+        role: 'Leiar',
+        sub: 'Undergruppe av Bergens største studentorganisasjon',
+        period: '2025 –',
+        color: '#7A8E6F',
+        size: 205,
+        x: 50, y: 5,
+      },
+      {
+        org: 'BSI Damefotball',
+        role: 'So-Me ansvarleg',
+        sub: 'Ansvarlig for lagets markedsføring, kommunikasjon og sosiale medium',
+        period: '2024 – 2025',
+        color: '#9B7B5E',
+        size: 185,
+        x: 70, y: 50,
+      },
+    ];
+
+    function BubbleItem({ b, tweaks }) {
+      const [hov, setHov] = useState(false);
+      const [pos, setPos] = useState({ x: 0, y: 0 });
+
+      useEffect(() => {
+        let frame;
+        let t = Math.random() * Math.PI * 2;
+        const amp = 8 + Math.random() * 6;
+        const speed = 0.008 + Math.random() * 0.005;
+        const animate = () => {
+          t += speed;
+          setPos({ x: Math.sin(t) * amp, y: Math.cos(t * 0.7) * amp });
+          frame = requestAnimationFrame(animate);
+        };
+        frame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(frame);
+      }, []);
+
+      return (
+        <div
+          data-hover
+          onMouseEnter={() => setHov(true)}
+          onMouseLeave={() => setHov(false)}
+          style={{
+            position: 'absolute',
+            left: `${b.x}%`,
+            top: `${b.y}%`,
+            width: b.size,
+            height: b.size,
+            borderRadius: '50%',
+            background: hov ? b.color : `${b.color}18`,
+            border: `2px solid ${b.color}${hov ? 'ff' : '60'}`,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: 24, textAlign: 'center',
+            transform: hov ? `translate(${pos.x}px, ${pos.y}px) scale(1.08)` : `translate(${pos.x}px, ${pos.y}px) scale(1)`,
+            transition: 'background 0.4s, border-color 0.4s, transform 0.4s cubic-bezier(.16,1,.3,1)',
+            cursor: 'none',
+            zIndex: hov ? 2 : 1,
+          }}
+        >
+          <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700,
+            color: hov ? 'rgba(255,255,255,0.7)' : b.color, marginBottom: 6, transition: 'color 0.4s' }}>{b.org}</p>
+          <p style={{ fontFamily: tweaks.fontHeading, fontSize: b.size > 200 ? 18 : 16, fontWeight: 400,
+            color: hov ? '#fff' : tweaks.dark, lineHeight: 1.2, marginBottom: 4, transition: 'color 0.4s' }}>{b.role}</p>
+          <p style={{ fontSize: 11, color: hov ? 'rgba(255,255,255,0.65)' : tweaks.dark,
+            opacity: hov ? 1 : 0.4, transition: 'all 0.4s' }}>{b.period}</p>
+          {hov && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6, lineHeight: 1.4 }}>{b.sub}</p>}
+        </div>
+      );
+    }
+
+    function VolunteerBubbles({ tweaks }) {
+      return (
+        <div className="reveal" style={{ position: 'relative', height: 480, width: '100%' }}>
+          {bubbleData.map((b, i) => <BubbleItem key={i} b={b} tweaks={tweaks} />)}
+        </div>
+      );
+    }
+
+    // Contact
+    function Contact({ tweaks }) {
+      const [sent, setSent] = useState(false);
+      return (
+        <section id="kontakt" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 24, fontWeight: 500 }}>La oss snakke</p>
+            <h2 className="reveal reveal-delay-1" style={{
+              fontFamily: tweaks.fontHeading, fontSize: 'clamp(48px, 7vw, 96px)',
+              lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 400, marginBottom: 32
+            }}>
+              Trenger du min<br/>
+              <span style={{ fontStyle: 'italic', color: tweaks.accent }}>kompetanse?</span>
+            </h2>
+            <p className="reveal reveal-delay-2" style={{ fontSize: 18, opacity: 0.6, lineHeight: 1.7, marginBottom: 64, fontWeight: 300 }}>
+              Eg er alltid åpen for samarbeid, jobbtilbod,<br/>praksisplassar og internship innanfor utvikling og design.
+            </p>
+
+            <div className="reveal reveal-delay-3" style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 80, flexWrap: 'wrap' }}>
+              <a href="mailto:olinefk@outlook.com" data-hover style={{
+                background: tweaks.accent, color: '#fff', padding: '16px 40px',
+                borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
+                transition: 'transform 0.2s, opacity 0.2s', display: 'inline-block'
+              }}
+              onMouseEnter={e => { e.target.style.transform = 'translateY(-3px)'; e.target.style.opacity = '0.9'; }}
+              onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; e.target.style.opacity = '1'; }}
+              >✉ Send e-post</a>
+
+              <a href="uploads/Oline_CV_2026-c3201b4d.pdf" download="Oline_Kleiven_CV_2026.pdf" data-hover style={{
+                background: 'transparent', color: '#f3e9dd', padding: '16px 40px',
+                borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
+                border: `1.5px solid ${tweaks.bg}30`,
+                transition: 'transform 0.2s, border-color 0.2s', display: 'inline-block'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
+              >↓ Last ned CV</a>
+
+              <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" onClick={e => { e.preventDefault(); window.open('https://www.linkedin.com/in/oline-kleiven-99852b264/', '_blank'); }} data-hover style={{
+                background: 'transparent', color: tweaks.bg, padding: '16px 40px',
+                borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
+                border: `1.5px solid ${tweaks.bg}30`,
+                transition: 'transform 0.2s, border-color 0.2s', display: 'inline-block'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
+              >LinkedIn ↗</a>
+
+              <a href="https://github.com/olinekleiven" target="_blank" rel="noopener" data-hover style={{
+                background: 'transparent', color: tweaks.bg, padding: '16px 40px',
+                borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
+                border: `1.5px solid ${tweaks.bg}30`,
+                transition: 'transform 0.2s, border-color 0.2s', display: 'inline-block'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
+              >GitHub ↗</a>
+            </div>
+
+            <div style={{ borderTop: `1px solid ${tweaks.bg}15`, paddingTop: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, opacity: 0.4 }}>
+              <span>Oline Flatabø Kleiven</span>
+              <span>olinefk@outlook.com</span>
+              <span>Bergen, Norge</span>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Tweaks Panel
+    function TweaksPanel({ tweaks, setTweaks, open }) {
+      const update = (key, val) => {
+        const next = { ...tweaks, [key]: val };
+        setTweaks(next);
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+      };
+      return (
+        <div id="tweaks-panel" className={open ? 'open' : ''}>
+          <h4>Tweaks</h4>
+          <div className="tweak-row"><label>Accentfarge</label><input type="color" value={tweaks.accent} onChange={e => update('accent', e.target.value)} /></div>
+          <div className="tweak-row"><label>Bakgrunn</label><input type="color" value={tweaks.bg} onChange={e => update('bg', e.target.value)} /></div>
+          <div className="tweak-row"><label>Skrift</label>
+            <select value={tweaks.fontHeading} onChange={e => update('fontHeading', e.target.value)}>
+              <option>DM Serif Display</option>
+              <option>Playfair Display</option>
+              <option>Georgia</option>
+            </select>
+          </div>
+          <div className="tweak-row"><label>Romlighet</label><input type="range" min="0.7" max="1.4" step="0.1" value={tweaks.spacing} onChange={e => update('spacing', parseFloat(e.target.value))} /></div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+      const [tweaksOpen, setTweaksOpen] = useState(false);
+      useReveal();
+
+      useEffect(() => {
+        // Register edit mode
+        window.addEventListener('message', (e) => {
+          if (e.data?.type === '__activate_edit_mode') setTweaksOpen(true);
+          if (e.data?.type === '__deactivate_edit_mode') setTweaksOpen(false);
+        });
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+      }, []);
+
+      useEffect(() => {
+        document.documentElement.style.setProperty('--accent', tweaks.accent);
+        document.documentElement.style.setProperty('--bg', tweaks.bg);
+      }, [tweaks]);
+
+      return (
+        <>
+          <ScrollProgress tweaks={tweaks} />
+          <Cursor />
+          <Nav tweaks={tweaks} />
+          <Hero tweaks={tweaks} />
+          <About tweaks={tweaks} />
+          <Experience tweaks={tweaks} />
+          <Projects tweaks={tweaks} />
+          <Skills tweaks={tweaks} />
+          <Volunteer tweaks={tweaks} />
+          <Contact tweaks={tweaks} />
+          <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} open={tweaksOpen} />
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+
+  <style>
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.4; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.2); }
+    }
+  </style>
+</body>
+</html>
