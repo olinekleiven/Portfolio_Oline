@@ -44,6 +44,16 @@
     .tweak-row input[type=color] { width: 28px; height: 28px; border: none; border-radius: 50%; cursor: pointer !important; background: none; padding: 0; }
     .tweak-row input[type=range] { width: 100px; accent-color: #C04B22; cursor: pointer !important; }
     .tweak-row select { background: #3A352F; color: #EDE0CF; border: none; border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer !important; }
+
+    /* Marquee */
+    .marquee-track { display: flex; animation: marquee 28s linear infinite; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* Touch devices: disable custom cursor */
+    @media (hover: none) {
+      #cursor, #cursor-ring { display: none !important; }
+      * { cursor: auto !important; }
+    }
   </style>
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
@@ -175,6 +185,17 @@
       return null;
     }
 
+    // Breakpoint hook
+    function useBreakpoint() {
+      const [width, setWidth] = useState(window.innerWidth);
+      useEffect(() => {
+        const h = () => setWidth(window.innerWidth);
+        window.addEventListener('resize', h);
+        return () => window.removeEventListener('resize', h);
+      }, []);
+      return { isMobile: width < 640, isTablet: width < 1024, width };
+    }
+
     // Scroll reveal hook
     function useReveal() {
       useEffect(() => {
@@ -188,9 +209,11 @@
     }
 
     // Nav
-    function Nav({ tweaks }) {
+    function Nav({ tweaks, bp }) {
       const [scrolled, setScrolled] = useState(false);
       const [isDark, setIsDark] = useState(false);
+      const [menuOpen, setMenuOpen] = useState(false);
+      const navItems = ['Om', 'Erfaring', 'Prosjekter', 'Ferdigheter', 'Verv', 'Kontakt'];
       useEffect(() => {
         const darkIds = ['om', 'kontakt'];
         const check = () => {
@@ -209,41 +232,92 @@
         check();
         return () => window.removeEventListener('scroll', check);
       }, []);
+      useEffect(() => { if (!bp.isMobile) setMenuOpen(false); }, [bp.isMobile]);
       const textColor = isDark ? tweaks.bg : tweaks.dark;
-      const navBg = scrolled
-        ? (isDark ? tweaks.dark + 'ee' : tweaks.bg + 'ee')
-        : 'transparent';
+      const navBg = menuOpen
+        ? tweaks.dark
+        : scrolled ? (isDark ? tweaks.dark + 'ee' : tweaks.bg + 'ee') : 'transparent';
       return (
-        <nav style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-          padding: '20px 48px',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: navBg,
-          backdropFilter: scrolled ? 'blur(12px)' : 'none',
-          transition: 'background 0.4s ease, color 0.4s ease',
-          borderBottom: scrolled ? `1px solid ${textColor}18` : 'none'
-        }}>
-          <a href="#hero" style={{ fontFamily: tweaks.fontHeading, fontSize: 18, letterSpacing: '-0.02em', color: textColor, textDecoration: 'none', transition: 'color 0.4s ease' }}>
-            Oline<span style={{ color: tweaks.accent, fontStyle: 'italic' }}>.</span>
-          </a>
-          <div style={{ display: 'flex', gap: 36 }}>
-            {['Om', 'Erfaring', 'Prosjekter', 'Ferdigheter', 'Verv', 'Kontakt'].map(item => (
-              <a key={item} href={`#${item.toLowerCase()}`} style={{
-                color: textColor, textDecoration: 'none', fontSize: 13,
-                fontWeight: 500, letterSpacing: '0.04em', opacity: 0.7,
-                transition: 'opacity 0.2s, color 0.4s ease', cursor: 'none'
-              }}
-              onMouseEnter={e => e.target.style.opacity = 1}
-              onMouseLeave={e => e.target.style.opacity = 0.7}
-              >{item}</a>
-            ))}
-          </div>
-        </nav>
+        <>
+          <nav style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 101,
+            padding: bp.isMobile ? '16px 24px' : '20px 48px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            background: navBg,
+            backdropFilter: scrolled && !menuOpen ? 'blur(12px)' : 'none',
+            transition: 'background 0.4s ease, color 0.4s ease',
+            borderBottom: scrolled && !menuOpen ? `1px solid ${textColor}18` : 'none'
+          }}>
+            <a href="#hero" style={{ fontFamily: tweaks.fontHeading, fontSize: 18, letterSpacing: '-0.02em', color: menuOpen ? tweaks.bg : textColor, textDecoration: 'none', transition: 'color 0.4s ease', zIndex: 102 }}>
+              Oline<span style={{ color: tweaks.accent, fontStyle: 'italic' }}>.</span>
+            </a>
+            {bp.isMobile ? (
+              <button onClick={() => setMenuOpen(!menuOpen)} style={{
+                background: 'none', border: 'none', padding: 8, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', gap: 5, zIndex: 102
+              }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{
+                    width: 24, height: 2, borderRadius: 1,
+                    background: menuOpen ? tweaks.bg : textColor,
+                    transition: 'all 0.3s ease',
+                    transform: menuOpen && i === 0 ? 'rotate(45deg) translate(5px, 5px)' :
+                               menuOpen && i === 1 ? 'scaleX(0)' :
+                               menuOpen && i === 2 ? 'rotate(-45deg) translate(5px, -5px)' : 'none',
+                    opacity: menuOpen && i === 1 ? 0 : 1
+                  }} />
+                ))}
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: bp.isTablet ? 20 : 36 }}>
+                {navItems.map(item => (
+                  <a key={item} href={`#${item.toLowerCase()}`} style={{
+                    color: textColor, textDecoration: 'none', fontSize: 13,
+                    fontWeight: 500, letterSpacing: '0.04em', opacity: 0.7,
+                    transition: 'opacity 0.2s, color 0.4s ease', cursor: 'none'
+                  }}
+                  onMouseEnter={e => e.target.style.opacity = 1}
+                  onMouseLeave={e => e.target.style.opacity = 0.7}
+                  >{item}</a>
+                ))}
+              </div>
+            )}
+          </nav>
+          {bp.isMobile && (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+              background: tweaks.dark,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 4,
+              opacity: menuOpen ? 1 : 0,
+              pointerEvents: menuOpen ? 'auto' : 'none',
+              transition: 'opacity 0.35s ease'
+            }}>
+              {navItems.map((item) => (
+                <a key={item} href={`#${item.toLowerCase()}`}
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    color: tweaks.bg, textDecoration: 'none',
+                    fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 10vw, 52px)',
+                    fontWeight: 400, letterSpacing: '-0.02em', opacity: 0.85,
+                    transition: 'opacity 0.2s'
+                  }}
+                  onMouseEnter={e => e.target.style.opacity = 1}
+                  onMouseLeave={e => e.target.style.opacity = 0.85}
+                >{item}</a>
+              ))}
+              <div style={{ marginTop: 48, display: 'flex', gap: 24 }}>
+                <a href="mailto:olinefk@outlook.com" style={{ color: tweaks.accent, fontSize: 14, textDecoration: 'none' }}>✉ E-post</a>
+                <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" style={{ color: tweaks.accent, fontSize: 14, textDecoration: 'none' }}>LinkedIn ↗</a>
+              </div>
+            </div>
+          )}
+        </>
       );
     }
 
     // Hero
-    function Hero({ tweaks }) {
+    function Hero({ tweaks, bp }) {
       const scrambled = useScramble('Interaksjonsdesign', 600);
       const [scrollY, setScrollY] = React.useState(0);
       React.useEffect(() => {
@@ -251,26 +325,46 @@
         window.addEventListener('scroll', h);
         return () => window.removeEventListener('scroll', h);
       }, []);
+
+      // Portrait: same position as desktop on tablet, just proportionally smaller
+      const portraitSize = bp.isMobile ? 200 : bp.isTablet ? Math.round(bp.width * 0.28) : 380;
+      const sidePad = bp.isMobile ? '24px' : '48px';
+
       return (
         <section id="hero" style={{
           minHeight: '100vh', display: 'flex', flexDirection: 'column',
-          justifyContent: 'flex-end', padding: '0 48px 80px',
+          justifyContent: bp.isMobile ? 'center' : 'flex-end',
+          padding: bp.isMobile ? `100px ${sidePad} 60px` : `0 ${sidePad} 80px`,
           background: tweaks.bg, position: 'relative', overflow: 'hidden'
         }}>
-          {/* Parallax portrait */}
-          <div style={{
-            position: 'absolute', top: '50%', right: '6%',
-            transform: `translateY(calc(-50% + ${scrollY * 0.12}px))`,
-            width: 380, height: 380,
-            borderRadius: '50%',
-            overflow: 'hidden',
-            border: `3px solid ${tweaks.accent}40`,
-            boxShadow: `0 0 0 12px ${tweaks.accent}10`,
-            pointerEvents: 'none', transition: 'transform 0.08s linear'
-          }}>
-            <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
-          </div>
+
+          {/* Portrait — inline on mobile, absolute top-right on tablet+desktop */}
+          {bp.isMobile ? (
+            <div style={{
+              width: portraitSize, height: portraitSize, borderRadius: '50%', overflow: 'hidden',
+              border: `2px solid ${tweaks.accent}50`,
+              boxShadow: `0 0 0 8px ${tweaks.accent}10`,
+              marginBottom: 28, flexShrink: 0
+            }}>
+              <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+            </div>
+          ) : (
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              right: '6%',
+              transform: `translateY(calc(-50% + ${scrollY * 0.12}px))`,
+              width: portraitSize, height: portraitSize,
+              borderRadius: '50%', overflow: 'hidden',
+              border: `3px solid ${tweaks.accent}40`,
+              boxShadow: `0 0 0 12px ${tweaks.accent}10`,
+              pointerEvents: 'none', transition: 'transform 0.08s linear'
+            }}>
+              <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+            </div>
+          )}
 
           <div style={{ maxWidth: 900 }}>
             <p className="reveal" style={{
@@ -279,7 +373,8 @@
             }}>Oline Flatabø Kleiven</p>
 
             <h1 className="reveal reveal-delay-1" style={{
-              fontFamily: tweaks.fontHeading, fontSize: 'clamp(52px, 8vw, 110px)',
+              fontFamily: tweaks.fontHeading,
+              fontSize: bp.isMobile ? 'clamp(40px, 11vw, 64px)' : 'clamp(52px, 8vw, 110px)',
               lineHeight: 1.0, letterSpacing: '-0.03em', color: tweaks.dark,
               marginBottom: 32, fontWeight: 400
             }}>
@@ -288,7 +383,8 @@
             </h1>
 
             <p className="reveal reveal-delay-2" style={{
-              fontSize: 18, lineHeight: 1.7, maxWidth: 480,
+              fontSize: bp.isMobile ? 16 : 18, lineHeight: 1.7,
+              maxWidth: bp.isMobile ? '100%' : 480,
               color: tweaks.dark, opacity: 0.65, marginBottom: 48,
               fontWeight: 300
             }}>
@@ -296,7 +392,7 @@
               møter menneskelig forståelse.
             </p>
 
-            <div className="reveal reveal-delay-3" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div className="reveal reveal-delay-3" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <a href="#prosjekter" data-hover style={{
                 background: tweaks.dark, color: tweaks.bg,
                 padding: '14px 32px', borderRadius: 100, textDecoration: 'none',
@@ -319,31 +415,34 @@
             </div>
           </div>
 
-          {/* Scroll indicator */}
-          <div style={{
-            position: 'absolute', bottom: 40, right: 48,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8
-          }}>
+          {/* Scroll indicator — hidden on mobile */}
+          {!bp.isMobile && (
             <div style={{
-              width: 1, height: 60,
-              background: `linear-gradient(to bottom, ${tweaks.accent}, transparent)`,
-              animation: 'scrollPulse 2s ease-in-out infinite'
-            }} />
-            <span style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.4, writingMode: 'vertical-lr' }}>scroll</span>
-          </div>
+              position: 'absolute', bottom: 40, right: 48,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8
+            }}>
+              <div style={{
+                width: 1, height: 60,
+                background: `linear-gradient(to bottom, ${tweaks.accent}, transparent)`,
+                animation: 'scrollPulse 2s ease-in-out infinite'
+              }} />
+              <span style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.4, writingMode: 'vertical-lr' }}>scroll</span>
+            </div>
+          )}
         </section>
       );
     }
 
     // About
-    function About({ tweaks }) {
+    function About({ tweaks, bp }) {
+      const sidePad = bp.isMobile ? '24px' : '48px';
       return (
         <section id="om" style={{
-          padding: `${72 * tweaks.spacing}px 48px`,
+          padding: `${72 * tweaks.spacing}px ${sidePad}`,
           background: tweaks.dark, color: tweaks.bg,
           minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
         }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
 
             {/* Top row: photo + label */}
             <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 40 }}>
@@ -353,17 +452,26 @@
               <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
             </div>
 
-            {/* Main grid: heading + bio left, education right */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start', marginBottom: 0 }}>
+            {/* Main grid: single column on mobile, two on desktop */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: bp.isMobile ? '1fr' : '1fr 1fr',
+              gap: bp.isMobile ? 48 : 80,
+              alignItems: 'start'
+            }}>
               <div>
                 <h2 className="reveal" style={{
-                  fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 52px)',
-                  lineHeight: 1.15, letterSpacing: '-0.02em', fontWeight: 400, marginBottom: 32
+                  fontFamily: tweaks.fontHeading,
+                  fontSize: bp.isMobile ? 'clamp(28px, 8vw, 38px)' : 'clamp(36px, 4vw, 52px)',
+                  lineHeight: 1.15, letterSpacing: '-0.02em', fontWeight: 400, marginBottom: 24
                 }}>
                   Teknologi som<br/>
                   <span style={{ fontStyle: 'italic', color: tweaks.accent }}>forstår mennesker</span>
                 </h2>
-                <p className="reveal reveal-delay-1" style={{ fontSize: 16, lineHeight: 1.85, opacity: 0.65, fontWeight: 300 }}>
+                <p className="reveal reveal-delay-1" style={{
+                  fontSize: bp.isMobile ? 14 : 16,
+                  lineHeight: 1.8, opacity: 0.65, fontWeight: 300
+                }}>
                   Bachelorgrad i informasjonsvitenskap, masterstudent i interaksjonsdesign ved UiB.
                   Eg spesialiserer meg på brukarvennlege løysingar og frontend-utvikling — med
                   ein blid, engasjert og nysgjerrig tilnærming til alt eg lagar.
@@ -372,7 +480,7 @@
 
               {/* Education */}
               <div className="reveal reveal-delay-1">
-                <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600, marginBottom: 28 }}>Utdanning</p>
+                <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600, marginBottom: 20 }}>Utdanning</p>
                 {[
                   { school: 'Universitetet i Bergen', degree: 'Master — Medie og Interaksjonsdesign', period: '2025 –' },
                   { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025' },
@@ -383,14 +491,24 @@
                   <div key={i} data-hover
                     onMouseEnter={() => setHov(true)}
                     onMouseLeave={() => setHov(false)}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 16px', borderBottom: `1px solid ${tweaks.bg}15`,
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                      padding: bp.isMobile ? '16px 12px' : '20px 16px',
+                      borderBottom: `1px solid ${tweaks.bg}15`,
                       background: hov ? tweaks.bg : 'transparent', borderRadius: 8,
-                      transition: 'background 0.3s ease', margin: '0 -16px' }}>
+                      transition: 'background 0.3s ease',
+                      margin: bp.isMobile ? '0 -12px' : '0 -16px'
+                    }}>
                     <div>
-                      <div style={{ fontFamily: tweaks.fontHeading, fontSize: 22, fontWeight: 400, marginBottom: 4, color: hov ? tweaks.dark : tweaks.bg, transition: 'color 0.3s' }}>{e.school}</div>
-                      <div style={{ fontSize: 13, fontStyle: 'italic', color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.6 : 0.5, transition: 'all 0.3s' }}>{e.degree}</div>
+                      <div style={{
+                        fontFamily: tweaks.fontHeading,
+                        fontSize: bp.isMobile ? 17 : 22,
+                        fontWeight: 400, marginBottom: 3,
+                        color: hov ? tweaks.dark : tweaks.bg, transition: 'color 0.3s'
+                      }}>{e.school}</div>
+                      <div style={{ fontSize: 12, fontStyle: 'italic', color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.6 : 0.5, transition: 'all 0.3s' }}>{e.degree}</div>
                     </div>
-                    <span style={{ fontSize: 12, flexShrink: 0, marginLeft: 24, marginTop: 4, color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.5 : 0.4, transition: 'all 0.3s' }}>{e.period}</span>
+                    <span style={{ fontSize: 11, flexShrink: 0, marginLeft: 12, marginTop: 3, color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.5 : 0.4, transition: 'all 0.3s' }}>{e.period}</span>
                   </div>
                   );
                 })}
@@ -433,7 +551,7 @@
       },
     ];
 
-    function ProjectCard({ project, tweaks, index }) {
+    function ProjectCard({ project, tweaks, index, mobile }) {
       const [hovered, setHovered] = useState(false);
       return (
         <div
@@ -445,16 +563,16 @@
             background: hovered ? project.color : '#fff',
             border: `1px solid ${tweaks.dark}12`,
             borderRadius: 16,
-            padding: '48px 40px',
+            padding: mobile ? '28px 24px' : '48px 40px',
             transition: 'all 0.4s cubic-bezier(.16,1,.3,1)',
             transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
             cursor: 'none',
             position: 'relative', overflow: 'hidden'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: mobile ? 20 : 32 }}>
             <span style={{
-              fontFamily: tweaks.fontHeading, fontSize: 48,
+              fontFamily: tweaks.fontHeading, fontSize: mobile ? 36 : 48,
               color: hovered ? 'rgba(255,255,255,0.2)' : project.color + '30',
               fontWeight: 400, lineHeight: 1,
               transition: 'color 0.4s'
@@ -472,11 +590,11 @@
           </div>
           <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 500, marginBottom: 8, color: hovered ? 'rgba(255,255,255,0.6)' : project.color, transition: 'color 0.4s' }}>{project.subtitle}</p>
           <h3 style={{
-            fontFamily: tweaks.fontHeading, fontSize: 32,
-            fontWeight: 400, letterSpacing: '-0.02em', marginBottom: 16,
+            fontFamily: tweaks.fontHeading, fontSize: mobile ? 24 : 32,
+            fontWeight: 400, letterSpacing: '-0.02em', marginBottom: 12,
             color: hovered ? '#fff' : tweaks.dark, transition: 'color 0.4s'
           }}>{project.title}</h3>
-          <p style={{ fontSize: 15, lineHeight: 1.75, color: hovered ? 'rgba(255,255,255,0.8)' : tweaks.dark, opacity: hovered ? 1 : 0.6, marginBottom: 28, transition: 'all 0.4s' }}>{project.desc}</p>
+          <p style={{ fontSize: mobile ? 14 : 15, lineHeight: 1.75, color: hovered ? 'rgba(255,255,255,0.8)' : tweaks.dark, opacity: hovered ? 1 : 0.6, marginBottom: mobile ? 20 : 28, transition: 'all 0.4s' }}>{project.desc}</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {project.tags.map(tag => (
               <span key={tag} style={{
@@ -493,23 +611,24 @@
       );
     }
 
-    function Projects({ tweaks }) {
+    function Projects({ tweaks, bp }) {
+      const narrow = bp && bp.width < 800;
       return (
-        <section id="prosjekter" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="prosjekter" style={{ padding: `${80 * tweaks.spacing}px ${narrow ? '24px' : '48px'}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 64 }}>
+            <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 40 : 64, gap: narrow ? 8 : 0 }}>
               <div>
                 <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Utvalgte prosjekter</p>
                 <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark }}>
                   Arbeidet mitt
                 </h2>
               </div>
-              <p className="reveal reveal-delay-2" style={{ fontSize: 14, opacity: 0.5, maxWidth: 200, textAlign: 'right', lineHeight: 1.6 }}>
+              <p className="reveal reveal-delay-2" style={{ fontSize: 14, opacity: 0.5, maxWidth: 200, textAlign: narrow ? 'left' : 'right', lineHeight: 1.6 }}>
                 Design, kode og brukervennlighet i praksis
               </p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
-              {projects.map((p, i) => <ProjectCard key={p.num} project={p} tweaks={tweaks} index={i} />)}
+            <div style={{ display: 'grid', gridTemplateColumns: narrow ? '1fr' : '1fr 1fr 1fr', gap: narrow ? 16 : 20 }}>
+              {projects.map((p, i) => <ProjectCard key={p.num} project={p} tweaks={tweaks} index={i} mobile={narrow} />)}
             </div>
           </div>
         </section>
@@ -556,24 +675,70 @@
       },
     ];
 
-    function Experience({ tweaks }) {
+    function Experience({ tweaks, bp }) {
+      const sidePad = bp.isMobile ? '24px' : bp.isTablet ? '32px' : '48px';
       return (
-        <section id="erfaring" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <section id="erfaring" style={{ padding: `${80 * tweaks.spacing}px ${sidePad}`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowX: 'hidden' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Erfaring</p>
-            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 64 }}>
+            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: bp.isTablet ? 'clamp(28px, 6vw, 40px)' : 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: bp.isTablet ? 28 : 64 }}>
               Arbeidserfaring
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              {experiences.map((exp, i) => <ExperienceRow key={i} exp={exp} tweaks={tweaks} index={i} />)}
+            <div style={{
+              display: bp.isTablet ? 'grid' : 'flex',
+              gridTemplateColumns: bp.isMobile ? '1fr' : bp.isTablet ? '1fr 1fr' : undefined,
+              flexDirection: bp.isTablet ? undefined : 'column',
+              gap: bp.isTablet ? 10 : 0
+            }}>
+              {experiences.map((exp, i) => <ExperienceRow key={i} exp={exp} tweaks={tweaks} index={i} bp={bp} />)}
             </div>
           </div>
         </section>
       );
     }
 
-    function ExperienceRow({ exp, tweaks, index }) {
+    function ExperienceRow({ exp, tweaks, index, bp }) {
       const [hovered, setHovered] = useState(false);
+      if (bp.isTablet) {
+        return (
+          <div
+            data-hover
+            className={`reveal reveal-delay-${index + 1}`}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+              padding: '14px 16px',
+              background: hovered ? exp.color : '#F5EAD8',
+              borderRadius: 10,
+              border: `2px solid ${hovered ? 'rgba(255,255,255,0.25)' : exp.color}`,
+              display: 'flex', flexDirection: 'column', gap: 6,
+              minWidth: 0, overflow: 'hidden',
+              transition: 'background 0.3s cubic-bezier(.16,1,.3,1), border-color 0.3s'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: hovered ? 'rgba(255,255,255,0.7)' : exp.color, flexShrink: 0, transition: 'background 0.3s' }} />
+                <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: hovered ? 'rgba(255,255,255,0.7)' : exp.color, transition: 'color 0.3s' }}>{exp.company}</span>
+              </div>
+              <span style={{ fontSize: 10, color: hovered ? 'rgba(255,255,255,0.5)' : tweaks.dark, opacity: hovered ? 1 : 0.35, transition: 'all 0.3s' }}>{exp.year}</span>
+            </div>
+            <h3 style={{ fontFamily: tweaks.fontHeading, fontSize: 17, fontWeight: 400, letterSpacing: '-0.01em', color: hovered ? '#fff' : tweaks.dark, transition: 'color 0.3s' }}>{exp.role}</h3>
+            <p style={{ fontSize: 12, lineHeight: 1.55, color: hovered ? 'rgba(255,255,255,0.75)' : tweaks.dark, opacity: hovered ? 1 : 0.55, overflowWrap: 'break-word', transition: 'all 0.3s' }}>{exp.desc}</p>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {exp.tags.map(tag => (
+                <span key={tag} style={{
+                  padding: '2px 8px', borderRadius: 100, fontSize: 10, fontWeight: 500,
+                  background: hovered ? 'rgba(255,255,255,0.2)' : exp.color + '12',
+                  color: hovered ? '#fff' : exp.color,
+                  border: `1px solid ${hovered ? 'rgba(255,255,255,0.25)' : exp.color + '25'}`,
+                  transition: 'all 0.3s'
+                }}>{tag}</span>
+              ))}
+            </div>
+          </div>
+        );
+      }
       return (
         <div
           data-hover
@@ -633,18 +798,19 @@
       },
     ];
 
-    function Skills({ tweaks }) {
+    function Skills({ tweaks, bp }) {
+      const mobile = bp && bp.width < 700;
       return (
-        <section id="ferdigheter" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <section id="ferdigheter" style={{ padding: `${80 * tweaks.spacing}px ${mobile ? '24px' : '48px'}`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Kompetanse</p>
-            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 72 }}>
+            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: mobile ? 40 : 72 }}>
               Ferdigheter &<br/><span style={{ fontStyle: 'italic' }}>verktøy</span>
             </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr 1fr', gap: mobile ? 12 : 16 }}>
               {skillGroups.map((group, gi) => (
-                <SkillColumn key={group.category} group={group} tweaks={tweaks} gi={gi} />
+                <SkillColumn key={group.category} group={group} tweaks={tweaks} gi={gi} mobile={mobile} />
               ))}
             </div>
           </div>
@@ -652,28 +818,28 @@
       );
     }
 
-    function SkillColumn({ group, tweaks, gi }) {
+    function SkillColumn({ group, tweaks, gi, mobile }) {
       return (
         <div className={`reveal reveal-delay-${gi + 1}`} style={{
-          padding: '40px 36px',
+          padding: mobile ? '24px 20px' : '40px 36px',
           background: '#E8D9C4',
           borderRadius: 16,
           border: `1px solid ${tweaks.dark}08`
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: mobile ? 16 : 32 }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: group.color }} />
             <span style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700, color: group.color }}>{group.category}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {group.skills.map((skill) => (
-              <SkillItem key={skill} skill={skill} color={group.color} tweaks={tweaks} />
+              <SkillItem key={skill} skill={skill} color={group.color} tweaks={tweaks} mobile={mobile} />
             ))}
           </div>
         </div>
       );
     }
 
-    function SkillItem({ skill, color, tweaks }) {
+    function SkillItem({ skill, color, tweaks, mobile }) {
       const [hov, setHov] = useState(false);
       return (
         <div
@@ -682,14 +848,14 @@
           onMouseLeave={() => setHov(false)}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 16px', borderRadius: 10,
+            padding: '10px 16px', borderRadius: 10,
             background: hov ? color : 'transparent',
             transition: 'background 0.25s ease',
             margin: '0 -16px'
           }}
         >
           <span style={{
-            fontFamily: tweaks.fontHeading, fontSize: 22, fontWeight: 400,
+            fontFamily: tweaks.fontHeading, fontSize: mobile ? 18 : 22, fontWeight: 400,
             letterSpacing: '-0.01em',
             color: hov ? '#fff' : tweaks.dark,
             transition: 'color 0.25s'
@@ -710,7 +876,7 @@
       { org: 'BSI Damefotball', role: 'So-Me ansvarleg', sub: 'Kommunikasjon', period: '2024 – 2025', color: '#7A8E6F' },
     ];
 
-    function Volunteer({ tweaks }) {
+    function Volunteer({ tweaks, bp }) {
       return (
         <section id="verv" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
@@ -718,7 +884,7 @@
             <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 72, paddingLeft: 16 }}>
               Frivillige<br/><span style={{ fontStyle: 'italic' }}>verv</span>
             </h2>
-            <VolunteerBubbles tweaks={tweaks} />
+            <VolunteerBubbles tweaks={tweaks} bp={bp} />
           </div>
         </section>
       );
@@ -763,7 +929,7 @@
       },
     ];
 
-    function BubbleItem({ b, tweaks }) {
+    function BubbleItem({ b, tweaks, scale }) {
       const [hov, setHov] = useState(false);
       const [pos, setPos] = useState({ x: 0, y: 0 });
 
@@ -781,6 +947,7 @@
         return () => cancelAnimationFrame(frame);
       }, []);
 
+      const sz = Math.round(b.size * scale);
       return (
         <div
           data-hover
@@ -790,99 +957,106 @@
             position: 'absolute',
             left: `${b.x}%`,
             top: `${b.y}%`,
-            width: b.size,
-            height: b.size,
+            width: sz,
+            height: sz,
             borderRadius: '50%',
             background: hov ? b.color : `${b.color}18`,
             border: `2px solid ${b.color}${hov ? 'ff' : '60'}`,
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
-            padding: 24, textAlign: 'center',
+            padding: Math.round(24 * scale), textAlign: 'center',
             transform: hov ? `translate(${pos.x}px, ${pos.y}px) scale(1.08)` : `translate(${pos.x}px, ${pos.y}px) scale(1)`,
             transition: 'background 0.4s, border-color 0.4s, transform 0.4s cubic-bezier(.16,1,.3,1)',
             cursor: 'none',
             zIndex: hov ? 2 : 1,
           }}
         >
-          <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700,
+          <p style={{ fontSize: Math.max(9, Math.round(10 * scale)), letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700,
             color: hov ? 'rgba(255,255,255,0.7)' : b.color, marginBottom: 6, transition: 'color 0.4s' }}>{b.org}</p>
-          <p style={{ fontFamily: tweaks.fontHeading, fontSize: b.size > 200 ? 18 : 16, fontWeight: 400,
+          <p style={{ fontFamily: tweaks.fontHeading, fontSize: Math.max(13, Math.round((sz > 200 ? 18 : 16) * scale)), fontWeight: 400,
             color: hov ? '#fff' : tweaks.dark, lineHeight: 1.2, marginBottom: 4, transition: 'color 0.4s' }}>{b.role}</p>
-          <p style={{ fontSize: 11, color: hov ? 'rgba(255,255,255,0.65)' : tweaks.dark,
+          <p style={{ fontSize: Math.max(10, Math.round(11 * scale)), color: hov ? 'rgba(255,255,255,0.65)' : tweaks.dark,
             opacity: hov ? 1 : 0.4, transition: 'all 0.4s' }}>{b.period}</p>
-          {hov && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6, lineHeight: 1.4 }}>{b.sub}</p>}
+          {hov && <p style={{ fontSize: Math.max(10, Math.round(11 * scale)), color: 'rgba(255,255,255,0.6)', marginTop: 6, lineHeight: 1.4 }}>{b.sub}</p>}
         </div>
       );
     }
 
-    function VolunteerBubbles({ tweaks }) {
+    function VolunteerBubbles({ tweaks, bp }) {
+      const w = bp ? bp.width : 1100;
+      const scale = w <= 400 ? 1 : Math.min(2, 1 + (w - 400) / 900);
+      const containerH = Math.round(480 * scale);
       return (
-        <div className="reveal" style={{ position: 'relative', height: 480, width: '100%' }}>
-          {bubbleData.map((b, i) => <BubbleItem key={i} b={b} tweaks={tweaks} />)}
+        <div className="reveal" style={{ position: 'relative', height: containerH, width: '100%' }}>
+          {bubbleData.map((b, i) => <BubbleItem key={i} b={b} tweaks={tweaks} scale={scale} />)}
         </div>
       );
     }
 
     // Contact
-    function Contact({ tweaks }) {
-      const [sent, setSent] = useState(false);
+    function Contact({ tweaks, bp }) {
+      const mobile = bp && bp.isMobile;
+      const btnBase = {
+        borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
+        transition: 'transform 0.2s, opacity 0.2s, border-color 0.2s',
+        display: 'block', textAlign: 'center',
+        padding: mobile ? '14px 24px' : '16px 40px',
+        width: mobile ? '100%' : 'auto',
+      };
       return (
-        <section id="kontakt" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
-            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 24, fontWeight: 500 }}>La oss snakke</p>
+        <section id="kontakt" style={{ padding: mobile ? '72px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', textAlign: 'center' }}>
+            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 20, fontWeight: 500 }}>La oss snakke</p>
             <h2 className="reveal reveal-delay-1" style={{
-              fontFamily: tweaks.fontHeading, fontSize: 'clamp(48px, 7vw, 96px)',
-              lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 400, marginBottom: 32
+              fontFamily: tweaks.fontHeading, fontSize: mobile ? 'clamp(36px, 11vw, 56px)' : 'clamp(48px, 7vw, 96px)',
+              lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 400, marginBottom: mobile ? 20 : 32
             }}>
               Trenger du min<br/>
               <span style={{ fontStyle: 'italic', color: tweaks.accent }}>kompetanse?</span>
             </h2>
-            <p className="reveal reveal-delay-2" style={{ fontSize: 18, opacity: 0.6, lineHeight: 1.7, marginBottom: 64, fontWeight: 300 }}>
-              Eg er alltid åpen for samarbeid, jobbtilbod,<br/>praksisplassar og internship innanfor utvikling og design.
+            <p className="reveal reveal-delay-2" style={{ fontSize: mobile ? 15 : 18, opacity: 0.6, lineHeight: 1.7, marginBottom: mobile ? 40 : 64, fontWeight: 300 }}>
+              Eg er alltid åpen for samarbeid, jobbtilbod, praksisplassar og internship innanfor utvikling og design.
             </p>
 
-            <div className="reveal reveal-delay-3" style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 80, flexWrap: 'wrap' }}>
+            <div className="reveal reveal-delay-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
               <a href="mailto:olinefk@outlook.com" data-hover style={{
-                background: tweaks.accent, color: '#fff', padding: '16px 40px',
+                background: tweaks.accent, color: '#fff', padding: mobile ? '15px 48px' : '16px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
-                transition: 'transform 0.2s, opacity 0.2s', display: 'inline-block'
+                transition: 'transform 0.2s, opacity 0.2s', display: 'inline-block', width: mobile ? '60%' : 'auto', textAlign: 'center'
               }}
-              onMouseEnter={e => { e.target.style.transform = 'translateY(-3px)'; e.target.style.opacity = '0.9'; }}
-              onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; e.target.style.opacity = '1'; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.opacity = '1'; }}
               >✉ Send e-post</a>
 
               <a href="uploads/OlineKleivenCV.pdf" download="OlineKleivenCV.pdf" data-hover style={{
-                background: 'transparent', color: '#f3e9dd', padding: '16px 40px',
-                borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
-                border: `1.5px solid ${tweaks.bg}30`,
-                transition: 'transform 0.2s, border-color 0.2s', display: 'inline-block'
+                background: 'transparent', color: tweaks.bg, padding: mobile ? '13px 48px' : '14px 56px',
+                borderRadius: 100, textDecoration: 'none', fontSize: 14, fontWeight: 400,
+                border: `1.5px solid ${tweaks.bg}30`, transition: 'transform 0.2s, border-color 0.2s',
+                display: 'inline-block', width: mobile ? '60%' : 'auto', textAlign: 'center'
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
               >↓ Last ned CV</a>
 
-              <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" onClick={e => { e.preventDefault(); window.open('https://www.linkedin.com/in/oline-kleiven-99852b264/', '_blank'); }} data-hover style={{
-                background: 'transparent', color: tweaks.bg, padding: '16px 40px',
-                borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
-                border: `1.5px solid ${tweaks.bg}30`,
-                transition: 'transform 0.2s, border-color 0.2s', display: 'inline-block'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
-              >LinkedIn ↗</a>
-
-              <a href="https://github.com/olinekleiven" target="_blank" rel="noopener" data-hover style={{
-                background: 'transparent', color: tweaks.bg, padding: '16px 40px',
-                borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
-                border: `1.5px solid ${tweaks.bg}30`,
-                transition: 'transform 0.2s, border-color 0.2s', display: 'inline-block'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
-              >GitHub ↗</a>
+              <div style={{ display: 'flex', gap: 32, marginTop: mobile ? 8 : 12 }}>
+                <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" data-hover style={{
+                  color: tweaks.bg, textDecoration: 'none', fontSize: 14, fontWeight: 400,
+                  opacity: 0.5, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >LinkedIn ↗</a>
+                <a href="https://github.com/olinekleiven" target="_blank" rel="noopener" data-hover style={{
+                  color: tweaks.bg, textDecoration: 'none', fontSize: 14, fontWeight: 400,
+                  opacity: 0.5, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >GitHub ↗</a>
+              </div>
             </div>
 
-            <div style={{ borderTop: `1px solid ${tweaks.bg}15`, paddingTop: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, opacity: 0.4 }}>
+            <div style={{ borderTop: `1px solid ${tweaks.bg}15`, paddingTop: 32, display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: mobile ? 6 : 0, fontSize: 13, opacity: 0.4 }}>
               <span>Oline Flatabø Kleiven</span>
               <span>olinefk@outlook.com</span>
               <span>Bergen, Norge</span>
@@ -919,10 +1093,10 @@
     function App() {
       const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
       const [tweaksOpen, setTweaksOpen] = useState(false);
+      const bp = useBreakpoint();
       useReveal();
 
       useEffect(() => {
-        // Register edit mode
         window.addEventListener('message', (e) => {
           if (e.data?.type === '__activate_edit_mode') setTweaksOpen(true);
           if (e.data?.type === '__deactivate_edit_mode') setTweaksOpen(false);
@@ -939,14 +1113,14 @@
         <>
           <ScrollProgress tweaks={tweaks} />
           <Cursor />
-          <Nav tweaks={tweaks} />
-          <Hero tweaks={tweaks} />
-          <About tweaks={tweaks} />
-          <Experience tweaks={tweaks} />
-          <Projects tweaks={tweaks} />
-          <Skills tweaks={tweaks} />
-          <Volunteer tweaks={tweaks} />
-          <Contact tweaks={tweaks} />
+          <Nav tweaks={tweaks} bp={bp} />
+          <Hero tweaks={tweaks} bp={bp} />
+          <About tweaks={tweaks} bp={bp} />
+          <Experience tweaks={tweaks} bp={bp} />
+          <Projects tweaks={tweaks} bp={bp} />
+          <Skills tweaks={tweaks} bp={bp} />
+          <Volunteer tweaks={tweaks} bp={bp} />
+          <Contact tweaks={tweaks} bp={bp} />
           <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} open={tweaksOpen} />
         </>
       );
