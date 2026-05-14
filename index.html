@@ -877,11 +877,12 @@
     ];
 
     function Volunteer({ tweaks, bp }) {
+      const mobile = bp && bp.isMobile;
       return (
-        <section id="verv" style={{ padding: `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="verv" style={{ padding: mobile ? '60px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: mobile ? 'auto' : '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500, paddingLeft: 8 }}>Engasjement</p>
-            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 72, paddingLeft: 16 }}>
+            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 32, paddingLeft: 16 }}>
               Frivillige<br/><span style={{ fontStyle: 'italic' }}>verv</span>
             </h2>
             <VolunteerBubbles tweaks={tweaks} bp={bp} />
@@ -985,7 +986,7 @@
     function VolunteerBubbles({ tweaks, bp }) {
       const w = bp ? bp.width : 1100;
       const scale = w <= 400 ? 1 : Math.min(2, 1 + (w - 400) / 900);
-      const containerH = Math.round(480 * scale);
+      const containerH = Math.round(340 * scale);
       return (
         <div className="reveal" style={{ position: 'relative', height: containerH, width: '100%' }}>
           {bubbleData.map((b, i) => <BubbleItem key={i} b={b} tweaks={tweaks} scale={scale} />)}
