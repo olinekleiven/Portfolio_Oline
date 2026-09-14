@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Oline Flatabø Kleiven — Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -49,6 +49,7 @@
     .marquee-track { display: flex; animation: marquee 28s linear infinite; }
     @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
+
     /* Touch devices: disable custom cursor */
     @media (hover: none) {
       #cursor, #cursor-ring { display: none !important; }
@@ -80,23 +81,6 @@
       "spacing": 1.1
     }/*EDITMODE-END*/;
 
-    // Scroll progress bar
-    function ScrollProgress({ tweaks }) {
-      const [pct, setPct] = useState(0);
-      useEffect(() => {
-        const h = () => {
-          const el = document.documentElement;
-          setPct((window.scrollY / (el.scrollHeight - el.clientHeight)) * 100);
-        };
-        window.addEventListener('scroll', h);
-        return () => window.removeEventListener('scroll', h);
-      }, []);
-      return (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 9999, background: 'transparent' }}>
-          <div style={{ height: '100%', width: pct + '%', background: tweaks.accent, transition: 'width 0.1s linear', transformOrigin: 'left' }} />
-        </div>
-      );
-    }
 
     // Text scramble hook
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -209,34 +193,40 @@
     }
 
     // Nav
+    const NAV_SECTIONS = ['hero', 'om', 'prosjekter', 'erfaring', 'skills', 'verv', 'kontakt'];
+    const NAV_DARK_SECTIONS = new Set(['om', 'prosjekter', 'kontakt']);
     function Nav({ tweaks, bp }) {
       const [scrolled, setScrolled] = useState(false);
-      const [isDark, setIsDark] = useState(false);
+      const [activeSection, setActiveSection] = useState('hero');
       const [menuOpen, setMenuOpen] = useState(false);
-      const navItems = ['Om', 'Erfaring', 'Prosjekter', 'Ferdigheter', 'Verv', 'Kontakt'];
+      const navItems = ['Om', 'Erfaring', 'Prosjekter', 'Skills', 'Verv', 'Kontakt'];
       useEffect(() => {
-        const darkIds = ['om', 'kontakt'];
         const check = () => {
           setScrolled(window.scrollY > 60);
-          let dark = false;
-          darkIds.forEach(id => {
+          let current = 'hero';
+          NAV_SECTIONS.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
               const rect = el.getBoundingClientRect();
-              if (rect.top <= 80 && rect.bottom > 0) dark = true;
+              if (rect.top <= 80 && rect.bottom > 0) current = id;
             }
           });
-          setIsDark(dark);
+          setActiveSection(current);
         };
         window.addEventListener('scroll', check);
         check();
         return () => window.removeEventListener('scroll', check);
       }, []);
       useEffect(() => { if (!bp.isMobile) setMenuOpen(false); }, [bp.isMobile]);
+      const isDark = NAV_DARK_SECTIONS.has(activeSection);
+      const sectionBg = {
+        hero: tweaks.bg, om: tweaks.dark, prosjekter: '#5B7C8A',
+        erfaring: tweaks.bg, skills: tweaks.bg, verv: tweaks.bg, kontakt: tweaks.dark
+      };
       const textColor = isDark ? tweaks.bg : tweaks.dark;
       const navBg = menuOpen
         ? tweaks.dark
-        : scrolled ? (isDark ? tweaks.dark + 'ee' : tweaks.bg + 'ee') : 'transparent';
+        : scrolled ? (sectionBg[activeSection] || tweaks.bg) + 'ee' : 'transparent';
       return (
         <>
           <nav style={{
@@ -255,9 +245,13 @@
               Oline<span style={{ color: tweaks.accent, fontStyle: 'italic' }}>.</span>
             </a>
             {bp.isMobile ? (
-              <button onClick={() => setMenuOpen(!menuOpen)} style={{
-                background: 'none', border: 'none', padding: 8, cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', gap: 5, zIndex: 102
+              <button onClick={() => setMenuOpen(!menuOpen)}
+                aria-label={menuOpen ? 'Lukk meny' : 'Åpne meny'}
+                aria-expanded={menuOpen}
+                style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                gap: 5, zIndex: 102, width: 44, height: 44, marginRight: -10
               }}>
                 {[0, 1, 2].map(i => (
                   <div key={i} style={{
@@ -273,7 +267,7 @@
               </button>
             ) : (
               <div style={{ display: 'flex', gap: bp.isTablet ? 6 : 10 }}>
-                {navItems.map(item => (
+                {navItems.map((item, i) => (
                   <a key={item} href={`#${item.toLowerCase()}`} style={{
                     color: textColor, textDecoration: 'none', fontSize: 13,
                     fontWeight: 500, letterSpacing: '0.04em',
@@ -301,7 +295,17 @@
                 ))}
               </div>
             )}
-            {!bp.isMobile && <div />}
+            {!bp.isMobile && (
+              <a href="#hero" aria-label="Til toppen" style={{
+                  justifySelf: 'end', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 32, height: 32, color: textColor, textDecoration: 'none', fontSize: 16,
+                  opacity: 0.6, transition: 'opacity 0.25s ease, transform 0.25s ease',
+                  zIndex: 102
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >↑</a>
+            )}
           </nav>
           {bp.isMobile && (
             <div style={{
@@ -458,7 +462,7 @@
       const sidePad = bp.isMobile ? '24px' : '48px';
       return (
         <section id="om" style={{
-          padding: `${72 * tweaks.spacing}px ${sidePad}`,
+          padding: `${80 * tweaks.spacing}px ${sidePad}`,
           background: tweaks.dark, color: tweaks.bg,
           minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
         }}>
@@ -502,7 +506,7 @@
               <div className="reveal reveal-delay-1">
                 <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600, marginBottom: 20 }}>Utdanning</p>
                 {[
-                  { school: 'Universitetet i Bergen', degree: 'Master — Medie- og interaksjonsdesign', period: '2025 –' },
+                  { school: 'Universitetet i Bergen', degree: 'Master — Medie- og interaksjonsdesign', period: '2025 – 2027' },
                   { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025' },
                   { school: 'Møre Folkehøgskule', degree: 'Ekstremsport', period: '2021 – 2022' },
                 ].map((e, i) => {
@@ -558,7 +562,7 @@
         desc: 'Ein webapp som hjelper studentar å navigere studiekvardagen smartare — rask tilgang til viktige ressursar, varslar og verktøy samla på éin stad. Bygd med fokus på enkel navigasjon og lav kognitiv last.',
         tags: ['React', 'UX Design', 'Prototyping', 'Figma'],
         url: 'https://snarveg-emzo.vercel.app',
-        color: '#5B7C8A',
+        color: '#8A5B7C',
       },
       {
         num: '03',
@@ -584,6 +588,7 @@
             border: `1px solid ${tweaks.dark}12`,
             borderRadius: 16,
             padding: mobile ? '28px 24px' : '48px 40px',
+            boxShadow: hovered ? '0 24px 48px rgba(0,0,0,0.22)' : '0 16px 40px rgba(0,0,0,0.14)',
             transition: 'all 0.4s cubic-bezier(.16,1,.3,1)',
             transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
             cursor: 'none',
@@ -634,16 +639,21 @@
     function Projects({ tweaks, bp }) {
       const narrow = bp && bp.width < 800;
       return (
-        <section id="prosjekter" style={{ padding: `${80 * tweaks.spacing}px ${narrow ? '24px' : '48px'}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <section id="prosjekter" style={{
+          padding: `${80 * tweaks.spacing}px ${narrow ? '24px' : '48px'}`,
+          background: '#5B7C8A',
+          color: tweaks.bg,
+          minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
+        }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 40 : 64, gap: narrow ? 8 : 0 }}>
               <div>
-                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Utvalgte prosjekter</p>
-                <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark }}>
+                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.bg, marginBottom: 16, fontWeight: 500 }}>Utvalgte prosjekter</p>
+                <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.bg }}>
                   Arbeidet mitt
                 </h2>
               </div>
-              <p className="reveal reveal-delay-2" style={{ fontSize: 14, opacity: 0.5, maxWidth: 200, textAlign: narrow ? 'left' : 'right', lineHeight: 1.6 }}>
+              <p className="reveal reveal-delay-2" style={{ fontSize: 14, color: tweaks.bg, opacity: 0.85, maxWidth: 200, textAlign: narrow ? 'left' : 'right', lineHeight: 1.6 }}>
                 Design, kode og brukervennlighet i praksis
               </p>
             </div>
@@ -716,7 +726,7 @@
     function Experience({ tweaks, bp }) {
       const sidePad = bp.isMobile ? '24px' : bp.isTablet ? '32px' : '48px';
       return (
-        <section id="erfaring" style={{ padding: `${80 * tweaks.spacing}px ${sidePad}`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowX: 'hidden' }}>
+        <section id="erfaring" style={{ padding: `${80 * tweaks.spacing}px ${sidePad}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowX: 'hidden' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Erfaring</p>
             <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: bp.isTablet ? 'clamp(28px, 6vw, 40px)' : 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: bp.isTablet ? 28 : 64 }}>
@@ -746,7 +756,7 @@
             onMouseLeave={() => setHovered(false)}
             style={{
               padding: '14px 16px',
-              background: hovered ? exp.color : '#F5EAD8',
+              background: hovered ? exp.color : tweaks.bg,
               borderRadius: 10,
               border: `2px solid ${hovered ? 'rgba(255,255,255,0.25)' : exp.color}`,
               display: 'flex', flexDirection: 'column', gap: 6,
@@ -759,7 +769,7 @@
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: hovered ? 'rgba(255,255,255,0.7)' : exp.color, flexShrink: 0, transition: 'background 0.3s' }} />
                 <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: hovered ? 'rgba(255,255,255,0.7)' : exp.color, transition: 'color 0.3s' }}>{exp.company}</span>
               </div>
-              <span style={{ fontSize: 10, color: hovered ? 'rgba(255,255,255,0.5)' : tweaks.dark, opacity: hovered ? 1 : 0.35, transition: 'all 0.3s' }}>{exp.year}</span>
+              <span style={{ fontSize: 10, color: hovered ? 'rgba(255,255,255,0.5)' : tweaks.dark, opacity: hovered ? 1 : 0.7, transition: 'all 0.3s' }}>{exp.year}</span>
             </div>
             <h3 style={{ fontFamily: tweaks.fontHeading, fontSize: 17, fontWeight: 400, letterSpacing: '-0.01em', color: hovered ? '#fff' : tweaks.dark, transition: 'color 0.3s' }}>{exp.role}</h3>
             <p style={{ fontSize: 12, lineHeight: 1.55, color: hovered ? 'rgba(255,255,255,0.75)' : tweaks.dark, opacity: hovered ? 1 : 0.55, overflowWrap: 'break-word', transition: 'all 0.3s' }}>{exp.desc}</p>
@@ -787,7 +797,7 @@
             display: 'grid', gridTemplateColumns: '200px 1fr auto',
             alignItems: 'center', gap: 40,
             padding: '28px 40px',
-            background: hovered ? exp.color : '#F5EAD8',
+            background: hovered ? exp.color : tweaks.bg,
             borderBottom: `1px solid ${tweaks.dark}12`,
             borderRadius: index === 0 ? '12px 12px 0 0' : index === experiences.length - 1 ? '0 0 12px 12px' : 0,
             transition: 'all 0.3s cubic-bezier(.16,1,.3,1)',
@@ -812,7 +822,7 @@
               ))}
             </div>
           </div>
-          <span style={{ fontSize: 13, opacity: hovered ? 0.7 : 0.4, color: hovered ? '#fff' : tweaks.dark, transition: 'all 0.3s', whiteSpace: 'nowrap', alignSelf: 'flex-start', paddingTop: 4 }}>{exp.year}</span>
+          <span style={{ fontSize: 13, opacity: 0.7, color: hovered ? '#fff' : tweaks.dark, transition: 'all 0.3s', whiteSpace: 'nowrap', alignSelf: 'flex-start', paddingTop: 4 }}>{exp.year}</span>
         </div>
       );
     }
@@ -839,11 +849,11 @@
     function Skills({ tweaks, bp }) {
       const mobile = bp && bp.width < 700;
       return (
-        <section id="ferdigheter" style={{ padding: `${80 * tweaks.spacing}px ${mobile ? '24px' : '48px'}`, background: '#F5EAD8', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="skills" style={{ padding: `${80 * tweaks.spacing}px ${mobile ? '24px' : '48px'}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Kompetanse</p>
             <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: mobile ? 40 : 72 }}>
-              Ferdigheter &<br/><span style={{ fontStyle: 'italic' }}>verktøy</span>
+              Skills &<br/><span style={{ fontStyle: 'italic' }}>verktøy</span>
             </h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr 1fr', gap: mobile ? 12 : 16 }}>
@@ -908,9 +918,9 @@
 
     // Volunteer
     const volunteerData = [
-      { org: 'Studentradioen i Bergen', role: 'Designer & Frontend-utviklar', sub: 'IT-gruppen', period: '2026 – 2026', color: '#C04B22' },
-      { org: 'UX Bergen', role: 'Styremedlem', sub: 'Fagleg nettverk', period: '2026 –', color: '#5B7C8A' },
-      { org: 'BSI Damefotball', role: 'Leiar', sub: 'Studentidrett', period: '2025 –', color: '#7A8E6F' },
+      { org: 'Studentradioen i Bergen', role: 'Designer & Frontend-utviklar', sub: 'IT-gruppen', period: '2026', color: '#C04B22' },
+      { org: 'UX Bergen', role: 'Styremedlem', sub: 'Fagleg nettverk', period: '2026 – d.d.', color: '#5B7C8A' },
+      { org: 'BSI Damefotball', role: 'Leiar', sub: 'Studentidrett', period: '2025 – d.d.', color: '#7A8E6F' },
       { org: 'BSI Damefotball', role: 'So-Me ansvarleg', sub: 'Kommunikasjon', period: '2024 – 2025', color: '#7A8E6F' },
     ];
 
@@ -934,28 +944,28 @@
         org: 'Studentradioen i Bergen',
         role: 'Designer & Frontend-utviklar',
         sub: 'IT-gruppen',
-        period: '2026 – 2026',
+        period: '2026',
         color: '#C04B22',
-        size: 210,
-        x: 2, y: 5,
+        size: 200,
+        x: 4, y: 8,
       },
       {
         org: 'UX Bergen',
         role: 'Styremedlem',
         sub: 'Fagleg nettverk for UX-profesjonelle',
-        period: '2026 –',
+        period: '2026 – d.d.',
         color: '#5B7C8A',
-        size: 195,
-        x: 24, y: 48,
+        size: 178,
+        x: 27, y: 40,
       },
       {
         org: 'BSI Damefotball',
         role: 'Leiar',
         sub: 'Undergruppe av Bergens største studentorganisasjon',
-        period: '2025 –',
+        period: '2025 – d.d.',
         color: '#7A8E6F',
-        size: 205,
-        x: 50, y: 5,
+        size: 192,
+        x: 50, y: 4,
       },
       {
         org: 'BSI Damefotball',
@@ -963,23 +973,46 @@
         sub: 'Ansvarlig for lagets markedsføring, kommunikasjon og sosiale medium',
         period: '2024 – 2025',
         color: '#9B7B5E',
-        size: 185,
-        x: 70, y: 50,
+        size: 172,
+        x: 72, y: 44,
       },
     ];
 
-    function BubbleItem({ b, tweaks, scale }) {
+    function BubbleItem({ b, tweaks, scale, mouseRef }) {
       const [hov, setHov] = useState(false);
       const [pos, setPos] = useState({ x: 0, y: 0 });
+      const hovRef = useRef(false);
+      const elRef = useRef(null);
+      useEffect(() => { hovRef.current = hov; }, [hov]);
 
       useEffect(() => {
         let frame;
         let t = Math.random() * Math.PI * 2;
-        const amp = 8 + Math.random() * 6;
-        const speed = 0.008 + Math.random() * 0.005;
+        const amp = 10 + Math.random() * 8;
+        const speed = 0.012 + Math.random() * 0.007;
         const animate = () => {
           t += speed;
-          setPos({ x: Math.sin(t) * amp, y: Math.cos(t * 0.7) * amp });
+          let ix = Math.sin(t) * amp;
+          let iy = Math.cos(t * 0.7) * amp;
+
+          // Drift away from the cursor when it gets close — skip while the
+          // bubble itself is hovered, so the details stay put to read.
+          if (!hovRef.current && elRef.current && mouseRef && mouseRef.current) {
+            const rect = elRef.current.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const dx = cx - mouseRef.current.x;
+            const dy = cy - mouseRef.current.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const influence = rect.width / 2 + 110;
+            if (dist < influence && dist > 0.01) {
+              const strength = (1 - dist / influence) * 55;
+              ix += (dx / dist) * strength;
+              iy += (dy / dist) * strength;
+            }
+          }
+
+          setPos({ x: ix, y: iy });
           frame = requestAnimationFrame(animate);
         };
         frame = requestAnimationFrame(animate);
@@ -989,45 +1022,62 @@
       const sz = Math.round(b.size * scale);
       return (
         <div
-          data-hover
-          onMouseEnter={() => setHov(true)}
-          onMouseLeave={() => setHov(false)}
+          ref={elRef}
           style={{
             position: 'absolute',
             left: `${b.x}%`,
             top: `${b.y}%`,
             width: sz,
             height: sz,
-            borderRadius: '50%',
-            background: hov ? b.color : `${b.color}18`,
-            border: `2px solid ${b.color}${hov ? 'ff' : '60'}`,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            padding: Math.round(24 * scale), textAlign: 'center',
-            transform: hov ? `translate(${pos.x}px, ${pos.y}px) scale(1.08)` : `translate(${pos.x}px, ${pos.y}px) scale(1)`,
-            transition: 'background 0.4s, border-color 0.4s, transform 0.4s cubic-bezier(.16,1,.3,1)',
-            cursor: 'none',
+            transform: `translate(${pos.x}px, ${pos.y}px)`,
             zIndex: hov ? 2 : 1,
           }}
         >
-          <p style={{ fontSize: Math.max(9, Math.round(10 * scale)), letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700,
-            color: hov ? 'rgba(255,255,255,0.7)' : b.color, marginBottom: 6, transition: 'color 0.4s' }}>{b.org}</p>
-          <p style={{ fontFamily: tweaks.fontHeading, fontSize: Math.max(13, Math.round((sz > 200 ? 18 : 16) * scale)), fontWeight: 400,
-            color: hov ? '#fff' : tweaks.dark, lineHeight: 1.2, marginBottom: 4, transition: 'color 0.4s' }}>{b.role}</p>
-          <p style={{ fontSize: Math.max(10, Math.round(11 * scale)), color: hov ? 'rgba(255,255,255,0.65)' : tweaks.dark,
-            opacity: hov ? 1 : 0.4, transition: 'all 0.4s' }}>{b.period}</p>
-          {hov && <p style={{ fontSize: Math.max(10, Math.round(11 * scale)), color: 'rgba(255,255,255,0.6)', marginTop: 6, lineHeight: 1.4 }}>{b.sub}</p>}
+          <div
+            data-hover
+            onMouseEnter={() => setHov(true)}
+            onMouseLeave={() => setHov(false)}
+            style={{
+              width: '100%', height: '100%', borderRadius: '50%',
+              background: hov ? b.color : `${b.color}18`,
+              border: `2px solid ${b.color}${hov ? 'ff' : '60'}`,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              padding: Math.round(24 * scale), textAlign: 'center',
+              transform: hov ? 'scale(1.08)' : 'scale(1)',
+              transition: 'background 0.4s, border-color 0.4s, transform 0.4s cubic-bezier(.16,1,.3,1)',
+              cursor: 'none',
+            }}
+          >
+            <p style={{ fontSize: Math.max(9, Math.round(10 * scale)), letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700,
+              color: hov ? 'rgba(255,255,255,0.7)' : b.color, marginBottom: 6, transition: 'color 0.4s' }}>{b.org}</p>
+            <p style={{ fontFamily: tweaks.fontHeading, fontSize: Math.max(13, Math.round((sz > 200 ? 18 : 16) * scale)), fontWeight: 400,
+              color: hov ? '#fff' : tweaks.dark, lineHeight: 1.2, marginBottom: 4, transition: 'color 0.4s' }}>{b.role}</p>
+            <p style={{ fontSize: Math.max(10, Math.round(11 * scale)), color: hov ? 'rgba(255,255,255,0.65)' : tweaks.dark,
+              opacity: hov ? 1 : 0.4, transition: 'all 0.4s' }}>{b.period}</p>
+            {hov && <p style={{ fontSize: Math.max(10, Math.round(11 * scale)), color: 'rgba(255,255,255,0.6)', marginTop: 6, lineHeight: 1.4 }}>{b.sub}</p>}
+          </div>
         </div>
       );
     }
 
     function VolunteerBubbles({ tweaks, bp }) {
       const w = bp ? bp.width : 1100;
-      const scale = w <= 400 ? 1 : Math.min(2, 1 + (w - 400) / 900);
-      const containerH = Math.round(340 * scale);
+      const scale = w <= 400 ? 1 : Math.min(1.15, 1 + (w - 400) / 2400);
+      // Container height covers the lowest bubble's bottom edge, whatever the scale.
+      const containerH = Math.round(Math.max(
+        280 * scale,
+        ...bubbleData.map(b => (b.y / 100) * 280 * scale + b.size * scale)
+      ) + 24);
+      const mouseRef = useRef({ x: -9999, y: -9999 });
+      useEffect(() => {
+        const move = (e) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
+        window.addEventListener('mousemove', move);
+        return () => window.removeEventListener('mousemove', move);
+      }, []);
       return (
         <div className="reveal" style={{ position: 'relative', height: containerH, width: '100%' }}>
-          {bubbleData.map((b, i) => <BubbleItem key={i} b={b} tweaks={tweaks} scale={scale} />)}
+          {bubbleData.map((b, i) => <BubbleItem key={i} b={b} tweaks={tweaks} scale={scale} mouseRef={mouseRef} />)}
         </div>
       );
     }
@@ -1054,7 +1104,7 @@
               <span style={{ fontStyle: 'italic', color: tweaks.accent }}>kompetanse?</span>
             </h2>
             <p className="reveal reveal-delay-2" style={{ fontSize: mobile ? 15 : 18, opacity: 0.6, lineHeight: 1.7, marginBottom: mobile ? 40 : 64, fontWeight: 300 }}>
-              Eg er alltid åpen for samarbeid, jobbtilbod, praksisplassar og internship innanfor utvikling og design.
+              Alltid åpen for samarbeid, jobb eller internship innanfor design og utvikling.
             </p>
 
             <div className="reveal reveal-delay-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
@@ -1080,22 +1130,22 @@
               <div style={{ display: 'flex', gap: 32, marginTop: mobile ? 8 : 12 }}>
                 <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" data-hover style={{
                   color: tweaks.bg, textDecoration: 'none', fontSize: 14, fontWeight: 400,
-                  opacity: 0.5, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
+                  opacity: 0.65, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
                 }}
                   onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >LinkedIn ↗</a>
                 <a href="https://github.com/olinekleiven" target="_blank" rel="noopener" data-hover style={{
                   color: tweaks.bg, textDecoration: 'none', fontSize: 14, fontWeight: 400,
-                  opacity: 0.5, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
+                  opacity: 0.65, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
                 }}
                   onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >GitHub ↗</a>
               </div>
             </div>
 
-            <div style={{ borderTop: `1px solid ${tweaks.bg}15`, paddingTop: 32, display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: mobile ? 6 : 0, fontSize: 13, opacity: 0.4 }}>
+            <div style={{ borderTop: `1px solid ${tweaks.bg}15`, paddingTop: 32, display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: mobile ? 6 : 0, fontSize: 13, opacity: 0.6 }}>
               <span>Oline Flatabø Kleiven</span>
               <span>olinefk@outlook.com</span>
               <span>Bergen, Norge</span>
@@ -1150,7 +1200,6 @@
 
       return (
         <>
-          <ScrollProgress tweaks={tweaks} />
           <Cursor />
           <Nav tweaks={tweaks} bp={bp} />
           <Hero tweaks={tweaks} bp={bp} />
