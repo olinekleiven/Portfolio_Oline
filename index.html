@@ -49,6 +49,29 @@
     .marquee-track { display: flex; animation: marquee 28s linear infinite; }
     @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
+    /* Paper plane send animation. The trail (paperTrailReveal / paperTrailFade)
+       reuses these exact same keyframe checkpoints so the two curves are
+       mathematically identical in shape — the trail is given a small
+       animation-delay in JS instead of different keyframe stops, so it always
+       trails the plane by a fixed, precise amount rather than drifting. */
+    @keyframes paperPlaneFly {
+      0% { opacity: 0; offset-distance: 0%; }
+      6% { opacity: 1; }
+      70% { opacity: 1; offset-distance: 100%; }
+      100% { opacity: 0; offset-distance: 100%; }
+    }
+    @keyframes paperTrailReveal {
+      0% { stroke-dashoffset: 100; }
+      70% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes paperTrailFade {
+      0% { opacity: 0; }
+      6% { opacity: 0.55; }
+      70% { opacity: 0.55; }
+      100% { opacity: 0; }
+    }
+
 
     /* Touch devices: disable custom cursor */
     @media (hover: none) {
@@ -438,21 +461,6 @@
               >↓ Last ned CV</a>
             </div>
           </div>
-
-          {/* Scroll indicator — hidden on mobile */}
-          {!bp.isMobile && (
-            <div style={{
-              position: 'absolute', bottom: 40, right: 48,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8
-            }}>
-              <div style={{
-                width: 1, height: 60,
-                background: `linear-gradient(to bottom, ${tweaks.accent}, transparent)`,
-                animation: 'scrollPulse 2s ease-in-out infinite'
-              }} />
-              <span style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.4, writingMode: 'vertical-lr' }}>scroll</span>
-            </div>
-          )}
         </section>
       );
     }
@@ -470,7 +478,7 @@
 
             {/* Top row: photo + label */}
             <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 40 }}>
-              <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${tweaks.accent}60`, flexShrink: 0 }}>
+              <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${tweaks.accent}60`, flexShrink: 0 }}>
                 <img src="uploads/profilbilde_oline.png" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
               </div>
               <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
@@ -497,8 +505,8 @@
                   lineHeight: 1.8, opacity: 0.65, fontWeight: 300
                 }}>
                   Bachelorgrad i informasjonsvitenskap, masterstudent i interaksjonsdesign ved UiB.
-                  Eg spesialiserer meg på brukarvennlege løysingar og frontend-utvikling — med
-                  ei engasjert og nysgjerrig tilnærming til prosjketer.
+                  Eg spesialiserer meg på brukarvennlege løysingar og design — med
+                  ei engasjert og nysgjerrig tilnærming.
                 </p>
               </div>
 
@@ -1108,24 +1116,70 @@
             </p>
 
             <div className="reveal reveal-delay-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
+              <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: 'center', gap: mobile ? 12 : 16 }}>
               <a href="mailto:olinefk@outlook.com" data-hover style={{
+                position: 'relative', overflow: 'visible',
                 background: tweaks.accent, color: '#fff', padding: mobile ? '15px 48px' : '16px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
                 transition: 'transform 0.2s, opacity 0.2s', display: 'inline-block', width: mobile ? '60%' : 'auto', textAlign: 'center'
               }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.opacity = '0.9'; }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.opacity = '0.9';
+                  const plane = e.currentTarget.querySelector('.paper-plane');
+                  const trail = e.currentTarget.querySelector('.paper-plane-trail');
+                  const trailMask = e.currentTarget.querySelector('.paper-plane-trail-mask');
+                  const ease = 'cubic-bezier(.45,.05,.35,1)';
+                  const trailDelay = '0.15s';
+                  if (plane) { plane.style.animation = 'none'; void plane.offsetWidth; plane.style.animation = `paperPlaneFly 3s ${ease} forwards`; }
+                  if (trail) { trail.style.animation = 'none'; void trail.offsetWidth; trail.style.animation = `paperTrailFade 3s ${ease} ${trailDelay} forwards`; }
+                  if (trailMask) { trailMask.style.animation = 'none'; void trailMask.offsetWidth; trailMask.style.animation = `paperTrailReveal 3s ${ease} ${trailDelay} forwards`; }
+                }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.opacity = '1'; }}
-              >✉ Send e-post</a>
+              >
+                <span>✉ Send e-post</span>
+                {!mobile && (
+                  <div style={{ position: 'absolute', top: '50%', right: '100%', width: 140, height: 100, transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                    <svg viewBox="0 0 140 100" width="140" height="100" style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}>
+                      <defs>
+                        <mask id="paperTrailMask" maskUnits="userSpaceOnUse" x="0" y="0" width="140" height="100">
+                          <path className="paper-plane-trail-mask"
+                            d="M138,52 C108,15 62,10 40,32 C18,54 30,78 58,74 C82,70 84,46 62,40 C46,35 30,24 18,12"
+                            fill="none" stroke="#fff" strokeWidth="14" strokeLinecap="round"
+                            strokeDasharray="100 100" pathLength="100"
+                            style={{ strokeDashoffset: 100 }} />
+                        </mask>
+                      </defs>
+                      {/* Always fully "drawn" with a small dash texture — the mask above reveals
+                          only the portion behind the plane, so the stripes never appear ahead of it. */}
+                      <path className="paper-plane-trail"
+                        d="M138,52 C108,15 62,10 40,32 C18,54 30,78 58,74 C82,70 84,46 62,40 C46,35 30,24 18,12"
+                        fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"
+                        strokeDasharray="6 6" mask="url(#paperTrailMask)"
+                        style={{ opacity: 0 }} />
+                    </svg>
+                    <svg className="paper-plane" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16"
+                      style={{
+                        position: 'absolute', top: 0, left: 0, marginTop: -8, marginLeft: -8, opacity: 0,
+                        offsetPath: 'path("M138,52 C108,15 62,10 40,32 C18,54 30,78 58,74 C82,70 84,46 62,40 C46,35 30,24 18,12")',
+                        offsetRotate: 'auto', offsetDistance: '0%'
+                      }}>
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </div>
+                )}
+              </a>
 
               <a href="uploads/OlineKleivenCV.pdf" download="OlineKleivenCV.pdf" data-hover style={{
                 background: 'transparent', color: tweaks.bg, padding: mobile ? '13px 48px' : '14px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 14, fontWeight: 400,
-                border: `1.5px solid ${tweaks.bg}30`, transition: 'transform 0.2s, border-color 0.2s',
+                border: `1.5px solid ${tweaks.bg}30`, transition: 'transform 0.2s, border-color 0.2s, background 0.2s, color 0.2s',
                 display: 'inline-block', width: mobile ? '60%' : 'auto', textAlign: 'center'
               }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.accent; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.bg; e.currentTarget.style.background = tweaks.bg; e.currentTarget.style.color = tweaks.dark; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tweaks.bg; }}
               >↓ Last ned CV</a>
+              </div>
 
               <div style={{ display: 'flex', gap: 32, marginTop: mobile ? 8 : 12 }}>
                 <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" data-hover style={{
@@ -1217,11 +1271,5 @@
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 
-  <style>
-    @keyframes scrollPulse {
-      0%, 100% { opacity: 0.4; transform: scaleY(1); }
-      50% { opacity: 1; transform: scaleY(1.2); }
-    }
-  </style>
 </body>
 </html>
