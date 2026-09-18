@@ -14,16 +14,27 @@
     html { scroll-behavior: smooth; }
     body { background: #EDE0CF; color: #2A2620; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
-    /* Custom pointer: a solid-white hand that follows the mouse (see Cursor()
-       in the script below). Native cursor is hidden everywhere; positioning
-       is done with an un-transitioned transform so it tracks the mouse with
-       zero lag — only the decorative bits (spark, click-scale) transition. */
+    /* Custom pointer: a plain, neutral white dot that follows the mouse (see
+       Cursor() in the script below). Native cursor is hidden everywhere;
+       positioning is done with an un-transitioned transform so it tracks the
+       mouse with zero lag — only the dot's own size/scale transitions. */
     * { cursor: none !important; }
     #pointer { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; z-index: 9999; }
-    #pointer svg { position: absolute; left: 0; top: 0; overflow: visible; transform: translate(-26px, -17px); transition: transform 0.15s cubic-bezier(.16,1,.3,1); }
-    #pointer.click svg { transform: translate(-26px, -17px) scale(0.86); }
-    #pointer .pointer-spark { opacity: 0; transition: opacity 0.2s ease; }
-    #pointer.active .pointer-spark { opacity: 1; }
+    #pointer-dot {
+      position: absolute; left: 0; top: 0;
+      width: 16px; height: 16px; margin: -8px 0 0 -8px;
+      border-radius: 50%; background: #fff;
+      box-shadow: 0 2px 8px rgba(36,31,25,0.35);
+      transition: width 0.25s cubic-bezier(.16,1,.3,1), height 0.25s cubic-bezier(.16,1,.3,1),
+                  margin 0.25s cubic-bezier(.16,1,.3,1), background 0.25s ease,
+                  box-shadow 0.25s ease, transform 0.15s ease;
+    }
+    #pointer.active #pointer-dot {
+      width: 38px; height: 38px; margin: -19px 0 0 -19px;
+      background: rgba(255,255,255,0.85);
+      box-shadow: 0 6px 18px rgba(36,31,25,0.3);
+    }
+    #pointer.click #pointer-dot { transform: scale(0.75); }
     @media (hover: none) {
       #pointer { display: none !important; }
       * { cursor: auto !important; }
@@ -92,27 +103,7 @@
 </head>
 <body>
   <div id="pointer" aria-hidden="true">
-    <svg viewBox="-2 -16 100 136" width="64" height="87" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="pointer-shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#241f19" flood-opacity="0.45" />
-        </filter>
-      </defs>
-      <g filter="url(#pointer-shadow)">
-        <g fill="#ffffff">
-          <rect x="18" y="60" width="62" height="48" rx="22" />
-          <rect x="30" y="10" width="18" height="60" rx="9" />
-          <rect x="50" y="34" width="10" height="36" rx="5" />
-          <rect x="62" y="38" width="9" height="32" rx="4.5" />
-          <rect x="4" y="76" width="26" height="20" rx="10" transform="rotate(-18 17 86)" />
-        </g>
-        <g class="pointer-spark" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round">
-          <line x1="4" y1="-6" x2="14" y2="4" />
-          <line x1="30" y1="-12" x2="30" y2="0" />
-          <line x1="56" y1="-6" x2="46" y2="4" />
-        </g>
-      </g>
-    </svg>
+    <div id="pointer-dot"></div>
   </div>
   <div id="root"></div>
 
@@ -388,7 +379,7 @@
 
     // Hero
     function Hero({ tweaks, bp }) {
-      const scrambled = useScramble('Interaksjonsdesign', 600);
+      const scrambled = useScramble('Digital designer', 600);
       const [scrollY, setScrollY] = React.useState(0);
       React.useEffect(() => {
         const h = () => setScrollY(window.scrollY);
@@ -417,7 +408,7 @@
               marginBottom: 28, flexShrink: 0
             }}>
               <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
             </div>
           ) : (
             <div style={{
@@ -432,25 +423,33 @@
               pointerEvents: 'none', transition: 'transform 0.08s linear'
             }}>
               <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
             </div>
           )}
 
           <div style={{ maxWidth: 900 }}>
             <p className="reveal" style={{
-              fontSize: 13, letterSpacing: '0.16em', textTransform: 'uppercase',
+              fontSize: 16, letterSpacing: '0.16em', textTransform: 'uppercase',
               color: tweaks.accent, fontWeight: 500, marginBottom: 24
             }}>Oline Flatabø Kleiven</p>
 
             <h1 className="reveal reveal-delay-1" style={{
               fontFamily: tweaks.fontHeading,
-              fontSize: bp.isMobile ? 'clamp(40px, 11vw, 64px)' : 'clamp(52px, 8vw, 110px)',
+              fontSize: bp.isMobile ? 'clamp(48px, 13vw, 76px)' : 'clamp(64px, 9.5vw, 130px)',
               lineHeight: 1.0, letterSpacing: '-0.03em', color: tweaks.dark,
               marginBottom: 32, fontWeight: 400
             }}>
-              {scrambled}<br/>
-              <span style={{ fontStyle: 'italic', color: tweaks.accent }}>&</span> utvikling
+              {scrambled}
             </h1>
+
+            <p className="reveal reveal-delay-1" style={{
+              fontFamily: tweaks.fontHeading,
+              fontSize: bp.isMobile ? 'clamp(18px, 4vw, 22px)' : 'clamp(20px, 2.2vw, 28px)',
+              color: tweaks.accent, fontStyle: 'italic', marginTop: -24,
+              marginBottom: 32, fontWeight: 400
+            }}>
+              med teknisk kompetanse
+            </p>
 
             <p className="reveal reveal-delay-2" style={{
               fontSize: bp.isMobile ? 16 : 18, lineHeight: 1.7,
@@ -458,8 +457,7 @@
               color: tweaks.dark, opacity: 0.65, marginBottom: 48,
               fontWeight: 300
             }}>
-              Masterstudent ved UiB — byggjer grensesnitt der teknologi
-              møter menneskeleg forståing.
+              Brobygger mellom design og utvikling
             </p>
 
             <div className="reveal reveal-delay-3" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -500,9 +498,9 @@
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
 
             {/* Top row: photo + label */}
-            <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 40 }}>
-              <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${tweaks.accent}60`, flexShrink: 0 }}>
-                <img src="uploads/profilbilde_oline.png" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+            <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 40 }}>
+              <div style={{ width: bp.isMobile ? 140 : 168, height: bp.isMobile ? 140 : 168, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${tweaks.accent}60`, flexShrink: 0 }}>
+                <img src="uploads/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
               </div>
               <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
             </div>
@@ -866,17 +864,35 @@
       {
         category: 'Design',
         color: '#C04B22',
-        skills: ['Figma', 'Prototyping', 'Wireframing', 'Interaction Design', 'Visual Design']
+        skills: [
+          { name: 'Figma', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'Prototyping', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'Wireframing', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'Interaction Design', used: 'EU Digital Wallet', usedColor: '#C04B22' },
+          { name: 'Visual Design', used: 'Digitale bursdagskort', usedColor: '#7A8E6F' },
+        ]
       },
       {
         category: 'Research',
         color: '#5B7C8A',
-        skills: ['User Testing', 'Accessibility', 'Personas', 'Information Architecture', 'Usability']
+        skills: [
+          { name: 'User Testing', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'Accessibility', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'Personas', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'Information Architecture', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'Usability', used: 'Snarveg', usedColor: '#8A5B7C' },
+        ]
       },
       {
         category: 'Utvikling',
         color: '#7A8E6F',
-        skills: ['React', 'HTML / CSS / JS', 'Python', 'mySQL', 'Django']
+        skills: [
+          { name: 'React', used: 'Snarveg', usedColor: '#8A5B7C' },
+          { name: 'HTML / CSS / JS', used: 'Digitale bursdagskort', usedColor: '#7A8E6F' },
+          { name: 'Python', used: 'UiB — Informasjonsvitskap', usedColor: null },
+          { name: 'mySQL', used: 'UiB — Informasjonsvitskap', usedColor: null },
+          { name: 'Django', used: 'UiB — Informasjonsvitskap', usedColor: null },
+        ]
       },
     ];
 
@@ -914,7 +930,7 @@
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {group.skills.map((skill) => (
-              <SkillItem key={skill} skill={skill} color={group.color} tweaks={tweaks} mobile={mobile} />
+              <SkillItem key={skill.name} skill={skill} color={group.color} tweaks={tweaks} mobile={mobile} />
             ))}
           </div>
         </div>
@@ -928,30 +944,45 @@
           onMouseEnter={() => setHov(true)}
           onMouseLeave={() => setHov(false)}
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '10px 16px', borderRadius: 10,
             background: hov ? color : 'transparent',
             transition: 'background 0.25s ease',
             margin: '0 -16px'
           }}
         >
-          <span style={{
-            fontFamily: tweaks.fontHeading, fontSize: mobile ? 18 : 22, fontWeight: 400,
-            letterSpacing: '-0.01em',
-            color: hov ? '#fff' : tweaks.dark,
-            transition: 'color 0.25s'
-          }}>{skill}</span>
-          <span style={{
-            fontSize: 16, opacity: hov ? 0.7 : 0,
-            color: '#fff', transition: 'opacity 0.25s'
-          }}>→</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{
+              fontFamily: tweaks.fontHeading, fontSize: mobile ? 18 : 22, fontWeight: 400,
+              letterSpacing: '-0.01em',
+              color: hov ? '#fff' : tweaks.dark,
+              transition: 'color 0.25s'
+            }}>{skill.name}</span>
+            <span style={{
+              fontSize: 16, opacity: hov ? 0.7 : 0,
+              color: '#fff', transition: 'opacity 0.25s'
+            }}>→</span>
+          </div>
+          {skill.used && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              maxHeight: hov ? 20 : 0, marginTop: hov ? 4 : 0,
+              opacity: hov ? 1 : 0, overflow: 'hidden',
+              transition: 'max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease'
+            }}>
+              <span style={{
+                fontSize: 11, letterSpacing: '0.02em',
+                color: 'rgba(255,255,255,0.75)',
+                whiteSpace: 'nowrap'
+              }}>Brukt i → {skill.used}</span>
+            </div>
+          )}
         </div>
       );
     }
 
     // Volunteer
     const volunteerData = [
-      { org: 'Studentradioen i Bergen', role: 'Designer & Frontend-utviklar', sub: 'IT-gruppen', period: '2026', color: '#C04B22' },
+      { org: 'Studentradioen i Bergen', role: 'Designer', sub: 'IT-gruppen', period: '2026', color: '#C04B22' },
       { org: 'UX Bergen', role: 'Styremedlem', sub: 'Fagleg nettverk', period: '2026 – d.d.', color: '#5B7C8A' },
       { org: 'BSI Damefotball', role: 'Leiar', sub: 'Studentidrett', period: '2025 – d.d.', color: '#7A8E6F' },
       { org: 'BSI Damefotball', role: 'So-Me ansvarleg', sub: 'Kommunikasjon', period: '2024 – 2025', color: '#7A8E6F' },
@@ -975,7 +1006,7 @@
     const bubbleData = [
       {
         org: 'Studentradioen i Bergen',
-        role: 'Designer & Frontend-utviklar',
+        role: 'Designer',
         sub: 'IT-gruppen',
         period: '2026',
         color: '#C04B22',
@@ -1142,9 +1173,10 @@
               <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: 'center', gap: mobile ? 12 : 16 }}>
               <a href="mailto:olinefk@outlook.com" style={{
                 position: 'relative', overflow: 'visible',
-                background: tweaks.accent, color: '#fff', padding: mobile ? '15px 48px' : '16px 56px',
+                background: tweaks.accent, color: '#fff', padding: mobile ? '15px 32px' : '16px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
-                transition: 'transform 0.2s, opacity 0.2s', display: 'inline-block', width: mobile ? '60%' : 'auto', textAlign: 'center'
+                whiteSpace: 'nowrap',
+                transition: 'transform 0.2s, opacity 0.2s', display: 'inline-block', width: mobile ? '100%' : 'auto', textAlign: 'center'
               }}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.opacity = '0.9';
@@ -1194,10 +1226,11 @@
               </a>
 
               <a href="uploads/Oline_Kleiven_CV.pdf" download="Oline_Kleiven_CV.pdf" style={{
-                background: 'transparent', color: tweaks.bg, padding: mobile ? '13px 48px' : '14px 56px',
+                background: 'transparent', color: tweaks.bg, padding: mobile ? '13px 32px' : '14px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 14, fontWeight: 400,
+                whiteSpace: 'nowrap',
                 border: `1.5px solid ${tweaks.bg}30`, transition: 'transform 0.2s, border-color 0.2s, background 0.2s, color 0.2s',
-                display: 'inline-block', width: mobile ? '60%' : 'auto', textAlign: 'center'
+                display: 'inline-block', width: mobile ? '100%' : 'auto', textAlign: 'center'
               }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.bg; e.currentTarget.style.background = tweaks.bg; e.currentTarget.style.color = tweaks.dark; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tweaks.bg; }}
