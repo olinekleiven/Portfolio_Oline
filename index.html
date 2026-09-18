@@ -928,26 +928,28 @@
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: group.color }} />
             <span style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700, color: group.color }}>{group.category}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {group.skills.map((skill) => (
-              <SkillItem key={skill.name} skill={skill} color={group.color} tweaks={tweaks} mobile={mobile} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {group.skills.map((skill, si) => (
+              <SkillItem key={skill.name} skill={skill} color={group.color} tweaks={tweaks} mobile={mobile} isLast={si === group.skills.length - 1} />
             ))}
           </div>
         </div>
       );
     }
 
-    function SkillItem({ skill, color, tweaks, mobile }) {
+    function SkillItem({ skill, color, tweaks, mobile, isLast }) {
       const [hov, setHov] = useState(false);
       return (
         <div
           onMouseEnter={() => setHov(true)}
           onMouseLeave={() => setHov(false)}
           style={{
-            padding: '10px 16px', borderRadius: 10,
+            padding: '14px 16px', borderRadius: 10,
             background: hov ? color : 'transparent',
-            transition: 'background 0.25s ease',
-            margin: '0 -16px'
+            borderBottom: isLast ? 'none' : `1px solid ${tweaks.dark}${hov ? '00' : '12'}`,
+            transform: hov ? 'translateX(4px)' : 'translateX(0)',
+            transition: 'background 0.25s ease, border-color 0.25s ease, transform 0.25s ease',
+            margin: '0 -16px', cursor: 'pointer'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -958,8 +960,10 @@
               transition: 'color 0.25s'
             }}>{skill.name}</span>
             <span style={{
-              fontSize: 16, opacity: hov ? 0.7 : 0,
-              color: '#fff', transition: 'opacity 0.25s'
+              fontSize: 16, opacity: hov ? 0.9 : 0.25,
+              color: hov ? '#fff' : tweaks.dark,
+              transform: hov ? 'translateX(0)' : 'translateX(-4px)',
+              transition: 'opacity 0.25s, color 0.25s, transform 0.25s'
             }}>→</span>
           </div>
           {skill.used && (
