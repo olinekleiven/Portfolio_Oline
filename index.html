@@ -91,6 +91,23 @@
       70% { opacity: 0.55; }
       100% { opacity: 0; }
     }
+
+    /* Toolbox — idle wobble on the closed box, to hint it's interactive */
+    @keyframes toolboxWobble {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      20% { transform: rotate(-1.4deg) translateY(-2px); }
+      50% { transform: rotate(1deg) translateY(0); }
+      75% { transform: rotate(-0.6deg) translateY(-1px); }
+    }
+    .toolbox-wobble { animation: toolboxWobble 4.5s ease-in-out infinite; }
+    .toolbox-wobble:hover, .toolbox-wobble:focus-visible { animation-play-state: paused; }
+    .toolbox-tool:focus-visible, .toolbox-box:focus-visible, .toolbox-close:focus-visible {
+      outline: 3px solid #fff; outline-offset: 3px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .toolbox-wobble { animation: none; }
+      .toolbox-box, .toolbox-tool, .toolbox-lid, .toolbox-panel { transition-duration: 0.01ms !important; }
+    }
   </style>
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
@@ -236,7 +253,14 @@
       const [scrolled, setScrolled] = useState(false);
       const [activeSection, setActiveSection] = useState('hero');
       const [menuOpen, setMenuOpen] = useState(false);
-      const navItems = ['Om', 'Erfaring', 'Prosjekter', 'Skills', 'Verv', 'Kontakt'];
+      const navItems = [
+        { id: 'om', label: 'Om' },
+        { id: 'erfaring', label: 'Erfaring' },
+        { id: 'prosjekter', label: 'Prosjekter' },
+        { id: 'skills', label: 'Skills' },
+        { id: 'verv', label: 'Verv' },
+        { id: 'kontakt', label: 'Kontakt' },
+      ];
       useEffect(() => {
         const check = () => {
           setScrolled(window.scrollY > 60);
@@ -305,7 +329,7 @@
             ) : (
               <div style={{ display: 'flex', gap: bp.isTablet ? 6 : 10 }}>
                 {navItems.map((item, i) => (
-                  <a key={item} href={`#${item.toLowerCase()}`} style={{
+                  <a key={item.id} href={`#${item.id}`} style={{
                     color: textColor, textDecoration: 'none', fontSize: 13,
                     fontWeight: 500, letterSpacing: '0.04em',
                     padding: bp.isTablet ? '7px 12px' : '8px 18px',
@@ -328,7 +352,7 @@
                     e.target.style.transform = 'translateY(0)';
                     e.target.style.boxShadow = 'none';
                   }}
-                  >{item}</a>
+                  >{item.label}</a>
                 ))}
               </div>
             )}
@@ -355,7 +379,7 @@
               transition: 'opacity 0.35s ease'
             }}>
               {navItems.map((item) => (
-                <a key={item} href={`#${item.toLowerCase()}`}
+                <a key={item.id} href={`#${item.id}`}
                   onClick={() => setMenuOpen(false)}
                   style={{
                     color: tweaks.bg, textDecoration: 'none',
@@ -365,7 +389,7 @@
                   }}
                   onMouseEnter={e => e.target.style.opacity = 1}
                   onMouseLeave={e => e.target.style.opacity = 0.85}
-                >{item}</a>
+                >{item.label}</a>
               ))}
               <div style={{ marginTop: 48, display: 'flex', gap: 24 }}>
                 <a href="mailto:olinefk@outlook.com" style={{ color: tweaks.accent, fontSize: 14, textDecoration: 'none' }}>✉ E-post</a>
@@ -813,9 +837,9 @@
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 40 : 64, gap: narrow ? 8 : 0 }}>
               <div>
-                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.bg, marginBottom: 16, fontWeight: 500 }}>Mitt arbeid i …</p>
+                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.bg, marginBottom: 16, fontWeight: 500 }}>Prosjekter</p>
                 <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.bg }}>
-                  Prosjekter
+                  Arbeidsarkivet
                 </h2>
               </div>
               <p className="reveal reveal-delay-2" style={{ fontSize: 14, color: tweaks.bg, opacity: 0.85, maxWidth: 200, textAlign: narrow ? 'left' : 'right', lineHeight: 1.6 }}>
@@ -998,228 +1022,355 @@
     }
 
     // Skills
-    const skillGroups = [
-      {
-        category: 'Design',
-        color: '#C04B22',
-        skills: [
-          { name: 'Figma', used: 'Snarveg', usedColor: '#8A5B7C', detail: 'Designa og prototypa Snarveg i Figma — frå low-fi skisser til eit ferdig grensesnitt, med fokus på enkel navigasjon og låg kognitiv last for studentar.' },
-          { name: 'Prototyping', used: 'Snarveg', usedColor: '#8A5B7C', detail: 'Bygde interaktive prototypar av Snarveg for å teste navigasjonsflyten før koding starta.' },
-          { name: 'Wireframing', used: 'Snarveg', usedColor: '#8A5B7C', detail: 'Starta Snarveg med wireframes for å strukturere innhald og prioritere det studentar treng raskast tilgang til.' },
-          { name: 'Interaction Design', used: 'EU Digital Wallet', usedColor: '#C04B22', detail: 'Designa brukarflyten i EU Digital Wallet-prosjektet hos Digdir — frå autentisering via Ansattporten til levering av verifiserbare identitetskort via QR-kode.' },
-          { name: 'Visual Design', used: 'Digitale bursdagskort', usedColor: '#7A8E6F', detail: 'Utforska visuelt uttrykk og animasjonar gjennom interaktive digitale bursdagskort, koda frå botn av med eige design og personlege bodskap.' },
-        ]
-      },
-      {
-        category: 'Research',
-        color: '#5B7C8A',
-        skills: [
-          { name: 'Brukertesting', used: 'Fleire prosjekt', usedColor: '#8A5B7C', detail: 'Brukar iterativ brukertesting i alle prosjekt for å sjå om løysinga faktisk blir forstått slik ho er meint — kva brukarane lykkast med, kor dei møter friksjon, og kva dei forventar undervegs. Slik kan eg skilje mellom korleis vi trur brukarane vil bruke ei løysing, og korleis dei faktisk gjer det.' },
-          { name: 'Universell utforming', used: 'Heile designprosessen', usedColor: '#8A5B7C', detail: 'Gjer produkt tilgjengelege for fleire, uansett føresetnad eller situasjon. Eg tek det med frå research til sluttprodukt — det avdekkar designproblem tidleg og er ein del av eit profesjonelt UX-ansvar.' },
-          { name: 'Personas', used: 'MCB201 — AI-treet', usedColor: '#9B7B5E', detail: 'Brukte personas-metoden i faget «Introduksjon til innovasjon og entreprenørskap» for å forstå korleis ulike brukarar ville nytta AI-treet. Bygde personaene Jenny og Geir basert på demografi, ferdigheiter og sosial kontekst.', url: 'https://ai-treet.vercel.app' },
-          { name: 'Informasjonsarkitektur', used: 'Snarveg', usedColor: '#8A5B7C', detail: 'Strukturerer innhald, funksjonar og navigasjon slik at brukarane raskt finn det dei treng — gjer opplevinga meir intuitiv og reduserer kognitiv belastning.' },
-          { name: 'Brukervennlighet', used: 'Snarveg', usedColor: '#8A5B7C', detail: 'Sikrar at ei løysing er enkel å forstå, lære og bruke, slik at brukaren når målet sitt effektivt. Testar og forbetrar undervegs gjennom iterativ brukertesting og observasjon.' },
-        ]
-      },
-      {
-        category: 'Utvikling',
-        color: '#7A8E6F',
-        skills: [
-          { name: 'React', used: 'Snarveg', usedColor: '#8A5B7C', detail: 'Bygde Snarveg som ein React-webapp — rask tilgang til ressursar, varslar og verktøy studentar treng, samla på éin stad.' },
-          { name: 'HTML / CSS / JS', used: 'Digitale bursdagskort', usedColor: '#7A8E6F', detail: 'Koda interaktive bursdagskort frå botn av med HTML, CSS og JavaScript. Underviser no i desse språka som seminarleiar i INFO100 — Innføring i informasjonsvitskap — ved UiB.' },
-          { name: 'Python', used: 'UiB — Informasjonsvitskap', usedColor: null },
-          { name: 'mySQL', used: 'UiB — Informasjonsvitskap', usedColor: null, detail: 'Lærte SQL gjennom studiet i informasjonsvitskap, og underviser no i det same som seminarleiar i INFO100 ved UiB.' },
-          { name: 'Django', used: 'UiB — Informasjonsvitskap', usedColor: null, detail: 'Min praktiske kompetanse her er frå faget «Web Science», der vi laga eit innloggingssystem for å låne bibliotekbøker.' },
-        ]
-      },
+    const TOOLS = [
+      { id: 'figma', name: 'Figma', icon: '🖊️', category: 'Design', color: '#C04B22',
+        what: 'Design- og prototypeverktøy for å byggje grensesnitt digitalt.',
+        why: 'Lèt meg raskt visualisere og teste idear før noko blir koda.',
+        how: 'Designa og prototypa Snarveg i Figma — frå low-fi skisser til eit ferdig grensesnitt, med fokus på enkel navigasjon og låg kognitiv last for studentar.',
+        project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
+      { id: 'prototyping', name: 'Prototyping', icon: '✏️', category: 'Design', color: '#C04B22',
+        what: 'Å byggje ein tidleg, testbar versjon av ei løysing før ho er ferdig utvikla.',
+        why: 'Avdekkar problem og samlar tilbakemeldingar tidleg, før dyre endringar.',
+        how: 'Bygde interaktive prototypar av Snarveg for å teste navigasjonsflyten før koding starta.',
+        project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
+      { id: 'wireframing', name: 'Wireframing', icon: '📐', category: 'Design', color: '#C04B22',
+        what: 'Enkle skisser som viser struktur og innhald, utan visuelt design.',
+        why: 'Gjer det raskt å teste struktur og prioritering før detaljane kjem på plass.',
+        how: 'Starta Snarveg med wireframes for å strukturere innhald og prioritere det studentar treng raskast tilgang til.',
+        project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
+      { id: 'interaction-design', name: 'Interaction Design', icon: '🧭', category: 'Design', color: '#C04B22',
+        what: 'Design av korleis ein brukar samhandlar med eit system, steg for steg.',
+        why: 'Sikrar at brukarflyten er intuitiv og føreseieleg.',
+        how: 'Designa brukarflyten i EU Digital Wallet-prosjektet hos Digdir — frå autentisering via Ansattporten til levering av verifiserbare identitetskort via QR-kode.',
+        project: { label: 'EU Digital Wallet', url: 'https://github.com/felleslosninger/dc24-eu-wallet' } },
+      { id: 'visual-design', name: 'Visual Design', icon: '🎨', category: 'Design', color: '#C04B22',
+        what: 'Det visuelle uttrykket til eit produkt — farge, typografi og layout.',
+        why: 'Skaper tillit og gjer produktet lettare å forstå og bruke.',
+        how: 'Utforska visuelt uttrykk og animasjonar gjennom interaktive digitale bursdagskort, koda frå botn av med eige design og personlege bodskap.',
+        project: { label: 'Digitale bursdagskort', url: 'https://ida24.vercel.app' } },
+      { id: 'brukertesting', name: 'Brukertesting', icon: '🧪', category: 'Research', color: '#5B7C8A',
+        what: 'Å observere korleis brukarar faktisk brukar ei løysing, for å avdekkje problem og forbetringsmoglegheiter.',
+        why: 'Gir innsikt i friksjon og behov som ikkje alltid kjem fram gjennom antakingar aleine.',
+        how: 'Brukar iterativ brukertesting i alle prosjekt for å sjå om løysinga faktisk blir forstått slik ho er meint.',
+        project: { label: 'Fleire prosjekt', url: null } },
+      { id: 'universell-utforming', name: 'Universell utforming', icon: '♿', category: 'Research', color: '#5B7C8A',
+        what: 'Å designe løysingar som fungerer for eit breitt spekter av menneske, uansett føresetnad eller situasjon.',
+        why: 'Er ein del av eit profesjonelt UX-ansvar, og avdekkar designproblem tidleg.',
+        how: 'Tek det med gjennom heile prosessen — frå research til sluttprodukt — i alle prosjekta mine.',
+        project: { label: 'Heile designprosessen', url: null } },
+      { id: 'personas', name: 'Personas', icon: '👥', category: 'Research', color: '#5B7C8A',
+        what: 'Fiktive, men forskingsbaserte representasjonar av typiske brukarar.',
+        why: 'Hjelper teamet å halde brukaren i fokus gjennom heile prosessen.',
+        how: 'Brukte personas-metoden i faget «Introduksjon til innovasjon og entreprenørskap» for å forstå korleis ulike brukarar ville nytta AI-treet. Bygde personaene Jenny og Geir basert på demografi, ferdigheiter og sosial kontekst.',
+        project: { label: 'AI-treet (MCB201)', url: 'https://ai-treet.vercel.app' } },
+      { id: 'informasjonsarkitektur', name: 'Informasjonsarkitektur', icon: '🗺️', category: 'Research', color: '#5B7C8A',
+        what: 'Å strukturere innhald, funksjonar og navigasjon logisk.',
+        why: 'Gjer det enklare for brukarar å finne det dei treng raskt.',
+        how: 'Strukturerte innhald og navigasjon i Snarveg rundt det studentar faktisk treng raskt tilgang til.',
+        project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
+      { id: 'brukervennlighet', name: 'Brukervennlighet', icon: '🧠', category: 'Research', color: '#5B7C8A',
+        what: 'Kor enkelt ei løysing er å forstå, lære og bruke.',
+        why: 'Avgjer om brukaren når målet sitt utan unødig frustrasjon.',
+        how: 'Testar og forbetrar Snarveg undervegs gjennom iterativ brukertesting og observasjon.',
+        project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
+      { id: 'react', name: 'React', icon: '⚛️', category: 'Utvikling', color: '#7A8E6F',
+        what: 'Eit JavaScript-bibliotek for å byggje brukargrensesnitt.',
+        why: 'Gjer det raskt å byggje gjenbrukbare, interaktive komponentar.',
+        how: 'Bygde Snarveg som ein React-webapp — rask tilgang til ressursar, varslar og verktøy studentar treng, samla på éin stad.',
+        project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
+      { id: 'html-css-js', name: 'HTML / CSS / JS', icon: '💻', category: 'Utvikling', color: '#7A8E6F',
+        what: 'Grunnleggjande byggjeklossar for alt som skjer i ein nettlesar.',
+        why: 'Gjev full kontroll over struktur, stil og interaksjon.',
+        how: 'Koda interaktive bursdagskort frå botn av med HTML, CSS og JavaScript. Underviser no i desse språka som seminarleiar i INFO100 ved UiB.',
+        project: { label: 'Digitale bursdagskort', url: 'https://ida24.vercel.app' } },
+      { id: 'python', name: 'Python', icon: '🐍', category: 'Utvikling', color: '#7A8E6F',
+        what: 'Eit allsidig programmeringsspråk brukt til alt frå backend til dataanalyse.',
+        why: 'Lett å lese og raskt å jobbe med.',
+        how: 'Lærte Python gjennom studiet i informasjonsvitskap ved UiB.',
+        project: { label: 'UiB — Informasjonsvitskap', url: null } },
+      { id: 'mysql', name: 'mySQL', icon: '🗄️', category: 'Utvikling', color: '#7A8E6F',
+        what: 'Eit relasjonsdatabasesystem for å lagre og hente strukturert data.',
+        why: 'Naudsynt for nesten alle system som skal lagre informasjon.',
+        how: 'Lærte SQL gjennom studiet i informasjonsvitskap, og underviser no i det same som seminarleiar i INFO100 ved UiB.',
+        project: { label: 'UiB — Informasjonsvitskap', url: null } },
+      { id: 'django', name: 'Django', icon: '🔐', category: 'Utvikling', color: '#7A8E6F',
+        what: 'Eit Python-rammeverk for å byggje webapplikasjonar raskt.',
+        why: 'Gir ferdige løysingar for vanlege behov, som innlogging og databasehandtering.',
+        how: 'Min praktiske kompetanse her er frå faget «Web Science», der vi laga eit innloggingssystem for å låne bibliotekbøker.',
+        project: { label: 'UiB — Web Science', url: null } },
     ];
+
+    const TOOL_LAYOUT = [
+      { x: 18, y: 18, rot: -14, scale: 0.85 }, { x: 34, y: 22, rot: 9, scale: 0.95 }, { x: 50, y: 16, rot: -5, scale: 0.82 }, { x: 66, y: 22, rot: 13, scale: 0.92 }, { x: 82, y: 18, rot: -10, scale: 0.88 },
+      { x: 8, y: 50, rot: 8, scale: 1.0 }, { x: 28, y: 50, rot: -16, scale: 0.85 }, { x: 50, y: 50, rot: 4, scale: 1.05 }, { x: 72, y: 50, rot: -9, scale: 0.88 }, { x: 92, y: 50, rot: 15, scale: 0.95 },
+      { x: 20, y: 80, rot: -11, scale: 0.88 }, { x: 36, y: 78, rot: 6, scale: 1.0 }, { x: 50, y: 84, rot: -18, scale: 0.8 }, { x: 64, y: 78, rot: 10, scale: 0.95 }, { x: 80, y: 80, rot: -7, scale: 0.85 },
+    ];
+
+    function usePrefersReducedMotion() {
+      const [reduced, setReduced] = useState(false);
+      useEffect(() => {
+        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+        setReduced(mq.matches);
+        const handler = (e) => setReduced(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+      }, []);
+      return reduced;
+    }
+
+    function ToolboxHandleArch({ width, height, borderWidth, color }) {
+      return (
+        <div aria-hidden="true" style={{
+          position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+          width, height, border: `${borderWidth}px solid ${color}`, borderBottom: 'none',
+          borderRadius: '50% 50% 0 0', zIndex: 0, pointerEvents: 'none'
+        }} />
+      );
+    }
+
+    function ToolboxClosed({ onOpen, mobile, reducedMotion, tweaks }) {
+      const [hov, setHov] = useState(false);
+      const boxH = mobile ? 150 : 260;
+      return (
+        <div style={{ width: '100%', maxWidth: mobile ? 400 : 900, margin: '0 auto', textAlign: 'center' }}>
+          <div
+            className={reducedMotion ? '' : 'toolbox-wobble'}
+            style={{ position: 'relative', paddingTop: mobile ? 36 : 56 }}
+          >
+            <ToolboxHandleArch width={mobile ? 120 : 230} height={mobile ? 44 : 74} borderWidth={mobile ? 8 : 14} color="#3A2A18" />
+            <button
+              className="toolbox-box"
+              onClick={onOpen}
+              onMouseEnter={() => setHov(true)}
+              onMouseLeave={() => setHov(false)}
+              aria-label="Opne verktøykassa — sjå verktøya og metodane mine"
+              style={{
+                position: 'relative', zIndex: 1, display: 'block', width: '100%', height: boxH,
+                border: 'none', borderRadius: 22, cursor: 'pointer', padding: 0,
+                background: 'linear-gradient(180deg, #E24A32 0%, #C23824 45%, #9C2A1A 100%)',
+                boxShadow: hov ? '0 36px 64px rgba(20,15,10,0.42)' : '0 26px 50px rgba(20,15,10,0.34)',
+                transform: hov ? 'scale(1.015)' : 'scale(1)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+              }}
+            >
+              <div style={{ position: 'absolute', top: mobile ? 46 : 82, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.22)' }} />
+              <div style={{
+                position: 'absolute', top: mobile ? 30 : 56, left: '50%', transform: 'translateX(-50%)',
+                width: mobile ? 40 : 60, height: mobile ? 40 : 60, borderRadius: 9,
+                background: 'linear-gradient(180deg,#DAD4C6,#A9A296)',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.32)'
+              }}>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', width: 11, height: 11, borderRadius: '50%', background: '#5A5449', transform: 'translate(-50%,-50%)' }} />
+              </div>
+              {[
+                { top: 14, left: 14 }, { top: 14, right: 14 },
+                { bottom: 14, left: 14 }, { bottom: 14, right: 14 }
+              ].map((corner, i) => (
+                <div key={i} style={{
+                  position: 'absolute', width: 22, height: 22, background: 'rgba(0,0,0,0.15)', borderRadius: 4,
+                  ...corner
+                }} />
+              ))}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function ToolChip({ tool, pos, isHovered, dim, onEnter, onLeave, onPick, mobile }) {
+      const size = (mobile ? 38 : 52) * (pos.scale || 1);
+      const lift = isHovered ? -18 : 0;
+      return (
+        <button
+          className="toolbox-tool"
+          onMouseEnter={onEnter}
+          onMouseLeave={onLeave}
+          onFocus={onEnter}
+          onBlur={onLeave}
+          onClick={onPick}
+          aria-label={`${tool.name} — opne detaljar`}
+          style={{
+            position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
+            width: size, height: size, border: '2px solid rgba(255,255,255,0.5)', borderRadius: '50%',
+            padding: 0, cursor: 'pointer', background: tool.color,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.48,
+            transform: `translate(-50%, -50%) rotate(${pos.rot}deg) translateY(${lift}px) scale(${isHovered ? 1.15 : 1})`,
+            boxShadow: isHovered ? '0 16px 28px rgba(0,0,0,0.5)' : '0 4px 10px rgba(0,0,0,0.35)',
+            opacity: dim ? 0.38 : 1, zIndex: isHovered ? 10 : 1,
+            transition: 'transform 0.25s cubic-bezier(.16,1,.3,1), opacity 0.25s ease, box-shadow 0.25s ease'
+          }}
+        >
+          <span aria-hidden="true">{tool.icon}</span>
+          {isHovered && (
+            <span style={{
+              position: 'absolute', bottom: '120%', left: '50%',
+              transform: `translateX(-50%) rotate(${-pos.rot}deg)`,
+              background: '#2A2620', color: '#fff', padding: '9px 14px', borderRadius: 10,
+              fontSize: 12, lineHeight: 1.4, textAlign: 'center',
+              whiteSpace: 'nowrap', boxShadow: '0 10px 24px rgba(0,0,0,0.35)', pointerEvents: 'none'
+            }}>
+              <strong style={{ display: 'block', marginBottom: 2, fontSize: 12, letterSpacing: '0.02em' }}>{tool.name}</strong>
+              <span style={{ opacity: 0.65, fontSize: 11 }}>Klikk for å lese meir</span>
+            </span>
+          )}
+        </button>
+      );
+    }
+
+    function ToolboxOpen({ tools, layout, hoveredId, setHoveredId, onPick, mobile }) {
+      const boxH = mobile ? 200 : 340;
+      const openingH = mobile ? 100 : 160;
+      return (
+        <div style={{ position: 'relative', width: '100%', maxWidth: mobile ? 400 : 900, margin: '0 auto', paddingTop: mobile ? 42 : 62 }}>
+          <ToolboxHandleArch width={mobile ? 100 : 190} height={mobile ? 32 : 50} borderWidth={mobile ? 7 : 12} color="#3A2A18" />
+          <div style={{
+            position: 'relative', zIndex: 1, width: '100%', height: boxH,
+            background: 'linear-gradient(180deg, #C23824 0%, #8A2114 100%)',
+            borderRadius: '20px 20px 28px 28px',
+            boxShadow: '0 30px 60px rgba(20,15,10,0.38)'
+          }}>
+            <div style={{
+              position: 'absolute', top: 0, left: '4%', right: '4%', height: openingH,
+              transform: 'translateY(-42%)', borderRadius: '50%', zIndex: 2,
+              background: 'radial-gradient(ellipse at 50% 40%, #241A12 0%, #150F0A 100%)',
+              boxShadow: 'inset 0 16px 30px rgba(0,0,0,0.65), 0 0 0 7px #D9432C'
+            }}>
+              {tools.map((tool, i) => {
+                const pos = layout[i % layout.length];
+                const isHovered = hoveredId === tool.id;
+                return (
+                  <ToolChip
+                    key={tool.id} tool={tool} pos={pos} isHovered={isHovered}
+                    dim={!!hoveredId && !isHovered}
+                    onEnter={() => setHoveredId(tool.id)}
+                    onLeave={() => setHoveredId(null)}
+                    onPick={() => onPick(tool)}
+                    mobile={mobile}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ToolDetail({ tool, onClose, tweaks, mobile }) {
+      return (
+        <div className="toolbox-panel" style={{
+          position: 'absolute', inset: 0, zIndex: 30, borderRadius: 20,
+          backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: mobile ? 16 : 32
+        }}>
+          <div style={{
+            position: 'relative', background: '#FBF6EC', borderRadius: 16, padding: mobile ? '32px 24px' : '44px 48px',
+            maxWidth: 520, width: '100%', maxHeight: '100%', overflow: 'auto',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.4)'
+          }}>
+            <button onClick={onClose} aria-label="Lukk" style={{
+              position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%',
+              border: 'none', background: 'rgba(42,38,32,0.08)', color: '#2A2620',
+              fontSize: 15, cursor: 'pointer', zIndex: 2
+            }}>✕</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
+              <div style={{ width: 46, height: 46, borderRadius: '50%', background: tool.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{tool.icon}</div>
+              <div>
+                <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: tool.color, marginBottom: 2 }}>{tool.category}</p>
+                <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontWeight: 400, fontSize: mobile ? 24 : 30, color: tweaks.dark, lineHeight: 1.1 }}>{tool.name}</h3>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Kva er det?</p>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: 18 }}>{tool.what}</p>
+
+            <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Kvifor er det viktig?</p>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: 18 }}>{tool.why}</p>
+
+            <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Korleis eg brukar det</p>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: tool.project ? 20 : 0 }}>{tool.how}</p>
+
+            {tool.project && (
+              <p style={{ fontSize: 13, color: tweaks.dark, opacity: 0.6, marginBottom: tool.project.url ? 14 : 0 }}>
+                Brukt i <strong style={{ opacity: 1 }}>{tool.project.label}</strong>
+              </p>
+            )}
+            {tool.project && tool.project.url && (
+              <a href={tool.project.url} target="_blank" rel="noopener" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '10px 20px', borderRadius: 100, background: tool.color, color: '#fff',
+                textDecoration: 'none', fontSize: 13, fontWeight: 500
+              }}>Sjå prosjektet ↗</a>
+            )}
+          </div>
+        </div>
+      );
+    }
 
     function Skills({ tweaks, bp }) {
       const mobile = bp && bp.width < 700;
-      const [pinned, setPinned] = useState(null);
-      const [active, setActive] = useState(null);
+      const reducedMotion = usePrefersReducedMotion();
+      const [stage, setStage] = useState('closed'); // closed | open | detail
+      const [hoveredId, setHoveredId] = useState(null);
+      const [selected, setSelected] = useState(null);
 
-      const handleEnter = (skill, group) => { if (!pinned) setActive({ skill, group }); };
-      const handleLeave = () => { setActive(pinned); };
-      const handleClick = (skill, group) => { setPinned({ skill, group }); setActive({ skill, group }); };
-      const handleReset = () => { setPinned(null); setActive(null); };
+      const stepBack = () => {
+        if (stage === 'detail') { setStage('open'); setSelected(null); }
+        else if (stage === 'open') { setStage('closed'); setHoveredId(null); }
+      };
+      const pickTool = (tool) => { setSelected(tool); setStage('detail'); };
+
+      useEffect(() => {
+        const onKey = (e) => { if (e.key === 'Escape') stepBack(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+      }, [stage]);
 
       return (
-        <section id="skills" style={{ padding: `${80 * tweaks.spacing}px ${mobile ? '24px' : '48px'}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ maxWidth: 1300, margin: '0 auto', width: '100%' }}>
-            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Kompetanse</p>
-            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: mobile ? 40 : 72 }}>
-              Skills &<br/><span style={{ fontStyle: 'italic' }}>verktøy</span>
+        <section id="skills" style={{ padding: `${80 * tweaks.spacing}px ${mobile ? '20px' : '48px'}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Skills</p>
+            <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 16 }}>
+              Verktøy<span style={{ fontStyle: 'italic' }}>kassa</span>
             </h2>
+            <p className="reveal reveal-delay-1" style={{ fontSize: mobile ? 15 : 16, color: tweaks.dark, opacity: 0.6, marginBottom: mobile ? 24 : 32, maxWidth: 480 }}>
+              Verktøy, metoder og erfaringar eg har samla på vegen.
+            </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(4, 1fr)', gap: mobile ? 12 : 16, alignItems: 'stretch' }}>
-              {skillGroups.map((group, gi) => (
-                <SkillColumn
-                  key={group.category}
-                  group={group}
-                  tweaks={tweaks}
-                  gi={gi}
-                  mobile={mobile}
-                  active={active}
-                  pinned={pinned}
-                  onEnter={handleEnter}
-                  onLeave={handleLeave}
-                  onClick={handleClick}
-                />
-              ))}
-              <SkillInfoPanel active={active} pinned={pinned} onReset={handleReset} tweaks={tweaks} mobile={mobile} />
+            <p style={{ fontSize: 13, color: tweaks.dark, opacity: 0.5, textAlign: 'center', marginBottom: mobile ? 16 : 24 }}>
+              {stage === 'closed' ? 'Klikk på kassa for å opne' : stage === 'open' ? 'Hover eller klikk på eit verktøy' : ''}
+            </p>
+
+            <div style={{
+              position: 'relative', minHeight: mobile ? '44vh' : '54vh',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {stage === 'closed' && (
+                <ToolboxClosed onOpen={() => setStage('open')} mobile={mobile} reducedMotion={reducedMotion} tweaks={tweaks} />
+              )}
+              {stage !== 'closed' && (
+                <>
+                  {stage === 'open' && (
+                    <button
+                      className="toolbox-close"
+                      onClick={stepBack}
+                      aria-label="Lukk verktøykassa"
+                      style={{
+                        position: 'absolute', top: 0, right: mobile ? 4 : 12, zIndex: 40,
+                        width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                        background: 'rgba(42,38,32,0.08)', color: tweaks.dark, fontSize: 15,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >✕</button>
+                  )}
+                  <ToolboxOpen tools={TOOLS} layout={TOOL_LAYOUT} hoveredId={hoveredId} setHoveredId={setHoveredId} onPick={pickTool} mobile={mobile} />
+                  {stage === 'detail' && selected && (
+                    <ToolDetail tool={selected} onClose={stepBack} tweaks={tweaks} mobile={mobile} />
+                  )}
+                </>
+              )}
             </div>
           </div>
         </section>
-      );
-    }
-
-    function SkillColumn({ group, tweaks, gi, mobile, active, pinned, onEnter, onLeave, onClick }) {
-      return (
-        <div className={`reveal reveal-delay-${gi + 1}`} style={{
-          padding: mobile ? '24px 20px' : '40px 28px',
-          background: '#E8D9C4',
-          borderRadius: 16,
-          border: `1px solid ${tweaks.dark}08`
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: mobile ? 16 : 32 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: group.color }} />
-            <span style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700, color: group.color }}>{group.category}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {group.skills.map((skill, si) => (
-              <SkillItem
-                key={skill.name}
-                skill={skill}
-                group={group}
-                color={group.color}
-                tweaks={tweaks}
-                mobile={mobile}
-                isLast={si === group.skills.length - 1}
-                isHovered={!!active && active.skill.name === skill.name && active.group.category === group.category}
-                isPinned={!!pinned && pinned.skill.name === skill.name && pinned.group.category === group.category}
-                onEnter={() => onEnter(skill, group)}
-                onLeave={onLeave}
-                onClick={() => onClick(skill, group)}
-              />
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    function SkillItem({ skill, group, color, tweaks, mobile, isLast, isHovered, isPinned, onEnter, onLeave, onClick }) {
-      return (
-        <div
-          onMouseEnter={onEnter}
-          onMouseLeave={onLeave}
-          onClick={onClick}
-          style={{
-            padding: '14px 16px', borderRadius: 10,
-            background: (isHovered || isPinned) ? color : 'transparent',
-            borderBottom: isLast ? 'none' : `1px solid ${tweaks.dark}${(isHovered || isPinned) ? '00' : '12'}`,
-            transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
-            transition: 'background 0.25s ease, border-color 0.25s ease, transform 0.25s ease',
-            margin: '0 -16px', cursor: 'pointer'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{
-              fontFamily: tweaks.fontHeading, fontSize: mobile ? 17 : 18, fontWeight: 400,
-              letterSpacing: '-0.01em', whiteSpace: 'nowrap',
-              color: (isHovered || isPinned) ? '#fff' : tweaks.dark,
-              transition: 'color 0.25s'
-            }}>{skill.name}</span>
-            <span style={{
-              fontSize: 16, opacity: isHovered ? 0.9 : (isPinned ? 0.7 : 0.25),
-              color: (isHovered || isPinned) ? '#fff' : tweaks.dark,
-              transform: isHovered ? 'translateX(0)' : 'translateX(-4px)',
-              transition: 'opacity 0.25s, color 0.25s, transform 0.25s'
-            }}>{isPinned && !isHovered ? '✓' : '→'}</span>
-          </div>
-        </div>
-      );
-    }
-
-    function SkillInfoPanel({ active, pinned, onReset, tweaks, mobile }) {
-      const accent = active ? active.group.color : tweaks.accent;
-      return (
-        <div style={{
-          position: mobile ? 'relative' : 'sticky', top: mobile ? 'auto' : 120,
-          minHeight: mobile ? 160 : 320,
-          padding: mobile ? '30px 24px 26px' : '38px 32px 32px',
-          borderRadius: 20,
-          background: '#fff',
-          border: `1px solid ${tweaks.dark}0D`,
-          boxShadow: '0 24px 48px rgba(42,38,32,0.10), 0 4px 12px rgba(42,38,32,0.05)',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: 4,
-            background: active ? accent : 'linear-gradient(90deg, #C04B22, #5B7C8A, #7A8E6F)',
-            transition: 'background 0.3s ease'
-          }} />
-          {pinned && (
-            <button
-              onClick={onReset}
-              aria-label="Nullstill val"
-              title="Nullstill val"
-              style={{
-                position: 'absolute', top: mobile ? 18 : 22, right: mobile ? 18 : 22,
-                width: 32, height: 32, borderRadius: '50%',
-                border: `1px solid ${tweaks.dark}1A`, background: `${tweaks.dark}08`,
-                color: tweaks.dark, fontSize: 15, lineHeight: 1, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.2s ease'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = `${tweaks.dark}14`; }}
-              onMouseLeave={e => { e.currentTarget.style.background = `${tweaks.dark}08`; }}
-            >↺</button>
-          )}
-          {active ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700, color: accent }}>
-                  {active.group.category}
-                </span>
-              </div>
-              <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontWeight: 400, fontSize: mobile ? 24 : 30, color: tweaks.dark, marginBottom: 16, lineHeight: 1.15 }}>
-                {active.skill.name}
-              </h3>
-              {active.skill.detail ? (
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: tweaks.dark, opacity: 0.7 }}>
-                  {active.skill.detail}
-                </p>
-              ) : active.skill.used && (
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: tweaks.dark, opacity: 0.7 }}>
-                  Brukt i praksis i <strong style={{ opacity: 1 }}>{active.skill.used}</strong>.
-                </p>
-              )}
-              {active.skill.url && (
-                <a href={active.skill.url} target="_blank" rel="noopener" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 13, fontWeight: 500, color: accent, textDecoration: 'none',
-                  marginTop: 16
-                }}>
-                  Sjå prosjektet <span style={{ transition: 'transform 0.2s' }}>↗</span>
-                </a>
-              )}
-            </>
-          ) : (
-            <>
-              <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C04B22' }} />
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#5B7C8A' }} />
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#7A8E6F' }} />
-              </div>
-              <p style={{ fontSize: 14, lineHeight: 1.6, color: tweaks.dark, opacity: 0.55 }}>
-                Hover over eller klikk på eit verktøy for å sjå korleis eg har brukt det i praksis.
-              </p>
-            </>
-          )}
-        </div>
       );
     }
 
@@ -1237,9 +1388,9 @@
       return (
         <section id="verv" style={{ padding: mobile ? '60px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: mobile ? 'auto' : '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500, paddingLeft: 8 }}>Engasjement</p>
+            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500, paddingLeft: 8 }}>Verv</p>
             <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 32, paddingLeft: 16 }}>
-              Frivillige<br/><span style={{ fontStyle: 'italic' }}>verv</span>
+              Frivillig<br/><span style={{ fontStyle: 'italic' }}>engasjement</span>
             </h2>
             <VolunteerBubbles tweaks={tweaks} bp={bp} />
           </div>
