@@ -720,13 +720,22 @@
     // Experience
     const experiences = [
       {
-        year: '2026 –',
+        year: '2026 – d.d.',
         role: 'Innhaldsprodusent',
         company: 'Eviny',
         fullname: 'Eviny',
         desc: 'Innhaldsproduksjon og kommunikasjonsarbeid i Bergen, ved sida av studiane.',
         color: '#7A8E6F',
         tags: ['Innhaldsproduksjon', 'Kommunikasjon', 'Deltid'],
+      },
+      {
+        year: '2026',
+        role: 'Seminarleiar',
+        company: 'Universitetet i Bergen',
+        fullname: 'Universitetet i Bergen — INFO100, Innføring i informasjonsvitskap',
+        desc: 'Underviser studentar som seminarleiar i INFO100 — Innføring i informasjonsvitskap. Følgjer studentane frå nettbutikk, HTML og CSS til XML, JSON, SQL og UML gjennom semesteret.',
+        color: '#8A5B7C',
+        tags: ['Undervisning', 'Webutvikling', 'SQL & XML/JSON'],
       },
       {
         year: '2026',
@@ -906,9 +915,9 @@
         color: '#7A8E6F',
         skills: [
           { name: 'React', used: 'Snarveg', usedColor: '#8A5B7C', detail: 'Bygde Snarveg som ein React-webapp — rask tilgang til ressursar, varslar og verktøy studentar treng, samla på éin stad.' },
-          { name: 'HTML / CSS / JS', used: 'Digitale bursdagskort', usedColor: '#7A8E6F', detail: 'Koda interaktive bursdagskort frå botn av med HTML, CSS og JavaScript — animasjonar, minner og personlege bodskap. Eitt av dei fekk til og med sitt eige vercel-domene.' },
+          { name: 'HTML / CSS / JS', used: 'Digitale bursdagskort', usedColor: '#7A8E6F', detail: 'Koda interaktive bursdagskort frå botn av med HTML, CSS og JavaScript. Underviser no i desse språka som seminarleiar i INFO100 — Innføring i informasjonsvitskap — ved UiB.' },
           { name: 'Python', used: 'UiB — Informasjonsvitskap', usedColor: null },
-          { name: 'mySQL', used: 'UiB — Informasjonsvitskap', usedColor: null },
+          { name: 'mySQL', used: 'UiB — Informasjonsvitskap', usedColor: null, detail: 'Lærte SQL gjennom studiet i informasjonsvitskap, og underviser no i det same som seminarleiar i INFO100 ved UiB.' },
           { name: 'Django', used: 'UiB — Informasjonsvitskap', usedColor: null, detail: 'Min praktiske kompetanse her er frå faget «Web Science», der vi laga eit innloggingssystem for å låne bibliotekbøker.' },
         ]
       },
@@ -1109,6 +1118,7 @@
       { org: 'UX Bergen', role: 'Styremedlem', sub: 'Fagleg nettverk', period: '2026 – d.d.', color: '#5B7C8A' },
       { org: 'BSI Damefotball', role: 'Leiar', sub: 'Studentidrett', period: '2025 – d.d.', color: '#7A8E6F' },
       { org: 'BSI Damefotball', role: 'So-Me ansvarleg', sub: 'Kommunikasjon', period: '2024 – 2025', color: '#7A8E6F' },
+      { org: 'X2-festivalen', role: 'Frivillig', sub: 'Tidtakar på elvepadling', period: '2022', color: '#8A5B7C' },
     ];
 
     function Volunteer({ tweaks, bp }) {
@@ -1162,6 +1172,15 @@
         color: '#9B7B5E',
         size: 172,
         x: 72, y: 44,
+      },
+      {
+        org: 'X2-festivalen',
+        role: 'Frivillig',
+        sub: 'Tidtakar på elvepadling',
+        period: '2022',
+        color: '#8A5B7C',
+        size: 140,
+        x: 88, y: 18,
       },
     ];
 
