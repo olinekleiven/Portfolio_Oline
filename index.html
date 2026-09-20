@@ -1262,7 +1262,7 @@
       const boxH = mobile ? 200 : 340;
       const openingH = mobile ? 100 : 160;
       return (
-        <div style={{ position: 'relative', width: '100%', maxWidth: mobile ? 400 : 900, margin: '0 auto', paddingTop: mobile ? 42 : 62 }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: mobile ? 400 : 900, margin: '0 auto', paddingTop: mobile ? 66 : 96 }}>
           <ToolboxHandleArch width={mobile ? 100 : 190} height={mobile ? 32 : 50} borderWidth={mobile ? 7 : 12} color="#3A2A18" />
           <div style={{
             position: 'relative', zIndex: 1, width: '100%', height: boxH,
@@ -1381,7 +1381,7 @@
             </p>
 
             <p style={{ fontSize: 13, color: tweaks.dark, opacity: 0.5, textAlign: 'center', marginBottom: mobile ? 16 : 24 }}>
-              {stage === 'closed' ? 'Klikk på kassa for å opne' : stage === 'open' ? 'Hover eller klikk på eit verktøy' : ''}
+              {stage === 'closed' ? 'Klikk på kassa for å opne' : 'Hover eller klikk på eit verktøy'}
             </p>
 
             <div style={{
