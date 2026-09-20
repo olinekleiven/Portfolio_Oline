@@ -486,23 +486,24 @@
 
             <div className="reveal reveal-delay-3" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <a href="#prosjekter" style={{
-                background: tweaks.dark, color: tweaks.bg,
+                background: tweaks.accent, color: tweaks.bg,
                 padding: '14px 32px', borderRadius: 100, textDecoration: 'none',
                 fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
-                transition: 'background 0.2s ease, transform 0.2s', display: 'inline-block'
+                transition: 'transform 0.2s', display: 'inline-block'
               }}
-              onMouseEnter={e => { e.target.style.background = tweaks.accent; e.target.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.target.style.background = tweaks.dark; e.target.style.transform = 'translateY(0)'; }}
-              >Se arbeidet mitt ↓</a>
+              onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; }}
+              >Prosjekter ↓</a>
 
               <a href="uploads/Oline_Kleiven_CV.pdf" download="Oline_Kleiven_CV.pdf" style={{
-                color: tweaks.dark, padding: '14px 32px', borderRadius: 100,
+                color: tweaks.dark, background: 'transparent',
+                padding: '14px 32px', borderRadius: 100,
                 textDecoration: 'none', fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
                 border: `1.5px solid ${tweaks.dark}40`, display: 'inline-block',
-                transition: 'border-color 0.2s, transform 0.2s'
+                transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s, transform 0.2s'
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = tweaks.accent; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = tweaks.dark+'40'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = tweaks.dark; e.currentTarget.style.color = tweaks.bg; e.currentTarget.style.borderColor = tweaks.dark; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tweaks.dark; e.currentTarget.style.borderColor = tweaks.dark+'40'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >↓ Last ned CV</a>
             </div>
           </div>
@@ -521,12 +522,20 @@
         }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
 
-            {/* Top row: photo + label */}
-            <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 40 }}>
-              <div style={{ width: bp.isMobile ? 140 : 168, height: bp.isMobile ? 140 : 168, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${tweaks.accent}60`, flexShrink: 0 }}>
-                <img src="uploads/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+            {/* Top row: photo + label, with Utdanning label aligned alongside on desktop */}
+            <div className="reveal" style={{
+              display: 'grid', gridTemplateColumns: bp.isMobile ? '1fr' : '1fr 1fr',
+              gap: bp.isMobile ? 24 : 80, alignItems: 'center', marginBottom: 24
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                <div style={{ width: bp.isMobile ? 140 : 128, height: bp.isMobile ? 140 : 128, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${tweaks.accent}60`, flexShrink: 0 }}>
+                  <img src="uploads/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                </div>
+                <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
               </div>
-              <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
+              {!bp.isMobile && (
+                <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600 }}>Utdanning</p>
+              )}
             </div>
 
             {/* Main grid: single column on mobile, two on desktop */}
@@ -557,24 +566,33 @@
 
               {/* Education */}
               <div className="reveal reveal-delay-1">
-                <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600, marginBottom: 20 }}>Utdanning</p>
+                {bp.isMobile && (
+                  <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600, marginBottom: 20 }}>Utdanning</p>
+                )}
                 {[
-                  { school: 'Universitetet i Bergen', degree: 'Master — Medie- og interaksjonsdesign', period: '2025 – 2027' },
-                  { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025' },
-                  { school: 'Møre Folkehøgskule', degree: 'Ekstremsport', period: '2021 – 2022' },
+                  { school: 'Universitetet i Bergen', degree: 'Master — Medie- og interaksjonsdesign', period: '2025 – 2027', url: 'https://www4.uib.no/program/medie-og-interaksjonsdesign-master' },
+                  { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025', url: 'https://www4.uib.no/program/informasjonsvitskap-bachelor' },
+                  { school: 'Møre Folkehøgskule', degree: 'Ekstremsport', period: '2021 – 2022', url: 'https://more.fhs.no' },
                 ].map((e, i) => {
                   const [hov, setHov] = React.useState(false);
+                  const open = () => { if (e.url) window.open(e.url, '_blank', 'noopener'); };
                   return (
                   <div key={i}
+                    role={e.url ? 'link' : undefined}
+                    tabIndex={e.url ? 0 : undefined}
+                    aria-label={e.url ? `Opne ${e.school} — ${e.degree}` : undefined}
                     onMouseEnter={() => setHov(true)}
                     onMouseLeave={() => setHov(false)}
+                    onClick={open}
+                    onKeyDown={(ev) => { if (e.url && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); open(); } }}
                     style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                       padding: bp.isMobile ? '16px 12px' : '20px 16px',
                       borderBottom: `1px solid ${tweaks.bg}15`,
                       background: hov ? tweaks.bg : 'transparent', borderRadius: 8,
                       transition: 'background 0.3s ease',
-                      margin: bp.isMobile ? '0 -12px' : '0 -16px'
+                      margin: bp.isMobile ? '0 -12px' : '0 -16px',
+                      cursor: e.url ? 'pointer' : 'default'
                     }}>
                     <div>
                       <div style={{
@@ -862,6 +880,7 @@
         desc: 'Innhaldsproduksjon og kommunikasjonsarbeid i Bergen, ved sida av studiane.',
         color: '#7A8E6F',
         tags: ['Innhaldsproduksjon', 'Kommunikasjon', 'Deltid'],
+        url: 'https://www.eviny.no',
       },
       {
         year: '2026',
@@ -871,6 +890,7 @@
         desc: 'Underviser studentar som seminarleiar i INFO100 — Innføring i informasjonsvitskap. Følgjer studentane frå nettbutikk, HTML og CSS til XML, JSON, SQL og UML gjennom semesteret.',
         color: '#8A5B7C',
         tags: ['Undervisning', 'Webutvikling', 'SQL & XML/JSON'],
+        url: 'https://www.uib.no',
       },
       {
         year: '2026',
@@ -880,6 +900,7 @@
         desc: 'Spesialkonsulent i Kommunearkivet hos Vestland fylkeskommune, sommaren 2026 — arkivfagleg arbeid og handtering av offentlege dokument.',
         color: '#9B7B5E',
         tags: ['Offentleg sektor', 'Arkiv'],
+        url: 'https://www.vestlandfylke.no',
       },
       {
         year: '2025',
@@ -889,6 +910,7 @@
         desc: '6 veker med praktisk erfaring i ein stor statleg organisasjon, med fokus på digitale tenester og forvaltning.',
         color: '#5B7C8A',
         tags: ['Offentleg sektor', 'Digitale tenester'],
+        url: 'https://www.vegvesen.no',
       },
       {
         year: '2024',
@@ -898,6 +920,7 @@
         desc: '8 veker med EU Digital Wallet-prosjektet — implementerte ein verifiable credentials-teneste basert på eIDAS 2.0. Bidrog til frontend, backend (Java/Spring Boot) og UX-design av brukarflyt.',
         color: '#C04B22',
         tags: ['Java', 'UX', 'eIDAS 2.0', 'OAuth2'],
+        url: 'https://www.digdir.no',
       },
       {
         year: '2020–23',
@@ -907,6 +930,7 @@
         desc: 'Omsorg og praktisk arbeid med pasientar — trena sterke kommunikasjonsferdigheter og evne til å arbeide under press.',
         color: '#7A8E6F',
         tags: ['Omsorg', 'Kommunikasjon'],
+        url: 'https://www.sogndal.kommune.no/leikanger-sjukeheim.528728.nn.html',
       },
       {
         year: '2021–22',
@@ -916,6 +940,7 @@
         desc: 'Steppa inn som vikar og miljøarbeider for ulike trinn der det var behov — frå fagleg støtte til oppfølging av elevar i kvardagen.',
         color: '#C04B22',
         tags: ['Pedagogikk', 'Tilpassing', 'Miljøarbeid'],
+        url: 'https://www.sogndal.kommune.no/skuleportal/leikanger-ungdomsskule',
       },
     ];
 
@@ -943,19 +968,25 @@
 
     function ExperienceRow({ exp, tweaks, index, bp }) {
       const [hovered, setHovered] = useState(false);
+      const open = () => { if (exp.url) window.open(exp.url, '_blank', 'noopener'); };
       if (bp.isTablet) {
         return (
           <div
             className={`reveal reveal-delay-${index + 1}`}
+            role={exp.url ? 'link' : undefined}
+            tabIndex={exp.url ? 0 : undefined}
+            aria-label={exp.url ? `Opne nettsida til ${exp.company}` : undefined}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            onClick={open}
+            onKeyDown={(ev) => { if (exp.url && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); open(); } }}
             style={{
               padding: '14px 16px',
               background: hovered ? exp.color : tweaks.bg,
               borderRadius: 10,
               border: `2px solid ${hovered ? 'rgba(255,255,255,0.25)' : exp.color}`,
               display: 'flex', flexDirection: 'column', gap: 6,
-              minWidth: 0, overflow: 'hidden',
+              minWidth: 0, overflow: 'hidden', cursor: exp.url ? 'pointer' : 'default',
               transition: 'background 0.3s cubic-bezier(.16,1,.3,1), border-color 0.3s'
             }}
           >
@@ -985,8 +1016,13 @@
       return (
         <div
           className={`reveal reveal-delay-${index + 1}`}
+          role={exp.url ? 'link' : undefined}
+          tabIndex={exp.url ? 0 : undefined}
+          aria-label={exp.url ? `Opne nettsida til ${exp.company}` : undefined}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
+          onClick={open}
+          onKeyDown={(ev) => { if (exp.url && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); open(); } }}
           style={{
             display: 'grid', gridTemplateColumns: '200px 1fr auto',
             alignItems: 'center', gap: 40,
@@ -994,6 +1030,7 @@
             background: hovered ? exp.color : tweaks.bg,
             borderBottom: `1px solid ${tweaks.dark}12`,
             borderRadius: index === 0 ? '12px 12px 0 0' : index === experiences.length - 1 ? '0 0 12px 12px' : 0,
+            cursor: exp.url ? 'pointer' : 'default',
             transition: 'all 0.3s cubic-bezier(.16,1,.3,1)',
           }}
         >
