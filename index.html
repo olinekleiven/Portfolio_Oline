@@ -747,8 +747,7 @@
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              display: 'flex', flexDirection: mobile ? 'column' : 'row',
-              width: '100%', maxWidth: 880, maxHeight: '86vh', overflow: 'auto',
+              width: '100%', maxWidth: 880, maxHeight: '86vh',
               background: '#FBF6EC', borderRadius: 10,
               boxShadow: '0 40px 80px rgba(0,0,0,0.4)', position: 'relative',
               transform: shown ? 'scale(1)' : 'scale(0.88)', opacity: shown ? 1 : 0,
@@ -762,33 +761,38 @@
             }}>✕</button>
 
             <div style={{
-              flex: mobile ? 'none' : 1, padding: mobile ? '36px 24px 16px' : '56px 48px',
-              borderRight: mobile ? 'none' : `1px solid ${project.color}20`,
-              borderBottom: mobile ? `1px solid ${project.color}20` : 'none'
+              display: 'flex', flexDirection: mobile ? 'column' : 'row',
+              maxHeight: '86vh', overflow: 'auto', borderRadius: 10
             }}>
-              <span style={{ fontFamily: tweaks.fontHeading, fontSize: 44, color: project.color + '40', fontWeight: 400, lineHeight: 1 }}>{project.num}</span>
-              <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600, color: project.color, marginTop: 16, marginBottom: 8 }}>{project.subtitle}</p>
-              <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontSize: mobile ? 26 : 38, color: '#2A2620', marginBottom: 20, lineHeight: 1.15 }}>{project.title}</h3>
-              {project.url && (
-                <a href={project.url} target="_blank" rel="noopener" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '10px 20px', borderRadius: 100,
-                  background: project.color, color: '#fff', textDecoration: 'none',
-                  fontSize: 13, fontWeight: 500
-                }}>Sjå prosjektet ↗</a>
-              )}
-            </div>
+              <div style={{
+                flex: mobile ? 'none' : 1, padding: mobile ? '36px 24px 16px' : '56px 48px',
+                borderRight: mobile ? 'none' : `1px solid ${project.color}20`,
+                borderBottom: mobile ? `1px solid ${project.color}20` : 'none'
+              }}>
+                <span style={{ fontFamily: tweaks.fontHeading, fontSize: 44, color: project.color + '40', fontWeight: 400, lineHeight: 1 }}>{project.num}</span>
+                <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600, color: project.color, marginTop: 16, marginBottom: 8 }}>{project.subtitle}</p>
+                <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontSize: mobile ? 26 : 38, color: '#2A2620', marginBottom: 20, lineHeight: 1.15 }}>{project.title}</h3>
+                {project.url && (
+                  <a href={project.url} target="_blank" rel="noopener" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '10px 20px', borderRadius: 100,
+                    background: project.color, color: '#fff', textDecoration: 'none',
+                    fontSize: 13, fontWeight: 500
+                  }}>Sjå prosjektet ↗</a>
+                )}
+              </div>
 
-            <div style={{ flex: mobile ? 'none' : 1, padding: mobile ? '4px 24px 36px' : '56px 48px' }}>
-              <p style={{ fontSize: 15, lineHeight: 1.75, color: '#2A2620', opacity: 0.75, marginBottom: 24 }}>{project.desc}</p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {project.tags.map(tag => (
-                  <span key={tag} style={{
-                    padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 500,
-                    background: project.color + '14', color: project.color,
-                    border: `1px solid ${project.color}30`
-                  }}>{tag}</span>
-                ))}
+              <div style={{ flex: mobile ? 'none' : 1, padding: mobile ? '4px 24px 36px' : '56px 48px' }}>
+                <p style={{ fontSize: 15, lineHeight: 1.75, color: '#2A2620', opacity: 0.75, marginBottom: 24 }}>{project.desc}</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {project.tags.map(tag => (
+                    <span key={tag} style={{
+                      padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 500,
+                      background: project.color + '14', color: project.color,
+                      border: `1px solid ${project.color}30`
+                    }}>{tag}</span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1300,8 +1304,9 @@
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: mobile ? 16 : 32
         }}>
           <div style={{
-            position: 'relative', background: '#FBF6EC', borderRadius: 16, padding: mobile ? '32px 24px' : '44px 48px',
-            maxWidth: 520, width: '100%', maxHeight: '100%', overflow: 'auto',
+            position: 'relative', display: 'flex', flexDirection: 'column',
+            background: '#FBF6EC', borderRadius: 16,
+            maxWidth: 520, width: '100%', maxHeight: '100%',
             boxShadow: '0 40px 80px rgba(0,0,0,0.4)'
           }}>
             <button onClick={onClose} aria-label="Lukk" style={{
@@ -1309,35 +1314,37 @@
               border: 'none', background: 'rgba(42,38,32,0.08)', color: '#2A2620',
               fontSize: 15, cursor: 'pointer', zIndex: 2
             }}>✕</button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
-              <div style={{ width: 46, height: 46, borderRadius: '50%', background: tool.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{tool.icon}</div>
-              <div>
-                <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: tool.color, marginBottom: 2 }}>{tool.category}</p>
-                <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontWeight: 400, fontSize: mobile ? 24 : 30, color: tweaks.dark, lineHeight: 1.1 }}>{tool.name}</h3>
+            <div style={{ padding: mobile ? '32px 24px' : '44px 48px', flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
+                <div style={{ width: 46, height: 46, borderRadius: '50%', background: tool.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{tool.icon}</div>
+                <div>
+                  <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: tool.color, marginBottom: 2 }}>{tool.category}</p>
+                  <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontWeight: 400, fontSize: mobile ? 24 : 30, color: tweaks.dark, lineHeight: 1.1 }}>{tool.name}</h3>
+                </div>
               </div>
+
+              <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Kva er det?</p>
+              <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: 18 }}>{tool.what}</p>
+
+              <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Kvifor er det viktig?</p>
+              <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: 18 }}>{tool.why}</p>
+
+              <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Korleis eg brukar det</p>
+              <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: tool.project ? 20 : 0 }}>{tool.how}</p>
+
+              {tool.project && (
+                <p style={{ fontSize: 13, color: tweaks.dark, opacity: 0.6, marginBottom: tool.project.url ? 14 : 0 }}>
+                  Brukt i <strong style={{ opacity: 1 }}>{tool.project.label}</strong>
+                </p>
+              )}
+              {tool.project && tool.project.url && (
+                <a href={tool.project.url} target="_blank" rel="noopener" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '10px 20px', borderRadius: 100, background: tool.color, color: '#fff',
+                  textDecoration: 'none', fontSize: 13, fontWeight: 500
+                }}>Sjå prosjektet ↗</a>
+              )}
             </div>
-
-            <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Kva er det?</p>
-            <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: 18 }}>{tool.what}</p>
-
-            <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Kvifor er det viktig?</p>
-            <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: 18 }}>{tool.why}</p>
-
-            <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Korleis eg brukar det</p>
-            <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: tool.project ? 20 : 0 }}>{tool.how}</p>
-
-            {tool.project && (
-              <p style={{ fontSize: 13, color: tweaks.dark, opacity: 0.6, marginBottom: tool.project.url ? 14 : 0 }}>
-                Brukt i <strong style={{ opacity: 1 }}>{tool.project.label}</strong>
-              </p>
-            )}
-            {tool.project && tool.project.url && (
-              <a href={tool.project.url} target="_blank" rel="noopener" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '10px 20px', borderRadius: 100, background: tool.color, color: '#fff',
-                textDecoration: 'none', fontSize: 13, fontWeight: 500
-              }}>Sjå prosjektet ↗</a>
-            )}
           </div>
         </div>
       );
