@@ -1232,8 +1232,8 @@
           aria-label={`${tool.name} — opne detaljar`}
           style={{
             position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-            width: size, height: size, border: '2px solid rgba(255,255,255,0.5)', borderRadius: '50%',
-            padding: 0, cursor: 'pointer', background: tool.color,
+            width: size, height: size, border: '2px solid rgba(42,38,32,0.5)', borderRadius: '50%',
+            padding: 0, cursor: 'pointer', background: '#D8D2C4',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.48,
             transform: `translate(-50%, -50%) rotate(${pos.rot}deg) translateY(${lift}px) scale(${isHovered ? 1.15 : 1})`,
             boxShadow: isHovered ? '0 16px 28px rgba(0,0,0,0.5)' : '0 4px 10px rgba(0,0,0,0.35)',
@@ -1316,9 +1316,9 @@
             }}>✕</button>
             <div style={{ padding: mobile ? '32px 24px' : '44px 48px', flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
-                <div style={{ width: 46, height: 46, borderRadius: '50%', background: tool.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{tool.icon}</div>
+                <div style={{ width: 46, height: 46, borderRadius: '50%', background: tweaks.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{tool.icon}</div>
                 <div>
-                  <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: tool.color, marginBottom: 2 }}>{tool.category}</p>
+                  <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.accent, marginBottom: 2 }}>{tool.category}</p>
                   <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontWeight: 400, fontSize: mobile ? 24 : 30, color: tweaks.dark, lineHeight: 1.1 }}>{tool.name}</h3>
                 </div>
               </div>
@@ -1340,7 +1340,7 @@
               {tool.project && tool.project.url && (
                 <a href={tool.project.url} target="_blank" rel="noopener" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '10px 20px', borderRadius: 100, background: tool.color, color: '#fff',
+                  padding: '10px 20px', borderRadius: 100, background: tweaks.accent, color: '#fff',
                   textDecoration: 'none', fontSize: 13, fontWeight: 500
                 }}>Sjå prosjektet ↗</a>
               )}
@@ -1381,7 +1381,7 @@
             </p>
 
             <p style={{ fontSize: 13, color: tweaks.dark, opacity: 0.5, textAlign: 'center', marginBottom: mobile ? 16 : 24 }}>
-              {stage === 'closed' ? 'Klikk på kassa for å opne' : 'Hover eller klikk på eit verktøy'}
+              {stage === 'closed' ? 'Klikk på kassa for å opne' : 'Velg eit verktøy'}
             </p>
 
             <div style={{
