@@ -528,8 +528,13 @@
               gap: bp.isMobile ? 24 : 80, alignItems: 'center', marginBottom: 24
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                <div style={{ width: bp.isMobile ? 140 : 128, height: bp.isMobile ? 140 : 128, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${tweaks.accent}60`, flexShrink: 0 }}>
-                  <img src="uploads/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                <div style={{
+                  width: bp.isMobile ? 160 : 168, height: bp.isMobile ? 160 : 168,
+                  borderRadius: '42% 58% 63% 37% / 45% 39% 61% 55%',
+                  overflow: 'hidden', border: `3px solid ${tweaks.accent}60`,
+                  transform: 'rotate(-4deg)', flexShrink: 0
+                }}>
+                  <img src="uploads/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'rotate(4deg) scale(1.15)' }} />
                 </div>
                 <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
               </div>
