@@ -281,7 +281,7 @@
       useEffect(() => { if (!bp.isMobile) setMenuOpen(false); }, [bp.isMobile]);
       const isDark = NAV_DARK_SECTIONS.has(activeSection);
       const sectionBg = {
-        hero: tweaks.bg, om: tweaks.dark, prosjekter: '#5B7C8A',
+        hero: tweaks.bg, om: tweaks.dark, prosjekter: tweaks.dark,
         erfaring: tweaks.bg, skills: tweaks.bg, verv: tweaks.bg, kontakt: tweaks.dark
       };
       const textColor = isDark ? tweaks.bg : tweaks.dark;
@@ -670,7 +670,7 @@
         desc: 'Var interaksjonsdesignar i gruppa og utvikla prototypen. Eit innovasjonsprosjekt der vi bygde eit verdiforslag frå idé til pitch — med lean canvas, personas (Jenny og Geir) og storyboarding som strukturerande verktøy undervegs.',
         tags: ['Interaksjonsdesign', 'Prototyping', 'Lean Canvas', 'Personas'],
         url: 'https://ai-treet.vercel.app',
-        extraLink: { label: 'Sjå bransjerapport', url: 'uploads/AiTreet.pdf' },
+        extraLink: { label: 'Bransjerapport', url: 'uploads/AiTreet.pdf' },
         color: '#9B7B5E',
       },
       {
@@ -852,7 +852,7 @@
           }}>
             <div style={{
               position: 'absolute', inset: 0, borderRadius: 14, overflow: 'hidden',
-              background: 'linear-gradient(180deg, #8A5C39 0%, #7A5233 12%, #6E4A2D 100%)',
+              background: 'linear-gradient(180deg, #AD7C4F 0%, #9A6C43 12%, #8B5E38 100%)',
               zIndex: 0, pointerEvents: 'none'
             }}>
               <div style={{
@@ -873,7 +873,7 @@
             </div>
             <div style={{
               height: mobile ? 16 : 22, marginTop: -2, position: 'relative', zIndex: 1,
-              background: 'linear-gradient(180deg, #8B5E3C 0%, #5A3B22 100%)',
+              background: 'linear-gradient(180deg, #A9764A 0%, #7A5233 100%)',
               boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.35), 0 10px 18px rgba(0,0,0,0.3)',
               borderRadius: '0 0 10px 10px'
             }} />
@@ -893,14 +893,14 @@
       return (
         <section id="prosjekter" style={{
           padding: `${80 * tweaks.spacing}px ${narrow ? '24px' : '48px'}`,
-          background: '#5B7C8A',
+          background: tweaks.dark,
           color: tweaks.bg,
-          minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
+          minHeight: '115vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: `${140 * tweaks.spacing}px`
         }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 40 : 64, gap: narrow ? 8 : 0 }}>
               <div>
-                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.bg, marginBottom: 16, fontWeight: 500 }}>Prosjekter</p>
+                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Prosjekter</p>
                 <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.bg }}>
                   Arbeidsarkivet
                 </h2>
