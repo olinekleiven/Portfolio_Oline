@@ -670,6 +670,7 @@
         desc: 'Var interaksjonsdesignar i gruppa og utvikla prototypen. Eit innovasjonsprosjekt der vi bygde eit verdiforslag frå idé til pitch — med lean canvas, personas (Jenny og Geir) og storyboarding som strukturerande verktøy undervegs.',
         tags: ['Interaksjonsdesign', 'Prototyping', 'Lean Canvas', 'Personas'],
         url: 'https://ai-treet.vercel.app',
+        extraLink: { label: 'Sjå bransjerapport', url: 'uploads/AiTreet.pdf' },
         color: '#9B7B5E',
       },
       {
@@ -679,7 +680,7 @@
         desc: 'Mi førre portefølje, koda frå botn av — levert med A i faget Web Design 1. Hovudvekt på HTML og CSS, med fokus på responsivt design, tilgjengelegheit og kreative frontend-løysingar.',
         tags: ['HTML', 'CSS', 'JavaScript', 'Tilgjengelegheit'],
         url: 'https://olinekleiven.github.io/Portfolio/',
-        extraLink: { label: 'Les grunngjevinga', url: 'uploads/Webdesign_essay.pdf' },
+        extraLink: { label: 'Essay', url: 'uploads/Webdesign_essay.pdf' },
         color: '#5B7C8A',
       },
       {
@@ -808,7 +809,7 @@
                       padding: '10px 20px', borderRadius: 100,
                       background: project.color, color: '#fff', textDecoration: 'none',
                       fontSize: 13, fontWeight: 500
-                    }}>Sjå prosjektet ↗</a>
+                    }}>Prosjektet ↗</a>
                   )}
                   {project.extraLink && (
                     <a href={project.extraLink.url} target="_blank" rel="noopener" style={{
@@ -1339,7 +1340,7 @@
     function ToolDetail({ tool, onClose, tweaks, mobile }) {
       return (
         <div className="toolbox-panel" style={{
-          position: 'absolute', inset: 0, zIndex: 30, borderRadius: 20,
+          position: 'fixed', inset: 0, zIndex: 200,
           backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: mobile ? 16 : 32
         }}>
