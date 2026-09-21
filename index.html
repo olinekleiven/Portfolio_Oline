@@ -571,7 +571,7 @@
                 )}
                 {[
                   { school: 'Universitetet i Bergen', degree: 'Master — Medie- og interaksjonsdesign', period: '2025 – 2027', url: 'https://www4.uib.no/program/medie-og-interaksjonsdesign-master' },
-                  { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025', url: 'https://www4.uib.no/program/informasjonsvitskap-bachelor' },
+                  { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025', url: 'https://www4.uib.no/program/informasjonsvitskap-bachelor', diplomaUrl: 'uploads/Bachelorgrad_vitnemal.pdf' },
                   { school: 'Møre Folkehøgskule', degree: 'Ekstremsport', period: '2021 – 2022', url: 'https://more.fhs.no' },
                 ].map((e, i) => {
                   const [hov, setHov] = React.useState(false);
@@ -603,7 +603,21 @@
                       }}>{e.school}</div>
                       <div style={{ fontSize: 12, fontStyle: 'italic', color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.6 : 0.5, transition: 'all 0.3s' }}>{e.degree}</div>
                     </div>
-                    <span style={{ fontSize: 11, flexShrink: 0, marginLeft: 12, marginTop: 3, color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.5 : 0.4, transition: 'all 0.3s' }}>{e.period}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0, marginLeft: 12 }}>
+                      <span style={{ fontSize: 11, marginTop: 3, color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.5 : 0.4, transition: 'all 0.3s' }}>{e.period}</span>
+                      {e.diplomaUrl && (
+                        <a
+                          href={e.diplomaUrl} target="_blank" rel="noopener"
+                          onClick={ev => ev.stopPropagation()}
+                          style={{
+                            fontSize: 11, textDecoration: 'underline',
+                            color: hov ? tweaks.accent : 'transparent',
+                            opacity: hov ? 1 : 0, pointerEvents: hov ? 'auto' : 'none',
+                            transition: 'all 0.3s'
+                          }}
+                        >Vitnemål ↗</a>
+                      )}
+                    </div>
                   </div>
                   );
                 })}
@@ -660,7 +674,17 @@
         desc: 'Mi førre portefølje, koda frå botn av — levert med A i faget Web Design 1. Hovudvekt på HTML og CSS, med fokus på responsivt design, tilgjengelegheit og kreative frontend-løysingar.',
         tags: ['HTML', 'CSS', 'JavaScript', 'Tilgjengelegheit'],
         url: 'https://olinekleiven.github.io/Portfolio/',
+        extraLink: { label: 'Les grunngjevinga', url: 'uploads/Webdesign_essay.pdf' },
         color: '#5B7C8A',
+      },
+      {
+        num: '06',
+        title: 'Cookie Care',
+        subtitle: 'Dataspelforteljingar (MIX333) — Universitetet i Bergen',
+        desc: 'Utvikla spelkonseptet «Cookie Care» saman med gruppa i masteremnet Dataspelforteljingar — med fokus på forteljeteknikkar, sjangerkonvensjonar og forholdet mellom spelar og avatar.',
+        tags: ['Spelkonsept', 'Narrativt design', 'MIX333'],
+        url: 'uploads/MIX333_Cookie_care.pdf',
+        color: '#3F7A78',
       },
     ];
 
@@ -772,14 +796,25 @@
                 <span style={{ fontFamily: tweaks.fontHeading, fontSize: 44, color: project.color + '40', fontWeight: 400, lineHeight: 1 }}>{project.num}</span>
                 <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600, color: project.color, marginTop: 16, marginBottom: 8 }}>{project.subtitle}</p>
                 <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontSize: mobile ? 26 : 38, color: '#2A2620', marginBottom: 20, lineHeight: 1.15 }}>{project.title}</h3>
-                {project.url && (
-                  <a href={project.url} target="_blank" rel="noopener" style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    padding: '10px 20px', borderRadius: 100,
-                    background: project.color, color: '#fff', textDecoration: 'none',
-                    fontSize: 13, fontWeight: 500
-                  }}>Sjå prosjektet ↗</a>
-                )}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {project.url && (
+                    <a href={project.url} target="_blank" rel="noopener" style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      padding: '10px 20px', borderRadius: 100,
+                      background: project.color, color: '#fff', textDecoration: 'none',
+                      fontSize: 13, fontWeight: 500
+                    }}>Sjå prosjektet ↗</a>
+                  )}
+                  {project.extraLink && (
+                    <a href={project.extraLink.url} target="_blank" rel="noopener" style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      padding: '10px 20px', borderRadius: 100,
+                      background: 'transparent', color: project.color, textDecoration: 'none',
+                      border: `1.5px solid ${project.color}50`,
+                      fontSize: 13, fontWeight: 500
+                    }}>{project.extraLink.label} ↗</a>
+                  )}
+                </div>
               </div>
 
               <div style={{ flex: mobile ? 'none' : 1, padding: mobile ? '4px 24px 36px' : '56px 48px' }}>
