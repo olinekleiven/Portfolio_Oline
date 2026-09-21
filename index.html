@@ -415,12 +415,32 @@
     // Hero
     function Hero({ tweaks, bp }) {
       const scrambled = useScramble('Digital designer', 600);
-      const [scrollY, setScrollY] = React.useState(0);
+      const reducedMotion = usePrefersReducedMotion();
+      const portraitRef = React.useRef(null);
+
+      // Parallax on the portrait, driven directly on the DOM node (no React
+      // re-render per scroll event) and batched to one update per animation
+      // frame so it stays smooth even with many other scroll/reveal listeners
+      // on the page. Purely decorative, so it's skipped entirely when the
+      // user prefers reduced motion.
       React.useEffect(() => {
-        const h = () => setScrollY(window.scrollY);
-        window.addEventListener('scroll', h);
-        return () => window.removeEventListener('scroll', h);
-      }, []);
+        if (reducedMotion || bp.isMobile) return;
+        let rafId = null;
+        const applyParallax = () => {
+          rafId = null;
+          const el = portraitRef.current;
+          if (el) el.style.transform = `translateY(calc(-50% + ${window.scrollY * 0.12}px))`;
+        };
+        const onScroll = () => {
+          if (rafId === null) rafId = window.requestAnimationFrame(applyParallax);
+        };
+        applyParallax();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+          window.removeEventListener('scroll', onScroll);
+          if (rafId !== null) window.cancelAnimationFrame(rafId);
+        };
+      }, [reducedMotion, bp.isMobile]);
 
       // Portrait: same position as desktop on tablet, just proportionally smaller
       const portraitSize = bp.isMobile ? 200 : bp.isTablet ? Math.round(bp.width * 0.28) : 380;
@@ -446,16 +466,16 @@
                 style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
             </div>
           ) : (
-            <div style={{
+            <div ref={portraitRef} style={{
               position: 'absolute',
               top: '50%',
               right: '6%',
-              transform: `translateY(calc(-50% + ${scrollY * 0.12}px))`,
+              transform: 'translateY(-50%)',
               width: portraitSize, height: portraitSize,
               borderRadius: '50%', overflow: 'hidden',
               border: `3px solid ${tweaks.accent}40`,
               boxShadow: `0 0 0 12px ${tweaks.accent}10`,
-              pointerEvents: 'none', transition: 'transform 0.08s linear'
+              pointerEvents: 'none', willChange: reducedMotion ? 'auto' : 'transform'
             }}>
               <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
@@ -1122,7 +1142,7 @@
 
     // Skills
     const TOOLS = [
-      { id: 'figma', name: 'Figma', icon: '🖊️', category: 'Design', color: '#C04B22',
+      { id: 'figma', name: 'Figma', icon: '🖊️', iconImg: 'uploads/Figma.svg', category: 'Design', color: '#C04B22',
         what: 'Design- og prototypeverktøy for å byggje grensesnitt digitalt.',
         why: 'Lèt meg raskt visualisere og teste idear før noko blir koda.',
         how: 'Designa og prototypa Snarveg i Figma — frå low-fi skisser til eit ferdig grensesnitt, med fokus på enkel navigasjon og låg kognitiv last for studentar.',
@@ -1137,7 +1157,7 @@
         why: 'Gjer det raskt å teste struktur og prioritering før detaljane kjem på plass.',
         how: 'Starta Snarveg med wireframes for å strukturere innhald og prioritere det studentar treng raskast tilgang til. Brukte det same i mi tidlegare portefølje, for å planleggje struktur før visuelt design og koding.',
         project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
-      { id: 'interaction-design', name: 'Interaction Design', icon: '🧭', category: 'Design', color: '#C04B22',
+      { id: 'interaction-design', name: 'Interaction Design', icon: '🧭', iconImg: 'uploads/Interaksjon.png', category: 'Design', color: '#C04B22',
         what: 'Design av korleis ein brukar samhandlar med eit system, steg for steg.',
         why: 'Sikrar at brukarflyten er intuitiv og føreseieleg.',
         how: 'Designa brukarflyten i EU Digital Wallet-prosjektet hos Digdir — frå autentisering via Ansattporten til levering av verifiserbare identitetskort via QR-kode.',
@@ -1147,7 +1167,7 @@
         why: 'Skaper tillit og gjer produktet lettare å forstå og bruke.',
         how: 'Utforska visuelt uttrykk og animasjonar gjennom interaktive digitale bursdagskort, koda frå botn av med eige design og personlege bodskap.',
         project: { label: 'Digitale bursdagskort', url: 'https://ida24.vercel.app' } },
-      { id: 'brukertesting', name: 'Brukertesting', icon: '🧪', category: 'Research', color: '#5B7C8A',
+      { id: 'brukertesting', name: 'Brukertesting', icon: '🧪', iconImg: 'uploads/brukertesting.png', category: 'Research', color: '#5B7C8A',
         what: 'Å observere korleis brukarar faktisk brukar ei løysing, for å avdekkje problem og forbetringsmoglegheiter.',
         why: 'Gir innsikt i friksjon og behov som ikkje alltid kjem fram gjennom antakingar aleine.',
         how: 'Brukar iterativ brukertesting i alle prosjekt for å sjå om løysinga faktisk blir forstått slik ho er meint.',
@@ -1172,7 +1192,7 @@
         why: 'Avgjer om brukaren når målet sitt utan unødig frustrasjon.',
         how: 'Testar og forbetrar Snarveg undervegs gjennom iterativ brukertesting og observasjon.',
         project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
-      { id: 'react', name: 'React', icon: '⚛️', category: 'Utvikling', color: '#7A8E6F',
+      { id: 'react', name: 'React', icon: '⚛️', iconImg: 'uploads/React.svg', category: 'Utvikling', color: '#7A8E6F',
         what: 'Eit JavaScript-bibliotek for å byggje brukargrensesnitt.',
         why: 'Gjer det raskt å byggje gjenbrukbare, interaktive komponentar.',
         how: 'Bygde Snarveg som ein React-webapp — rask tilgang til ressursar, varslar og verktøy studentar treng, samla på éin stad.',
@@ -1187,7 +1207,7 @@
         why: 'Lett å lese og raskt å jobbe med.',
         how: 'Lærte Python gjennom studiet i informasjonsvitskap ved UiB.',
         project: { label: 'UiB — Informasjonsvitskap', url: null } },
-      { id: 'mysql', name: 'mySQL', icon: '🗄️', category: 'Utvikling', color: '#7A8E6F',
+      { id: 'mysql', name: 'mySQL', icon: '🗄️', iconImg: 'uploads/sql.png', category: 'Utvikling', color: '#7A8E6F',
         what: 'Eit relasjonsdatabasesystem for å lagre og hente strukturert data.',
         why: 'Naudsynt for nesten alle system som skal lagre informasjon.',
         how: 'Lærte mykje om SQL i faget INFO125, og gjennom resten av studiet i informasjonsvitskap. Underviser no i det same som seminarleiar i INFO100 ved UiB.',
@@ -1197,12 +1217,18 @@
         why: 'Gir ferdige løysingar for vanlege behov, som innlogging og databasehandtering.',
         how: 'Min praktiske kompetanse her er frå faget «Web Science», der vi laga eit innloggingssystem for å låne bibliotekbøker.',
         project: { label: 'UiB — Web Science', url: null } },
+      { id: 'claude', name: 'Claude', iconImg: 'uploads/claude.png', category: 'Prosess', color: '#8A5B7C',
+        what: 'Eit AI-verktøy for koding og design — Claude Code — som eg har brukt til å byggje heile denne porteføljen saman med Claude.',
+        why: 'Å meistre nye verktøy som dette er ein sentral del av å vere ein moderne designar/utviklar i dag. Det endrar korleis ein jobbar, ikkje berre kva ein til slutt lagar.',
+        how: 'I dette prosjektet har eg oppretta tre eigne agentar som kvalitetssikrar arbeidet mitt undervegs: ein interaksjonsdesignar (animasjon og mikrointeraksjonar), ein kode-ekspert (kodekvalitet og tryggleik) og ein ux-ekspert (brukaroppleving). Dei hjelper meg sikre design, kode og flyt gjennom heile porteføljen.',
+        project: { label: 'Denne porteføljen', url: null } },
     ];
 
     const TOOL_LAYOUT = [
       { x: 18, y: 18, rot: -14, scale: 0.85 }, { x: 34, y: 22, rot: 9, scale: 0.95 }, { x: 50, y: 16, rot: -5, scale: 0.82 }, { x: 66, y: 22, rot: 13, scale: 0.92 }, { x: 82, y: 18, rot: -10, scale: 0.88 },
       { x: 8, y: 50, rot: 8, scale: 1.0 }, { x: 28, y: 50, rot: -16, scale: 0.85 }, { x: 50, y: 50, rot: 4, scale: 1.05 }, { x: 72, y: 50, rot: -9, scale: 0.88 }, { x: 92, y: 50, rot: 15, scale: 0.95 },
       { x: 20, y: 80, rot: -11, scale: 0.88 }, { x: 36, y: 78, rot: 6, scale: 1.0 }, { x: 50, y: 84, rot: -18, scale: 0.8 }, { x: 64, y: 78, rot: 10, scale: 0.95 }, { x: 80, y: 80, rot: -7, scale: 0.85 },
+      { x: 44, y: 34, rot: 5, scale: 0.9 },
     ];
 
     function usePrefersReducedMotion() {
@@ -1281,8 +1307,17 @@
       const size = (mobile ? 38 : 52) * weight;
       // Bigger/"heavier" tools lift less and respond a touch slower; smaller
       // ones snap up higher and quicker — a rough stand-in for physical weight.
-      const lift = isHovered ? -(21 / weight) : 0;
+      const liftMagnitude = 11 / weight;
+      const lift = isHovered ? -liftMagnitude : 0;
       const duration = (0.2 + weight * 0.09).toFixed(2);
+      // The hoverable hit area is a fixed, larger, non-moving zone — only the
+      // visual circle inside it lifts/scales. It must stay big enough to
+      // fully contain BOTH the resting circle AND the lifted+scaled (1.08x)
+      // one, so the tool stays clickable everywhere it's visible — including
+      // right where it "jumps" to on hover — not just at its start position.
+      // Sized from the actual lift distance + hover scale growth, not a
+      // guessed multiplier, so it stays correct if either value changes.
+      const hitSize = size * 1.1 + liftMagnitude * 2 + 6;
       return (
         <button
           className="toolbox-tool"
@@ -1294,16 +1329,28 @@
           aria-label={`${tool.name} — opne detaljar`}
           style={{
             position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-            width: size, height: size, border: '2px solid rgba(42,38,32,0.5)', borderRadius: '50%',
-            padding: 0, cursor: 'pointer', background: '#D8D2C4',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.48,
-            transform: `translate(-50%, -50%) rotate(${pos.rot}deg) translateY(${lift}px) scale(${isHovered ? 1.15 : 1})`,
-            boxShadow: isHovered ? '0 16px 28px rgba(0,0,0,0.5)' : '0 4px 10px rgba(0,0,0,0.35)',
+            width: hitSize, height: hitSize, border: 'none', background: 'transparent',
+            padding: 0, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: `translate(-50%, -50%) rotate(${pos.rot}deg)`,
             opacity: dim ? 0.38 : 1, zIndex: isHovered ? 10 : 1,
-            transition: `transform ${duration}s cubic-bezier(.16,1,.3,1), opacity 0.25s ease, box-shadow 0.25s ease`
+            transition: 'opacity 0.25s ease'
           }}
         >
-          <span aria-hidden="true">{tool.icon}</span>
+          <div style={{
+            width: size, height: size, border: '2px solid rgba(42,38,32,0.5)', borderRadius: '50%',
+            background: '#D8D2C4', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: size * 0.48, pointerEvents: 'none',
+            transform: `translateY(${lift}px) scale(${isHovered ? 1.08 : 1})`,
+            boxShadow: isHovered ? '0 10px 18px rgba(0,0,0,0.4)' : '0 4px 10px rgba(0,0,0,0.35)',
+            transition: `transform ${duration}s cubic-bezier(.16,1,.3,1), box-shadow 0.25s ease`
+          }}>
+            {tool.iconImg ? (
+              <img src={tool.iconImg} alt="" aria-hidden="true" style={{ width: '80%', height: '80%', objectFit: 'contain', borderRadius: '50%', pointerEvents: 'none', filter: 'drop-shadow(0 0 1.5px rgba(42,38,32,0.9)) drop-shadow(0 1px 2px rgba(42,38,32,0.5))' }} />
+            ) : (
+              <span aria-hidden="true">{tool.icon}</span>
+            )}
+          </div>
           {isHovered && (
             <span style={{
               position: 'absolute', bottom: '120%', left: '50%',
@@ -1399,7 +1446,9 @@
             >✕</button>
             <div style={{ padding: mobile ? '32px 24px' : '44px 48px', flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
-                <div style={{ width: 46, height: 46, borderRadius: '50%', background: tweaks.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{tool.icon}</div>
+                <div style={{ width: 46, height: 46, borderRadius: '50%', background: tweaks.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, overflow: 'hidden' }}>
+                  {tool.iconImg ? <img src={tool.iconImg} alt="" style={{ width: '78%', height: '78%', objectFit: 'contain' }} /> : tool.icon}
+                </div>
                 <div>
                   <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.accent, marginBottom: 2 }}>{tool.category}</p>
                   <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontWeight: 400, fontSize: mobile ? 24 : 30, color: tweaks.dark, lineHeight: 1.1 }}>{tool.name}</h3>
