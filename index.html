@@ -27,7 +27,7 @@
       box-shadow: 0 2px 8px rgba(36,31,25,0.35);
       transition: width 0.25s cubic-bezier(.16,1,.3,1), height 0.25s cubic-bezier(.16,1,.3,1),
                   margin 0.25s cubic-bezier(.16,1,.3,1), background 0.25s ease,
-                  box-shadow 0.25s ease, transform 0.15s ease;
+                  box-shadow 0.25s ease, transform 0.15s ease, opacity 0.25s cubic-bezier(.16,1,.3,1);
     }
     #pointer.active #pointer-dot {
       width: 38px; height: 38px; margin: -19px 0 0 -19px;
@@ -35,6 +35,38 @@
       box-shadow: 0 6px 18px rgba(36,31,25,0.3);
     }
     #pointer.click #pointer-dot { transform: scale(0.75); }
+    /* Key cursor — shown while the Skills/toolbox section is in view and the
+       toolbox is still closed (see Cursor() + useToolboxOpenGlobal below).
+       Crossfades with the regular dot rather than replacing it abruptly. */
+    #pointer-key {
+      position: absolute; left: 0; top: 0;
+      font-size: 46px; line-height: 1;
+      transform: translate(-50%,-50%) scale(0.4) rotate(-25deg);
+      opacity: 0;
+      transition: opacity 0.25s cubic-bezier(.16,1,.3,1), transform 0.25s cubic-bezier(.16,1,.3,1);
+      pointer-events: none;
+      user-select: none;
+    }
+    #pointer.key #pointer-dot { opacity: 0; transform: scale(0.3); }
+    #pointer.key #pointer-key { opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(-25deg); }
+    /* Key-turn sequence — plays on the cursor's own key emoji, frozen over the
+       toolbox latch (see Cursor()'s unlock effects + ToolboxClosed's
+       handleOpen), so the cursor itself visually "does" the unlocking rather
+       than the latch graphic animating on its own. Duration matches
+       TOOLBOX_UNLOCK_MS (420ms) so it reads as one continuous motion with the
+       toolboxLatchTurn/toolboxLatchSlide animations on the box itself. The
+       transition above is overridden by this animation while '.unlocking' is
+       present; '.key' stays applied throughout so the emoji (not the dot)
+       stays visible. */
+    @keyframes pointerKeyTurn {
+      0%   { transform: translate(-50%,-50%) rotate(-25deg) scale(1); }
+      35%  { transform: translate(-50%,-50%) rotate(15deg) scale(1.12); }
+      70%  { transform: translate(-50%,-50%) rotate(60deg) scale(1.18); }
+      100% { transform: translate(-50%,-50%) rotate(60deg) scale(1.15); }
+    }
+    #pointer.unlocking #pointer-key {
+      animation: pointerKeyTurn 0.42s cubic-bezier(.4,0,.2,1) forwards;
+    }
     @media (hover: none) {
       #pointer { display: none !important; }
       * { cursor: auto !important; }
@@ -101,6 +133,24 @@
     }
     .toolbox-wobble { animation: toolboxWobble 4.5s ease-in-out infinite; }
     .toolbox-wobble:hover, .toolbox-wobble:focus-visible { animation-play-state: paused; }
+
+    /* Toolbox — key-unlock sequence played on click, before the box swaps to
+       its open state. The latch (keyhole plate) turns as if a key is
+       twisting it, then the whole plate slides down and fades as the
+       shackle "gives". Only ever applied when NOT reduced-motion — see
+       ToolboxClosed's handleOpen, which skips this entirely otherwise. */
+    @keyframes toolboxLatchTurn {
+      0% { transform: translate(-50%,-50%) rotate(0deg); }
+      55% { transform: translate(-50%,-50%) rotate(95deg); }
+      100% { transform: translate(-50%,-50%) rotate(95deg); }
+    }
+    @keyframes toolboxLatchSlide {
+      0%, 25% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+      70% { transform: translateX(-50%) translateY(8px) scale(0.85); opacity: 1; }
+      100% { transform: translateX(-50%) translateY(14px) scale(0.6); opacity: 0; }
+    }
+    .toolbox-unlocking .toolbox-latch-hole { animation: toolboxLatchTurn 0.42s ease forwards; }
+    .toolbox-unlocking .toolbox-latch { animation: toolboxLatchSlide 0.42s cubic-bezier(.4,0,.2,1) forwards; }
     .toolbox-tool:focus-visible, .toolbox-box:focus-visible {
       outline: 3px solid #fff; outline-offset: 3px;
     }
@@ -118,6 +168,8 @@
       .toolbox-wobble { animation: none; }
       .toolbox-box, .toolbox-tool, .toolbox-lid, .toolbox-panel, .toolbox-open-reveal { transition-duration: 0.01ms !important; }
       .toolbox-tooltip { animation-duration: 0.01ms !important; }
+      .toolbox-latch, .toolbox-latch-hole { animation-duration: 0.01ms !important; }
+      #pointer-key { animation-duration: 0.01ms !important; }
     }
     /* The diploma link is only shown via onMouseEnter/onMouseLeave hover state,
        which never fires on touch devices — so it would otherwise be permanently
@@ -143,6 +195,7 @@
 <body>
   <div id="pointer" aria-hidden="true">
     <div id="pointer-dot"></div>
+    <div id="pointer-key">🔑</div>
   </div>
   <div id="root"></div>
 
@@ -217,9 +270,20 @@
     // lerp/transition on position — that's what caused the old cursor to
     // visibly lag), and toggles the spark/click states via CSS classes.
     function Cursor() {
+      const [skillsInView, setSkillsInView] = useState(false);
+      const toolboxOpen = useToolboxOpenGlobal();
+      const unlock = useToolboxUnlockGlobal();
+      const showKey = skillsInView && !toolboxOpen;
+      const unlockActiveRef = useRef(false);
+      useEffect(() => { unlockActiveRef.current = unlock.active; }, [unlock.active]);
+
       useEffect(() => {
         const pointer = document.getElementById('pointer');
         const move = (e) => {
+          // While the key-unlock sequence is playing, the cursor is frozen
+          // over the latch (see the effect below) — ignore real mouse moves
+          // so the key doesn't drift away from the lock mid-turn.
+          if (unlockActiveRef.current) return;
           pointer.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
         };
         const over = () => pointer.classList.add('active');
@@ -242,7 +306,167 @@
           clearTimeout(clickTimer);
         };
       }, []);
+
+      // Swap to a key cursor while the Skills/toolbox section is in view and
+      // the box is still locked — a hint that the box can be "unlocked".
+      // Goes away the instant the box opens (or the section scrolls out).
+      useEffect(() => {
+        const skills = document.getElementById('skills');
+        if (!skills) return;
+        const obs = new IntersectionObserver((entries) => {
+          entries.forEach(e => setSkillsInView(e.isIntersecting));
+        }, { threshold: 0.25 });
+        obs.observe(skills);
+        return () => obs.disconnect();
+      }, []);
+
+      useEffect(() => {
+        const pointer = document.getElementById('pointer');
+        if (!pointer) return;
+        pointer.classList.toggle('key', showKey);
+      }, [showKey]);
+
+      // Freeze the cursor over the latch and play the key-turn animation
+      // while unlocking is active; let it resume following the mouse (via a
+      // plain class removal — the next real mousemove naturally snaps it
+      // back) once the sequence finishes.
+      useEffect(() => {
+        const pointer = document.getElementById('pointer');
+        if (!pointer) return;
+        if (unlock.active) {
+          pointer.style.transform = `translate3d(${unlock.x}px, ${unlock.y}px, 0)`;
+          pointer.classList.add('unlocking');
+        } else {
+          pointer.classList.remove('unlocking');
+        }
+      }, [unlock.active, unlock.x, unlock.y]);
+
       return null;
+    }
+
+    // Touch-hover manager
+    //
+    // Native touch events only ever fire on the element a gesture *started*
+    // on — a finger that scrolls/drags across other hover-styled elements
+    // never triggers enter/leave there the way a mouse does. That means all
+    // our onMouseEnter/onMouseLeave hover styling is invisible on touch
+    // devices until the user commits to a tap on that exact element.
+    //
+    // To fix that, we track the finger's position globally (one listener on
+    // window, throttled to one elementFromPoint() lookup per animation
+    // frame so fast scrolling never gets janky) and look up which registered
+    // hover-target it's currently over, toggling that target's hover state
+    // explicitly — reconstructing mouseenter/mouseleave semantics for touch.
+    // Purely additive: real mouse hover behaviour is completely untouched,
+    // since this only ever reacts to touchstart/touchmove/touchend/touchcancel.
+    const touchHoverRegistry = new Set();
+    let touchHoverActive = null;
+    let touchHoverRaf = null;
+
+    function resolveTouchHoverTarget(x, y) {
+      const el = document.elementFromPoint(x, y);
+      let matched = null;
+      for (const entry of touchHoverRegistry) {
+        const node = entry.ref.current;
+        if (node && el && (node === el || node.contains(el))) { matched = entry; break; }
+      }
+      if (matched !== touchHoverActive) {
+        if (touchHoverActive) touchHoverActive.setActive(false);
+        if (matched) matched.setActive(true);
+        touchHoverActive = matched;
+      }
+    }
+
+    function queueTouchHoverUpdate(x, y) {
+      if (touchHoverRaf) cancelAnimationFrame(touchHoverRaf);
+      touchHoverRaf = requestAnimationFrame(() => { touchHoverRaf = null; resolveTouchHoverTarget(x, y); });
+    }
+
+    function clearTouchHover() {
+      if (touchHoverRaf) { cancelAnimationFrame(touchHoverRaf); touchHoverRaf = null; }
+      if (touchHoverActive) { touchHoverActive.setActive(false); touchHoverActive = null; }
+    }
+
+    window.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) queueTouchHoverUpdate(t.clientX, t.clientY); }, { passive: true });
+    window.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) queueTouchHoverUpdate(t.clientX, t.clientY); }, { passive: true });
+    window.addEventListener('touchend', clearTouchHover, { passive: true });
+    window.addEventListener('touchcancel', clearTouchHover, { passive: true });
+
+    // Register a DOM node (via the returned ref) as a touch-hover target.
+    // Returns [ref, active] — active mirrors what onMouseEnter/onMouseLeave
+    // would have been doing, but driven by the global touch tracker above.
+    function useTouchHover() {
+      const ref = useRef(null);
+      const [active, setActive] = useState(false);
+      useEffect(() => {
+        const entry = { ref, setActive };
+        touchHoverRegistry.add(entry);
+        return () => {
+          touchHoverRegistry.delete(entry);
+          if (touchHoverActive === entry) touchHoverActive = null;
+        };
+      }, []);
+      return [ref, active];
+    }
+
+    // Convenience wrapper for the many spots that mutate the DOM node
+    // directly in onMouseEnter/onMouseLeave (rather than via React state):
+    // replays the exact same handlers when touch-hover turns on/off, via a
+    // minimal fake event ({ currentTarget, target }) so no handler logic
+    // needs to be duplicated. Returns a ref to attach to the target node.
+    function useTouchHoverStyle(onEnter, onLeave) {
+      const [ref, active] = useTouchHover();
+      useEffect(() => {
+        const node = ref.current;
+        if (!node) return;
+        const fakeEvent = { currentTarget: node, target: node };
+        if (active) onEnter(fakeEvent); else onLeave(fakeEvent);
+      }, [active]);
+      return ref;
+    }
+
+    // Toolbox-open global state
+    //
+    // Cursor() and Skills() are unrelated components with no shared props —
+    // this is a tiny pub-sub, parallel to (but independent of)
+    // touchHoverRegistry above, that lets Skills broadcast whether the
+    // toolbox is open so Cursor can react (swap to the key cursor) without
+    // any prop drilling.
+    let toolboxOpenState = false;
+    const toolboxOpenListeners = new Set();
+    function setToolboxOpenGlobal(v) {
+      toolboxOpenState = v;
+      toolboxOpenListeners.forEach(fn => fn(v));
+    }
+    function useToolboxOpenGlobal() {
+      const [v, setV] = useState(toolboxOpenState);
+      useEffect(() => {
+        toolboxOpenListeners.add(setV);
+        return () => toolboxOpenListeners.delete(setV);
+      }, []);
+      return v;
+    }
+
+    // Same pub-sub pattern again, this time for the key-unlock sequence: lets
+    // ToolboxClosed broadcast the on-screen position of the latch (and
+    // whether the unlock animation is currently playing) so Cursor can freeze
+    // the key cursor there and play the turning animation on it — making the
+    // cursor itself look like it's doing the unlocking, instead of two
+    // unrelated animations happening in parallel. Independent of
+    // toolboxOpenState/toolboxOpenListeners above.
+    let toolboxUnlockPos = { active: false, x: 0, y: 0 };
+    const toolboxUnlockListeners = new Set();
+    function setToolboxUnlockGlobal(v) {
+      toolboxUnlockPos = v;
+      toolboxUnlockListeners.forEach(fn => fn(v));
+    }
+    function useToolboxUnlockGlobal() {
+      const [v, setV] = useState(toolboxUnlockPos);
+      useEffect(() => {
+        toolboxUnlockListeners.add(setV);
+        return () => toolboxUnlockListeners.delete(setV);
+      }, []);
+      return v;
     }
 
     // Breakpoint hook
@@ -275,6 +499,9 @@
       const [scrolled, setScrolled] = useState(false);
       const [activeSection, setActiveSection] = useState('hero');
       const [menuOpen, setMenuOpen] = useState(false);
+      const toTopEnter = e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.transform = 'translateY(-2px)'; };
+      const toTopLeave = e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.transform = 'translateY(0)'; };
+      const toTopTouchRef = useTouchHoverStyle(toTopEnter, toTopLeave);
       const navItems = [
         { id: 'om', label: 'Om' },
         { id: 'erfaring', label: 'Erfaring' },
@@ -350,8 +577,24 @@
               </button>
             ) : (
               <div style={{ display: 'flex', gap: bp.isTablet ? 6 : 10 }}>
-                {navItems.map((item, i) => (
-                  <a key={item.id} href={`#${item.id}`} style={{
+                {navItems.map((item, i) => {
+                  const pillEnter = e => {
+                    e.target.style.background = tweaks.accent;
+                    e.target.style.borderColor = tweaks.accent;
+                    e.target.style.color = '#fff';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = `0 8px 18px ${tweaks.accent}55`;
+                  };
+                  const pillLeave = e => {
+                    e.target.style.background = `${textColor}12`;
+                    e.target.style.borderColor = `${textColor}30`;
+                    e.target.style.color = textColor;
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  };
+                  const pillTouchRef = useTouchHoverStyle(pillEnter, pillLeave);
+                  return (
+                  <a key={item.id} ref={pillTouchRef} href={`#${item.id}`} style={{
                     color: textColor, textDecoration: 'none', fontSize: 13,
                     fontWeight: 500, letterSpacing: '0.04em',
                     padding: bp.isTablet ? '7px 12px' : '8px 18px',
@@ -360,33 +603,22 @@
                     border: `1.5px solid ${textColor}30`,
                     transition: 'all 0.25s cubic-bezier(.16,1,.3,1)'
                   }}
-                  onMouseEnter={e => {
-                    e.target.style.background = tweaks.accent;
-                    e.target.style.borderColor = tweaks.accent;
-                    e.target.style.color = '#fff';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = `0 8px 18px ${tweaks.accent}55`;
-                  }}
-                  onMouseLeave={e => {
-                    e.target.style.background = `${textColor}12`;
-                    e.target.style.borderColor = `${textColor}30`;
-                    e.target.style.color = textColor;
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = 'none';
-                  }}
+                  onMouseEnter={pillEnter}
+                  onMouseLeave={pillLeave}
                   >{item.label}</a>
-                ))}
+                  );
+                })}
               </div>
             )}
             {!bp.isMobile && (
-              <a href="#hero" aria-label="Til toppen" style={{
+              <a href="#hero" aria-label="Til toppen" ref={toTopTouchRef} style={{
                   justifySelf: 'end', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 32, height: 32, color: textColor, textDecoration: 'none', fontSize: 16,
                   opacity: 0.6, transition: 'opacity 0.25s ease, transform 0.25s ease',
                   zIndex: 102
                 }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.transform = 'translateY(0)'; }}
+                onMouseEnter={toTopEnter}
+                onMouseLeave={toTopLeave}
               >↑</a>
             )}
           </nav>
@@ -400,8 +632,12 @@
               pointerEvents: menuOpen ? 'auto' : 'none',
               transition: 'opacity 0.35s ease'
             }}>
-              {navItems.map((item) => (
-                <a key={item.id} href={`#${item.id}`}
+              {navItems.map((item) => {
+                const mobileNavEnter = e => { e.target.style.opacity = 1; };
+                const mobileNavLeave = e => { e.target.style.opacity = 0.85; };
+                const mobileNavTouchRef = useTouchHoverStyle(mobileNavEnter, mobileNavLeave);
+                return (
+                <a key={item.id} href={`#${item.id}`} ref={mobileNavTouchRef}
                   onClick={() => setMenuOpen(false)}
                   style={{
                     color: tweaks.bg, textDecoration: 'none',
@@ -409,10 +645,11 @@
                     fontWeight: 400, letterSpacing: '-0.02em', opacity: 0.85,
                     transition: 'opacity 0.2s'
                   }}
-                  onMouseEnter={e => e.target.style.opacity = 1}
-                  onMouseLeave={e => e.target.style.opacity = 0.85}
+                  onMouseEnter={mobileNavEnter}
+                  onMouseLeave={mobileNavLeave}
                 >{item.label}</a>
-              ))}
+                );
+              })}
               <div style={{ marginTop: 48, display: 'flex', gap: 24 }}>
                 <a href="mailto:olinefk@outlook.com" style={{ color: tweaks.accent, fontSize: 14, textDecoration: 'none' }}>✉ E-post</a>
                 <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" style={{ color: tweaks.accent, fontSize: 14, textDecoration: 'none' }}>LinkedIn ↗</a>
@@ -428,6 +665,12 @@
       const scrambled = useScramble('Digital designer', 600);
       const reducedMotion = usePrefersReducedMotion();
       const portraitRef = React.useRef(null);
+      const heroPrimaryEnter = e => { e.target.style.transform = 'translateY(-2px)'; };
+      const heroPrimaryLeave = e => { e.target.style.transform = 'translateY(0)'; };
+      const heroPrimaryTouchRef = useTouchHoverStyle(heroPrimaryEnter, heroPrimaryLeave);
+      const heroCvEnter = e => { e.currentTarget.style.background = tweaks.dark; e.currentTarget.style.color = tweaks.bg; e.currentTarget.style.borderColor = tweaks.dark; e.currentTarget.style.transform = 'translateY(-2px)'; };
+      const heroCvLeave = e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tweaks.dark; e.currentTarget.style.borderColor = tweaks.dark+'40'; e.currentTarget.style.transform = 'translateY(0)'; };
+      const heroCvTouchRef = useTouchHoverStyle(heroCvEnter, heroCvLeave);
 
       // Parallax on the portrait, driven directly on the DOM node (no React
       // re-render per scroll event) and batched to one update per animation
@@ -527,25 +770,25 @@
             </p>
 
             <div className="reveal reveal-delay-3" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <a href="#prosjekter" style={{
+              <a href="#prosjekter" ref={heroPrimaryTouchRef} style={{
                 background: tweaks.accent, color: tweaks.bg,
                 padding: '14px 32px', borderRadius: 100, textDecoration: 'none',
                 fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
                 transition: 'transform 0.2s', display: 'inline-block'
               }}
-              onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; }}
+              onMouseEnter={heroPrimaryEnter}
+              onMouseLeave={heroPrimaryLeave}
               >Prosjekter ↓</a>
 
-              <a href="uploads/Oline_Kleiven_CV.pdf" download="Oline_Kleiven_CV.pdf" style={{
+              <a href="uploads/Oline_Kleiven_CV.pdf" download="Oline_Kleiven_CV.pdf" ref={heroCvTouchRef} style={{
                 color: tweaks.dark, background: 'transparent',
                 padding: '14px 32px', borderRadius: 100,
                 textDecoration: 'none', fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
                 border: `1.5px solid ${tweaks.dark}40`, display: 'inline-block',
                 transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s, transform 0.2s'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = tweaks.dark; e.currentTarget.style.color = tweaks.bg; e.currentTarget.style.borderColor = tweaks.dark; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tweaks.dark; e.currentTarget.style.borderColor = tweaks.dark+'40'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              onMouseEnter={heroCvEnter}
+              onMouseLeave={heroCvLeave}
               >↓ Last ned CV</a>
             </div>
           </div>
@@ -623,9 +866,12 @@
                   { school: 'Møre Folkehøgskule', degree: 'Ekstremsport', period: '2021 – 2022', url: 'https://more.fhs.no' },
                 ].map((e, i) => {
                   const [hov, setHov] = React.useState(false);
+                  const [eduTouchRef, eduTouchHover] = useTouchHover();
+                  React.useEffect(() => { setHov(eduTouchHover); }, [eduTouchHover]);
                   const open = () => { if (e.url) window.open(e.url, '_blank', 'noopener'); };
                   return (
                   <div key={i}
+                    ref={eduTouchRef}
                     role={e.url ? 'link' : undefined}
                     tabIndex={e.url ? 0 : undefined}
                     aria-label={e.url ? `Opne ${e.school} — ${e.degree}` : undefined}
@@ -745,6 +991,8 @@
 
     function Book({ project, index, tweaks, mobile, onOpen }) {
       const [hov, setHov] = useState(false);
+      const [bookTouchRef, bookTouchHover] = useTouchHover();
+      useEffect(() => { setHov(bookTouchHover); }, [bookTouchHover]);
       const scale = mobile ? 0.8 : 1;
       const w = Math.round(BOOK_WIDTHS[index % BOOK_WIDTHS.length] * scale);
       const h = Math.round(BOOK_HEIGHTS[index % BOOK_HEIGHTS.length] * scale);
@@ -752,6 +1000,7 @@
       const pageW = Math.max(5, Math.round(w * 0.09));
       return (
         <button
+          ref={bookTouchRef}
           onClick={() => onOpen(project)}
           onMouseEnter={() => setHov(true)}
           onMouseLeave={() => setHov(false)}
@@ -796,6 +1045,9 @@
 
     function BookModal({ project, onClose, tweaks, mobile }) {
       const [shown, setShown] = useState(false);
+      const closeBtnEnter = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.16)'; };
+      const closeBtnLeave = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.08)'; };
+      const closeBtnTouchRef = useTouchHoverStyle(closeBtnEnter, closeBtnLeave);
       useEffect(() => {
         const raf = requestAnimationFrame(() => setShown(true));
         const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -829,6 +1081,7 @@
             }}
           >
             <button
+              ref={closeBtnTouchRef}
               className="toolbox-close"
               onClick={onClose} aria-label="Lukk"
               style={{
@@ -836,8 +1089,8 @@
                 border: 'none', background: 'rgba(42,38,32,0.08)', color: '#2A2620',
                 fontSize: 15, cursor: 'pointer', zIndex: 2, transition: 'background 0.2s ease'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(42,38,32,0.16)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(42,38,32,0.08)'; }}
+              onMouseEnter={closeBtnEnter}
+              onMouseLeave={closeBtnLeave}
             >✕</button>
 
             <div style={{
@@ -1063,10 +1316,13 @@
 
     function ExperienceRow({ exp, tweaks, index, bp }) {
       const [hovered, setHovered] = useState(false);
+      const [expTouchRef, expTouchHover] = useTouchHover();
+      useEffect(() => { setHovered(expTouchHover); }, [expTouchHover]);
       const open = () => { if (exp.url) window.open(exp.url, '_blank', 'noopener'); };
       if (bp.isTablet) {
         return (
           <div
+            ref={expTouchRef}
             className={`reveal reveal-delay-${index + 1}`}
             role={exp.url ? 'link' : undefined}
             tabIndex={exp.url ? 0 : undefined}
@@ -1110,6 +1366,7 @@
       }
       return (
         <div
+          ref={expTouchRef}
           className={`reveal reveal-delay-${index + 1}`}
           role={exp.url ? 'link' : undefined}
           tabIndex={exp.url ? 0 : undefined}
@@ -1266,9 +1523,38 @@
       );
     }
 
+    // Duration of the key-unlock sequence (latch turn + slide) — kept in one
+    // place so the CSS animation lengths (toolboxLatchTurn/toolboxLatchSlide,
+    // both 0.42s) and the JS delay before actually swapping to the open
+    // stage always stay in sync.
+    const TOOLBOX_UNLOCK_MS = 420;
+
     function ToolboxClosed({ onOpen, mobile, reducedMotion, tweaks }) {
       const [hov, setHov] = useState(false);
+      const [unlocking, setUnlocking] = useState(false);
+      const [boxTouchRef, boxTouchHover] = useTouchHover();
+      const latchRef = useRef(null);
+      useEffect(() => { setHov(boxTouchHover); }, [boxTouchHover]);
       const boxH = mobile ? 150 : 260;
+
+      // Works identically whether triggered by a click or by keyboard
+      // (Enter/Space) activation of the button — getBoundingClientRect() on
+      // the latch reads its current on-screen position either way, so the
+      // event itself is never needed as a position source.
+      const handleOpen = () => {
+        if (unlocking) return; // already mid-sequence — ignore repeat activation
+        if (reducedMotion) { onOpen(); return; }
+        if (latchRef.current) {
+          const r = latchRef.current.getBoundingClientRect();
+          setToolboxUnlockGlobal({ active: true, x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        }
+        setUnlocking(true);
+        setTimeout(() => {
+          setToolboxUnlockGlobal({ active: false, x: 0, y: 0 });
+          onOpen();
+        }, TOOLBOX_UNLOCK_MS);
+      };
+
       return (
         <div style={{ width: '100%', maxWidth: mobile ? 400 : 900, margin: '0 auto', textAlign: 'center' }}>
           <div
@@ -1277,8 +1563,9 @@
           >
             <ToolboxHandleArch width={mobile ? 120 : 230} height={mobile ? 44 : 74} borderWidth={mobile ? 8 : 14} color="#3A2A18" />
             <button
-              className="toolbox-box"
-              onClick={onOpen}
+              ref={boxTouchRef}
+              className={`toolbox-box${unlocking ? ' toolbox-unlocking' : ''}`}
+              onClick={handleOpen}
               onMouseEnter={() => setHov(true)}
               onMouseLeave={() => setHov(false)}
               aria-label="Opne verktøykassa — sjå verktøya og metodane mine"
@@ -1292,13 +1579,13 @@
               }}
             >
               <div style={{ position: 'absolute', top: mobile ? 46 : 82, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.22)' }} />
-              <div style={{
+              <div ref={latchRef} className="toolbox-latch" style={{
                 position: 'absolute', top: mobile ? 30 : 56, left: '50%', transform: 'translateX(-50%)',
                 width: mobile ? 40 : 60, height: mobile ? 40 : 60, borderRadius: 9,
                 background: 'linear-gradient(180deg,#DAD4C6,#A9A296)',
                 boxShadow: '0 4px 8px rgba(0,0,0,0.32)'
               }}>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', width: 11, height: 11, borderRadius: '50%', background: '#5A5449', transform: 'translate(-50%,-50%)' }} />
+                <div className="toolbox-latch-hole" style={{ position: 'absolute', top: '50%', left: '50%', width: 11, height: 11, borderRadius: '50%', background: '#5A5449', transform: 'translate(-50%,-50%)' }} />
               </div>
               {[
                 { top: 14, left: 14 }, { top: 14, right: 14 },
@@ -1316,6 +1603,8 @@
     }
 
     function ToolChip({ tool, pos, isHovered, dim, onEnter, onLeave, onPick, mobile }) {
+      const [toolTouchRef, toolTouchHover] = useTouchHover();
+      useEffect(() => { if (toolTouchHover) onEnter(); else onLeave(); }, [toolTouchHover]);
       const weight = pos.scale || 1;
       const size = (mobile ? 38 : 52) * weight;
       // Bigger/"heavier" tools lift less and respond a touch slower; smaller
@@ -1333,6 +1622,7 @@
       const hitSize = size * 1.1 + liftMagnitude * 2 + 6;
       return (
         <button
+          ref={toolTouchRef}
           className="toolbox-tool"
           onMouseEnter={onEnter}
           onMouseLeave={onLeave}
@@ -1434,6 +1724,9 @@
     }
 
     function ToolDetail({ tool, onClose, tweaks, mobile }) {
+      const closeBtnEnter = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.16)'; };
+      const closeBtnLeave = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.08)'; };
+      const closeBtnTouchRef = useTouchHoverStyle(closeBtnEnter, closeBtnLeave);
       return (
         <div className="toolbox-panel" style={{
           position: 'fixed', inset: 0, zIndex: 200,
@@ -1447,6 +1740,7 @@
             boxShadow: '0 40px 80px rgba(0,0,0,0.4)'
           }}>
             <button
+              ref={closeBtnTouchRef}
               className="toolbox-close"
               onClick={onClose} aria-label="Lukk"
               style={{
@@ -1454,8 +1748,8 @@
                 border: 'none', background: 'rgba(42,38,32,0.08)', color: '#2A2620',
                 fontSize: 15, cursor: 'pointer', zIndex: 2, transition: 'background 0.2s ease'
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(42,38,32,0.16)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(42,38,32,0.08)'; }}
+              onMouseEnter={closeBtnEnter}
+              onMouseLeave={closeBtnLeave}
             >✕</button>
             <div style={{ padding: mobile ? '32px 24px' : '44px 48px', flex: '1 1 auto', minHeight: 0, overflow: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
@@ -1507,11 +1801,22 @@
         else if (stage === 'open') { setStage('closed'); setHoveredId(null); }
       };
       const pickTool = (tool) => { setSelected(tool); setStage('detail'); };
+      const closeBtnEnter = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.16)'; };
+      const closeBtnLeave = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.08)'; };
+      const closeBtnTouchRef = useTouchHoverStyle(closeBtnEnter, closeBtnLeave);
 
       useEffect(() => {
         const onKey = (e) => { if (e.key === 'Escape') stepBack(); };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
+      }, [stage]);
+
+      // Broadcast to the custom cursor whether the toolbox is open, so it
+      // can drop the key-cursor hint the instant the box is unlocked. The
+      // "unlocking" mid-animation moment (see ToolboxClosed) still counts as
+      // closed here — the key should stay until the box has actually opened.
+      useEffect(() => {
+        setToolboxOpenGlobal(stage !== 'closed');
       }, [stage]);
 
       return (
@@ -1540,6 +1845,7 @@
                 <>
                   {stage === 'open' && (
                     <button
+                      ref={closeBtnTouchRef}
                       className="toolbox-close"
                       onClick={stepBack}
                       aria-label="Lukk verktøykassa"
@@ -1550,8 +1856,8 @@
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'background 0.2s ease'
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(42,38,32,0.16)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(42,38,32,0.08)'; }}
+                      onMouseEnter={closeBtnEnter}
+                      onMouseLeave={closeBtnLeave}
                     >✕</button>
                   )}
                   <ToolboxOpen tools={TOOLS} layout={TOOL_LAYOUT} hoveredId={hoveredId} setHoveredId={setHoveredId} onPick={pickTool} mobile={mobile} reducedMotion={reducedMotion} />
@@ -1889,6 +2195,28 @@
         padding: mobile ? '14px 24px' : '16px 40px',
         width: mobile ? '100%' : 'auto',
       };
+      const emailEnter = e => {
+        e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.opacity = '0.9';
+        const plane = e.currentTarget.querySelector('.paper-plane');
+        const trail = e.currentTarget.querySelector('.paper-plane-trail');
+        const trailMask = e.currentTarget.querySelector('.paper-plane-trail-mask');
+        const ease = 'cubic-bezier(.45,.05,.35,1)';
+        const trailDelay = '0.15s';
+        if (plane) { plane.style.animation = 'none'; void plane.offsetWidth; plane.style.animation = `paperPlaneFly 3s ${ease} forwards`; }
+        if (trail) { trail.style.animation = 'none'; void trail.offsetWidth; trail.style.animation = `paperTrailFade 3s ${ease} ${trailDelay} forwards`; }
+        if (trailMask) { trailMask.style.animation = 'none'; void trailMask.offsetWidth; trailMask.style.animation = `paperTrailReveal 3s ${ease} ${trailDelay} forwards`; }
+      };
+      const emailLeave = e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.opacity = '1'; };
+      const emailTouchRef = useTouchHoverStyle(emailEnter, emailLeave);
+      const cvEnter = e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.bg; e.currentTarget.style.background = tweaks.bg; e.currentTarget.style.color = tweaks.dark; };
+      const cvLeave = e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tweaks.bg; };
+      const cvTouchRef = useTouchHoverStyle(cvEnter, cvLeave);
+      const linkedinEnter = e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; };
+      const linkedinLeave = e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; };
+      const linkedinTouchRef = useTouchHoverStyle(linkedinEnter, linkedinLeave);
+      const githubEnter = e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; };
+      const githubLeave = e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; };
+      const githubTouchRef = useTouchHoverStyle(githubEnter, githubLeave);
       return (
         <section id="kontakt" style={{ padding: mobile ? '72px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', textAlign: 'center' }}>
@@ -1906,25 +2234,15 @@
 
             <div className="reveal reveal-delay-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
               <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: 'center', gap: mobile ? 12 : 16 }}>
-              <a href="mailto:olinefk@outlook.com" style={{
+              <a href="mailto:olinefk@outlook.com" ref={emailTouchRef} style={{
                 position: 'relative', overflow: 'visible',
                 background: tweaks.accent, color: '#fff', padding: mobile ? '15px 32px' : '16px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 15, fontWeight: 500,
                 whiteSpace: 'nowrap',
                 transition: 'transform 0.2s, opacity 0.2s', display: 'inline-block', width: mobile ? '100%' : 'auto', textAlign: 'center'
               }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.opacity = '0.9';
-                  const plane = e.currentTarget.querySelector('.paper-plane');
-                  const trail = e.currentTarget.querySelector('.paper-plane-trail');
-                  const trailMask = e.currentTarget.querySelector('.paper-plane-trail-mask');
-                  const ease = 'cubic-bezier(.45,.05,.35,1)';
-                  const trailDelay = '0.15s';
-                  if (plane) { plane.style.animation = 'none'; void plane.offsetWidth; plane.style.animation = `paperPlaneFly 3s ${ease} forwards`; }
-                  if (trail) { trail.style.animation = 'none'; void trail.offsetWidth; trail.style.animation = `paperTrailFade 3s ${ease} ${trailDelay} forwards`; }
-                  if (trailMask) { trailMask.style.animation = 'none'; void trailMask.offsetWidth; trailMask.style.animation = `paperTrailReveal 3s ${ease} ${trailDelay} forwards`; }
-                }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.opacity = '1'; }}
+                onMouseEnter={emailEnter}
+                onMouseLeave={emailLeave}
               >
                 <span>✉ Send e-post</span>
                 {!mobile && (
@@ -1960,32 +2278,32 @@
                 )}
               </a>
 
-              <a href="uploads/Oline_Kleiven_CV.pdf" download="Oline_Kleiven_CV.pdf" style={{
+              <a href="uploads/Oline_Kleiven_CV.pdf" download="Oline_Kleiven_CV.pdf" ref={cvTouchRef} style={{
                 background: 'transparent', color: tweaks.bg, padding: mobile ? '13px 32px' : '14px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 14, fontWeight: 400,
                 whiteSpace: 'nowrap',
                 border: `1.5px solid ${tweaks.bg}30`, transition: 'transform 0.2s, border-color 0.2s, background 0.2s, color 0.2s',
                 display: 'inline-block', width: mobile ? '100%' : 'auto', textAlign: 'center'
               }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = tweaks.bg; e.currentTarget.style.background = tweaks.bg; e.currentTarget.style.color = tweaks.dark; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = tweaks.bg+'30'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tweaks.bg; }}
+                onMouseEnter={cvEnter}
+                onMouseLeave={cvLeave}
               >↓ Last ned CV</a>
               </div>
 
               <div style={{ display: 'flex', gap: 32, marginTop: mobile ? 8 : 12 }}>
-                <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" style={{
+                <a href="https://www.linkedin.com/in/oline-kleiven-99852b264/" target="_blank" rel="noopener" ref={linkedinTouchRef} style={{
                   color: tweaks.bg, textDecoration: 'none', fontSize: 14, fontWeight: 400,
                   opacity: 0.65, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={linkedinEnter}
+                  onMouseLeave={linkedinLeave}
                 >LinkedIn ↗</a>
-                <a href="https://github.com/olinekleiven" target="_blank" rel="noopener" style={{
+                <a href="https://github.com/olinekleiven" target="_blank" rel="noopener" ref={githubTouchRef} style={{
                   color: tweaks.bg, textDecoration: 'none', fontSize: 14, fontWeight: 400,
                   opacity: 0.65, transition: 'opacity 0.2s, transform 0.2s', letterSpacing: '0.02em'
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={githubEnter}
+                  onMouseLeave={githubLeave}
                 >GitHub ↗</a>
               </div>
             </div>
