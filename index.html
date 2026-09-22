@@ -119,6 +119,17 @@
       .toolbox-box, .toolbox-tool, .toolbox-lid, .toolbox-panel, .toolbox-open-reveal { transition-duration: 0.01ms !important; }
       .toolbox-tooltip { animation-duration: 0.01ms !important; }
     }
+    /* The diploma link is only shown via onMouseEnter/onMouseLeave hover state,
+       which never fires on touch devices — so it would otherwise be permanently
+       invisible and unclickable there. On true touch devices (no fine pointer
+       to hover with) always show it, dimmed, instead of relying on hover. */
+    @media (hover: none), (pointer: coarse) {
+      .diploma-link {
+        opacity: 0.75 !important;
+        pointer-events: auto !important;
+        color: var(--accent) !important;
+      }
+    }
   </style>
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 80 56" xmlns="http://www.w3.org/2000/svg">
@@ -644,6 +655,7 @@
                       <span style={{ fontSize: 11, marginTop: 3, color: hov ? tweaks.dark : tweaks.bg, opacity: hov ? 0.5 : 0.4, transition: 'all 0.3s' }}>{e.period}</span>
                       {e.diplomaUrl && (
                         <a
+                          className="diploma-link"
                           href={e.diplomaUrl} target="_blank" rel="noopener"
                           onClick={ev => ev.stopPropagation()}
                           style={{
@@ -1629,11 +1641,16 @@
       },
     ];
 
-    function BubbleItem({ b, tweaks, scale, mouseRef }) {
+    function BubbleItem({ b, tweaks, scale, mouseRef, left, top, sz }) {
       const [hov, setHov] = useState(false);
       const [pos, setPos] = useState({ x: 0, y: 0 });
+      const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
       const hovRef = useRef(false);
       const elRef = useRef(null);
+      const reducedMotion = usePrefersReducedMotion();
+      const suppressClickRef = useRef(false);
+      const touchRef = useRef({ id: null, startX: 0, startY: 0, startOffX: 0, startOffY: 0, dragging: false });
+      const releaseFrameRef = useRef(null);
       useEffect(() => { hovRef.current = hov; }, [hov]);
 
       useEffect(() => {
@@ -1670,18 +1687,93 @@
         return () => cancelAnimationFrame(frame);
       }, []);
 
-      const sz = Math.round(b.size * scale);
+      // Touch "shove": lets fingers drag a bubble aside on devices that have
+      // no mouse-driven avoidance. Only touchmove needs a non-passive native
+      // listener so preventDefault can stop page scroll once a real drag
+      // (not a tap) is detected — a short tap still falls through to the
+      // normal onClick below and opens the link as before.
+      useEffect(() => {
+        const el = elRef.current;
+        if (!el) return;
+        const handleTouchMove = (ev) => {
+          const st = touchRef.current;
+          if (st.id == null) return;
+          const touch = Array.from(ev.touches).find((tt) => tt.identifier === st.id);
+          if (!touch) return;
+          const dx = touch.clientX - st.startX;
+          const dy = touch.clientY - st.startY;
+          if (!st.dragging && Math.hypot(dx, dy) > 8) {
+            st.dragging = true;
+            setHov(false);
+          }
+          if (st.dragging) {
+            ev.preventDefault();
+            const maxReach = 80;
+            setDragOffset({
+              x: Math.max(-maxReach, Math.min(maxReach, st.startOffX + dx)),
+              y: Math.max(-maxReach, Math.min(maxReach, st.startOffY + dy)),
+            });
+          }
+        };
+        el.addEventListener('touchmove', handleTouchMove, { passive: false });
+        return () => el.removeEventListener('touchmove', handleTouchMove);
+      }, []);
+
+      useEffect(() => () => cancelAnimationFrame(releaseFrameRef.current), []);
+
+      const springBack = () => {
+        cancelAnimationFrame(releaseFrameRef.current);
+        if (reducedMotion) { setDragOffset({ x: 0, y: 0 }); return; }
+        const step = () => {
+          setDragOffset((prev) => {
+            const nx = prev.x * 0.82;
+            const ny = prev.y * 0.82;
+            if (Math.abs(nx) < 0.4 && Math.abs(ny) < 0.4) return { x: 0, y: 0 };
+            releaseFrameRef.current = requestAnimationFrame(step);
+            return { x: nx, y: ny };
+          });
+        };
+        releaseFrameRef.current = requestAnimationFrame(step);
+      };
+
+      const handleTouchStart = (ev) => {
+        if (ev.touches.length !== 1) return;
+        const touch = ev.touches[0];
+        cancelAnimationFrame(releaseFrameRef.current);
+        touchRef.current = {
+          id: touch.identifier,
+          startX: touch.clientX,
+          startY: touch.clientY,
+          startOffX: dragOffset.x,
+          startOffY: dragOffset.y,
+          dragging: false,
+        };
+      };
+
+      const endTouch = () => {
+        const st = touchRef.current;
+        if (st.id != null && st.dragging) {
+          suppressClickRef.current = true;
+          springBack();
+        }
+        touchRef.current = { id: null, startX: 0, startY: 0, startOffX: 0, startOffY: 0, dragging: false };
+      };
+
       return (
         <div
           ref={elRef}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={endTouch}
+          onTouchCancel={endTouch}
           style={{
             position: 'absolute',
-            left: `${b.x}%`,
-            top: `${b.y}%`,
+            left,
+            top,
             width: sz,
             height: sz,
-            transform: `translate(${pos.x}px, ${pos.y}px)`,
+            transform: `translate(${pos.x + dragOffset.x}px, ${pos.y + dragOffset.y}px)`,
             zIndex: hov ? 2 : 1,
+            touchAction: 'none',
           }}
         >
           <div
@@ -1690,7 +1782,10 @@
             aria-label={b.url ? `Opne ${b.org} på Instagram` : undefined}
             onMouseEnter={() => setHov(true)}
             onMouseLeave={() => setHov(false)}
-            onClick={() => { if (b.url) window.open(b.url, '_blank', 'noopener'); }}
+            onClick={() => {
+              if (suppressClickRef.current) { suppressClickRef.current = false; return; }
+              if (b.url) window.open(b.url, '_blank', 'noopener');
+            }}
             onKeyDown={(ev) => { if (b.url && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); window.open(b.url, '_blank', 'noopener'); } }}
             style={{
               width: '100%', height: '100%', borderRadius: '50%',
@@ -1718,21 +1813,68 @@
 
     function VolunteerBubbles({ tweaks, bp }) {
       const w = bp ? bp.width : 1100;
-      const scale = w <= 400 ? 1 : Math.min(1.15, 1 + (w - 400) / 2400);
-      // Container height covers the lowest bubble's bottom edge, whatever the scale.
-      const containerH = Math.round(Math.max(
-        280 * scale,
-        ...bubbleData.map(b => (b.y / 100) * 280 * scale + b.size * scale)
-      ) + 24);
+      const mobile = bp && bp.isMobile;
+      // Below 400px the desktop formula used to stay flat at 1 — the vast
+      // majority of phones (375–430px) got zero size relief. Ease down
+      // continuously instead, steepening as the screen narrows, with a
+      // 0.5 floor so text never becomes illegible. Matches the desktop
+      // branch exactly at w=400 so there's no visible seam.
+      const shrink = Math.min(1, Math.max(0, (400 - w) / 80));
+      const scale = w <= 400
+        ? 1 - 0.5 * Math.pow(shrink, 0.3)
+        : Math.min(1.15, 1 + (w - 400) / 2400);
       const mouseRef = useRef({ x: -9999, y: -9999 });
       useEffect(() => {
         const move = (e) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
         window.addEventListener('mousemove', move);
         return () => window.removeEventListener('mousemove', move);
       }, []);
+
+      if (mobile) {
+        // The desktop x/y canvas was designed for a ~1100px-wide stage and
+        // gets cramped on a ~300px-wide phone. Stack the bubbles instead,
+        // in reading order, with a gentle left/right stagger so it still
+        // reads as "floating" rather than a strict grid — but each bubble
+        // gets its own vertical band so nothing overlaps or crowds.
+        const containerWidthPx = Math.max(200, w - 48);
+        const gap = 26;
+        const xPattern = [0.04, 0.32, 0.02, 0.28, 0.08];
+        let cursorTop = 6;
+        const laidOut = bubbleData.map((b, i) => {
+          const sz = Math.round(b.size * scale);
+          const maxLeftFrac = Math.max(0, (containerWidthPx - sz) / containerWidthPx);
+          const leftFrac = Math.min(xPattern[i % xPattern.length], maxLeftFrac);
+          const left = Math.round(leftFrac * containerWidthPx);
+          const top = cursorTop;
+          cursorTop += sz + gap;
+          return { b, sz, left, top };
+        });
+        const containerH = Math.round(cursorTop - gap + 20);
+        return (
+          <div className="reveal" style={{ position: 'relative', height: containerH, width: '100%' }}>
+            {laidOut.map(({ b, sz, left, top }, i) => (
+              <BubbleItem
+                key={i} b={b} tweaks={tweaks} scale={scale} mouseRef={mouseRef}
+                left={`${left}px`} top={`${top}px`} sz={sz}
+              />
+            ))}
+          </div>
+        );
+      }
+
+      // Container height covers the lowest bubble's bottom edge, whatever the scale.
+      const containerH = Math.round(Math.max(
+        280 * scale,
+        ...bubbleData.map(b => (b.y / 100) * 280 * scale + b.size * scale)
+      ) + 24);
       return (
         <div className="reveal" style={{ position: 'relative', height: containerH, width: '100%' }}>
-          {bubbleData.map((b, i) => <BubbleItem key={i} b={b} tweaks={tweaks} scale={scale} mouseRef={mouseRef} />)}
+          {bubbleData.map((b, i) => (
+            <BubbleItem
+              key={i} b={b} tweaks={tweaks} scale={scale} mouseRef={mouseRef}
+              left={`${b.x}%`} top={`${b.y}%`} sz={Math.round(b.size * scale)}
+            />
+          ))}
         </div>
       );
     }
