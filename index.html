@@ -558,9 +558,10 @@
               display: 'grid', gridTemplateColumns: bp.isMobile ? '1fr' : '1fr 1fr',
               gap: bp.isMobile ? 24 : 80, alignItems: 'center', marginBottom: 24
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 24 }}>
                 <div style={{
-                  width: bp.isMobile ? 160 : 168, height: bp.isMobile ? 160 : 168,
+                  width: bp.isMobile ? 'clamp(160px, 48vw, 240px)' : 280,
+                  height: bp.isMobile ? 'clamp(160px, 48vw, 240px)' : 280,
                   borderRadius: '42% 58% 63% 37% / 45% 39% 61% 55%',
                   overflow: 'hidden', border: `3px solid ${tweaks.accent}60`,
                   transform: 'rotate(-4deg)', flexShrink: 0
@@ -601,7 +602,7 @@
               </div>
 
               {/* Education */}
-              <div className="reveal reveal-delay-1">
+              <div className="reveal reveal-delay-1" style={{ marginTop: bp.isMobile ? 0 : -135 }}>
                 {bp.isMobile && (
                   <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600, marginBottom: 20 }}>Utdanning</p>
                 )}
@@ -1758,7 +1759,7 @@
               <span style={{ fontStyle: 'italic', color: tweaks.accent }}>kompetanse?</span>
             </h2>
             <p className="reveal reveal-delay-2" style={{ fontSize: mobile ? 15 : 18, opacity: 0.6, lineHeight: 1.7, marginBottom: mobile ? 40 : 64, fontWeight: 300 }}>
-              Alltid åpen for samarbeid, jobb eller internship innanfor design og utvikling.
+              Åpen for samarbeid, jobb eller internship innanfor design og utvikling.
             </p>
 
             <div className="reveal reveal-delay-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
