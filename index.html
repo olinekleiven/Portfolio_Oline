@@ -165,6 +165,11 @@
     .toolbox-close:focus-visible {
       outline: 3px solid #2A2620; outline-offset: 3px;
     }
+    /* Carousel arrows sit on a dark photo-overlay gradient, so a white
+       outline reads clearly there. */
+    .carousel-arrow:focus-visible {
+      outline: 2px solid #fff; outline-offset: 2px;
+    }
     @keyframes toolboxTooltipIn {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
@@ -499,8 +504,8 @@
     }
 
     // Nav
-    const NAV_SECTIONS = ['hero', 'om', 'prosjekter', 'erfaring', 'skills', 'verv', 'kontakt'];
-    const NAV_DARK_SECTIONS = new Set(['om', 'prosjekter', 'kontakt']);
+    const NAV_SECTIONS = ['hero', 'om-meg', 'utdanning', 'prosjekter', 'erfaring', 'skills', 'verv', 'kontakt'];
+    const NAV_DARK_SECTIONS = new Set(['utdanning', 'prosjekter', 'kontakt']);
     function Nav({ tweaks, bp }) {
       const [scrolled, setScrolled] = useState(false);
       const [activeSection, setActiveSection] = useState('hero');
@@ -509,7 +514,8 @@
       const toTopLeave = e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.transform = 'translateY(0)'; };
       const toTopTouchRef = useTouchHoverStyle(toTopEnter, toTopLeave);
       const navItems = [
-        { id: 'om', label: 'Om' },
+        { id: 'om-meg', label: 'Om meg' },
+        { id: 'utdanning', label: 'Utdanning' },
         { id: 'erfaring', label: 'Erfaring' },
         { id: 'prosjekter', label: 'Prosjekter' },
         { id: 'skills', label: 'Skills' },
@@ -536,7 +542,7 @@
       useEffect(() => { if (!bp.isMobile) setMenuOpen(false); }, [bp.isMobile]);
       const isDark = NAV_DARK_SECTIONS.has(activeSection);
       const sectionBg = {
-        hero: tweaks.bg, om: tweaks.dark, prosjekter: tweaks.dark,
+        hero: tweaks.bg, utdanning: tweaks.dark, prosjekter: tweaks.dark,
         erfaring: tweaks.bg, skills: tweaks.bg, verv: tweaks.bg, kontakt: tweaks.dark
       };
       const textColor = isDark ? tweaks.bg : tweaks.dark;
@@ -668,7 +674,7 @@
 
     // Hero
     function Hero({ tweaks, bp }) {
-      const scrambled = useScramble('Digital designer', 600);
+      const scrambled = useScramble('Produktdesigner', 600);
       const reducedMotion = usePrefersReducedMotion();
       const portraitRef = React.useRef(null);
       const heroPrimaryEnter = e => { e.target.style.transform = 'translateY(-2px)'; };
@@ -802,11 +808,226 @@
       );
     }
 
-    // About
-    function About({ tweaks, bp }) {
+    // About me — plain list, one item per line. Hover/focus/tap reveals a
+    // short detail line beneath — no colour, no icons, kept deliberately
+    // quiet next to the rest of the site.
+    const HOBBIES = [
+      { label: 'Fotball', detail: 'Leiar i BSI Damefotball — har spelt sidan eg var liten.' },
+      { label: 'Surfing', detail: 'Fikk denne interessen etter folkehøgskulen.' },
+      { label: 'Bading', detail: 'Helst når vatnet er litt kaldt, så lenge sola skin.' },
+      { label: 'Ski', detail: 'Glad i å stå på ski, anten det er offpiste, randonee eller langrenn.' },
+      { label: 'Musikk', detail: 'Glad i Bruce Springsteen og Odd Nordstoga.', spotifyUrl: null },
+      { label: 'Venner', detail: 'Dei som gjer kvardagen betre.' },
+      { label: 'Motbakkeløp', detail: 'Liker å løpe, særlig oppover.' },
+      { label: 'Strikking', detail: 'Nettopp lært meg å strikke, det er så vibe.' },
+    ];
+
+    // Every photo Oline supplied, one card per image — the carousel below
+    // browses the full set, not just a curated few.
+    const GALLERY = [
+      { img: 'uploads/Oline.jpg', label: null },
+      { img: 'uploads/hobby-fotball.jpg', label: 'Fotball' },
+      { img: 'uploads/hobby-fotball-2.jpg', label: 'Fotball' },
+      { img: 'uploads/hobby-fotball-3.jpg', label: 'Fotball' },
+      { img: 'uploads/hobby-fotball-4.jpg', label: 'Fotball' },
+      { img: 'uploads/hobby-fotball-5.jpg', label: 'Fotball' },
+      { img: 'uploads/hobby-fotball-6.jpg', label: 'Fotball' },
+      { img: 'uploads/hobby-fotball-7.jpg', label: 'Fotball' },
+      { img: 'uploads/hobby-surfing.jpg', label: 'Surfing' },
+      { img: 'uploads/hobby-bading.jpg', label: 'Bading' },
+      { img: 'uploads/hobby-ski.jpg', label: 'Ski' },
+      { img: 'uploads/hobby-ski-2.jpg', label: 'Ski' },
+      { img: 'uploads/hobby-ski-3.jpg', label: 'Ski' },
+      { img: 'uploads/hobby-ski-4.jpg', label: 'Ski' },
+      { img: 'uploads/hobby-motbakkelop.jpg', label: 'Motbakkeløp' },
+      { img: 'uploads/hobby-motbakkelop-2.jpg', label: 'Motbakkeløp' },
+      { img: 'uploads/hobby-venner.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-venner-2.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-venner-3.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-venner-4.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-venner-5.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-venner-6.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-venner-7.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-venner-8.jpg', label: 'Venner' },
+      { img: 'uploads/hobby-familie.jpg', label: 'Familie' },
+      { img: 'uploads/hobby-familie-2.jpg', label: 'Familie' },
+      { img: 'uploads/hobby-natur.jpg', label: 'Fjellet' },
+      { img: 'uploads/hobby-fisking.jpg', label: 'Fisking' },
+    ];
+
+    function HobbyRow({ h, tweaks }) {
+      const [hov, setHov] = useState(false);
+      const [touchRef, touchHover] = useTouchHover();
+      useEffect(() => { setHov(touchHover); }, [touchHover]);
+      return (
+        <div
+          ref={touchRef}
+          tabIndex={0}
+          onMouseEnter={() => setHov(true)}
+          onMouseLeave={() => setHov(false)}
+          onFocus={() => setHov(true)}
+          onBlur={() => setHov(false)}
+          style={{ padding: '14px 0', borderBottom: `1px solid ${tweaks.dark}12` }}
+        >
+          <div style={{ fontSize: 17, fontWeight: 500, color: tweaks.dark }}>{h.label}</div>
+          <div style={{
+            fontSize: 13, color: tweaks.dark, opacity: hov ? 0.55 : 0,
+            maxHeight: hov ? 30 : 0, overflow: 'hidden', marginTop: hov ? 6 : 0,
+            transition: 'opacity 0.25s ease, max-height 0.25s ease, margin-top 0.25s ease'
+          }}>{h.detail}</div>
+        </div>
+      );
+    }
+
+    // A tiny hover/press/touch-aware arrow button, living inside the bottom
+    // overlay bar. Mirrors the hov+touchHover pattern used by HobbyRow.
+    function CarouselArrow({ dir, onGo, reducedMotion, children, label }) {
+      const [hov, setHov] = useState(false);
+      const [pressed, setPressed] = useState(false);
+      const [touchRef, touchHover] = useTouchHover();
+      useEffect(() => { setHov(touchHover); }, [touchHover]);
+      const scale = pressed ? 0.86 : hov ? 1.1 : 1;
+      return (
+        <button
+          ref={touchRef}
+          className="carousel-arrow"
+          onClick={() => onGo(dir)}
+          aria-label={label}
+          onMouseEnter={() => setHov(true)}
+          onMouseLeave={() => { setHov(false); setPressed(false); }}
+          onMouseDown={() => setPressed(true)}
+          onMouseUp={() => setPressed(false)}
+          onTouchStart={() => setPressed(true)}
+          onTouchEnd={() => setPressed(false)}
+          style={{
+            width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: hov || pressed ? 'rgba(255,255,255,0.32)' : 'rgba(255,255,255,0.18)',
+            color: '#fff', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: `scale(${scale})`,
+            transition: reducedMotion ? 'none' : 'transform 0.15s cubic-bezier(.16,1,.3,1), background 0.2s ease'
+          }}
+        >{children}</button>
+      );
+    }
+
+    // Left-side portrait, now a small photo browser — starts on the plain
+    // portrait, then flips through every photo Oline supplied (GALLERY),
+    // one at a time, via the overlay controls baked into the image itself.
+    function PhotoCarousel({ tweaks, bp }) {
+      const reducedMotion = usePrefersReducedMotion();
+      const cards = GALLERY;
+      const idxRef = useRef(0);
+      const [dispIdx, setDispIdx] = useState(0);
+      const [visible, setVisible] = useState(true);
+
+      const go = dir => {
+        const next = (idxRef.current + dir + cards.length) % cards.length;
+        if (reducedMotion) { idxRef.current = next; setDispIdx(next); return; }
+        setVisible(false);
+        window.setTimeout(() => {
+          idxRef.current = next;
+          setDispIdx(next);
+          requestAnimationFrame(() => setVisible(true));
+        }, 110);
+      };
+
+      const card = cards[dispIdx];
+      const size = bp.isMobile ? 'clamp(220px, 70vw, 320px)' : 320;
+
+      return (
+        <div className="reveal" style={{ marginBottom: 24 }}>
+          <div
+            role="group"
+            aria-label={`Biletgalleri, bilete ${dispIdx + 1} av ${cards.length}`}
+            style={{
+              position: 'relative', width: size, height: size,
+              borderRadius: 20, overflow: 'hidden', border: `3px solid ${tweaks.accent}60`,
+              background: `${tweaks.dark}08`
+            }}
+          >
+            <img
+              src={card.img}
+              alt={card.label ? `Oline driv med ${card.label.toLowerCase()}` : 'Portrett av Oline'}
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top',
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'scale(1)' : 'scale(1.02)',
+                transition: reducedMotion ? 'none' : (visible
+                  ? 'opacity 0.22s cubic-bezier(.16,1,.3,1), transform 0.22s cubic-bezier(.16,1,.3,1)'
+                  : 'opacity 0.11s cubic-bezier(.4,0,1,1)')
+              }}
+            />
+            <div style={{
+              position: 'absolute', left: 0, right: 0, bottom: 0,
+              background: 'linear-gradient(transparent, rgba(20,15,10,0.6))',
+              padding: '30px 10px 10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8
+            }}>
+              <CarouselArrow dir={-1} onGo={go} reducedMotion={reducedMotion} label="Førre bilete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </CarouselArrow>
+              <span aria-live="polite" aria-atomic="true" style={{
+                fontSize: 12, color: '#fff', textAlign: 'center',
+                opacity: reducedMotion ? 1 : (visible ? 1 : 0), transition: reducedMotion ? 'none' : 'opacity 0.12s ease'
+              }}>
+                {card.label || 'Oline'} <span style={{ opacity: 0.65 }}>· {dispIdx + 1}/{cards.length}</span>
+              </span>
+              <CarouselArrow dir={1} onGo={go} reducedMotion={reducedMotion} label="Neste bilete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </CarouselArrow>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // About me — enkelt: bilete + kort intro til venstre, ei rolig,
+    // svart tekstliste til høgre. Ingen leik her, berre informasjon.
+    function AboutMe({ tweaks, bp }) {
       const sidePad = bp.isMobile ? '24px' : '48px';
       return (
-        <section id="om" style={{
+        <section id="om-meg" style={{
+          padding: `${80 * tweaks.spacing}px ${sidePad}`,
+          background: tweaks.bg, color: tweaks.dark,
+          minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
+        }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: bp.isMobile ? '1fr' : '1fr 1fr',
+              gap: bp.isMobile ? 32 : 80, alignItems: 'center'
+            }}>
+              <div>
+                <PhotoCarousel tweaks={tweaks} bp={bp} />
+                <h2 className="reveal reveal-delay-1" style={{
+                  fontFamily: tweaks.fontHeading,
+                  fontSize: bp.isMobile ? 'clamp(28px, 8vw, 38px)' : 'clamp(36px, 4vw, 52px)',
+                  lineHeight: 1.15, letterSpacing: '-0.02em', fontWeight: 400, marginBottom: 20
+                }}>
+                  Om <span style={{ fontStyle: 'italic', color: tweaks.accent }}>meg</span>
+                </h2>
+                <p className="reveal reveal-delay-1" style={{
+                  fontSize: bp.isMobile ? 14 : 16, lineHeight: 1.8, opacity: 0.65, fontWeight: 300, maxWidth: 420
+                }}>
+                  Eg er frå Leikanger i Sogn, med ei lidenskap for webdesign, UX og teknologi. Glad i å vere ute,
+                  og å vere med familie og venner. Vil tore å påstå at eg er ganske morosam også.
+                </p>
+              </div>
+
+              <div className="reveal reveal-delay-2">
+                {HOBBIES.map(h => <HobbyRow key={h.label} h={h} tweaks={tweaks} />)}
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Education
+    function Education({ tweaks, bp }) {
+      const sidePad = bp.isMobile ? '24px' : '48px';
+      return (
+        <section id="utdanning" style={{
           padding: `${80 * tweaks.spacing}px ${sidePad}`,
           background: tweaks.dark, color: tweaks.bg,
           minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
@@ -828,7 +1049,6 @@
                 }}>
                   <img src="uploads/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'rotate(4deg) scale(1.15)' }} />
                 </div>
-                <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 500 }}>Om meg</p>
               </div>
               {!bp.isMobile && (
                 <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: tweaks.accent, fontWeight: 600 }}>Utdanning</p>
@@ -973,7 +1193,7 @@
         num: '05',
         title: 'Portfolio',
         subtitle: 'Web Design 1 — Universitetet i Bergen',
-        desc: 'Mi førre portefølje, koda frå botn av — levert med A i faget Web Design 1. Hovudvekt på HTML og CSS, med fokus på responsivt design, tilgjengelegheit og kreative frontend-løysingar.',
+        desc: 'Mi førre portefølje, koda heilt åleine for hand i 2024 — utan bruk av KI-verktøy — og levert med A i faget Web Design 1. Hovudvekt på HTML og CSS, med fokus på responsivt design, tilgjengelegheit og kreative frontend-løysingar, bygd på fagstoff frå «Learning Web Design», «Accessibility for Everyone», «White Space Is Not Your Enemy» og «The Design of Everyday Things».',
         tags: ['HTML', 'CSS', 'JavaScript', 'Tilgjengelegheit'],
         url: 'https://olinekleiven.github.io/Portfolio/',
         extraLink: { label: 'Essay', url: 'uploads/Webdesign_essay.pdf' },
@@ -983,16 +1203,17 @@
         num: '06',
         title: 'Cookie Care',
         subtitle: 'Dataspelforteljingar (MIX333) — Universitetet i Bergen',
-        desc: 'Utvikla spelkonseptet «Cookie Care» saman med gruppa i masteremnet Dataspelforteljingar — med fokus på forteljeteknikkar, sjangerkonvensjonar og forholdet mellom spelar og avatar.',
+        desc: '«Cookie Care» er eit 2D management- og simuleringsspel der spelaren driv ein liten cookie-kafé arva frå bestemora si. Spelaren bakar og serverer cookies til éin kunde om gongen, og «matchar» deig, toppings, farge og steiketid til kunden sin emosjonelle tilstand — glad, trist, sint, stressa eller einsam — i staden for å følgje ei fast oppskrift. Rundt 20 faste kundar går igjen gjennom spelet med genererte historier som endrar seg over tid, og spelaren lærer meir om dei gjennom dialog, kroppsspråk og ein notatbok som lagrar tidlegare møte. Vi utvikla konseptet frå elevator pitch og designprinsipp — empati gjennom baking, ein roleg atmosfære inspirert av Stardew Valley, og «små historier over tid» — til eit fullt game design document med gameplay-loop, score-system og progresjon. Prosessen inkluderte òg prototyping av startcutscenen, spelromma (kjøkken og spiserom) og logoen, med fokus på forteljeteknikkar, sjangerkonvensjonar og forholdet mellom spelar og avatar.',
         tags: ['Spelkonsept', 'Narrativt design', 'MIX333'],
         url: 'uploads/MIX333_Cookie_care.pdf',
+        video: 'uploads/cookiecare_introscene.mov',
         color: '#3F7A78',
       },
       {
         num: '07',
         title: 'Erfaring, vanskegrad og prompting',
         subtitle: 'INFO361 — Universitetet i Bergen',
-        desc: 'Gruppeprosjekt der vi arrangerte ein workshop med 10 deltakarar for å undersøkje korleis programmeringserfaring og oppgåvevanskegrad påverkar prompting, tidsbruk og løysingskvalitet ved AI-assistert programmering med ChatGPT.',
+        desc: '«How does difficulty and prior experience impact solution quality, time, and prompts in AI-assisted coding?». Gruppeprosjekt der vi gjennomførte ein workshop med 10 deltakarar, frå nybegynnarar til erfarne programmerarar. Deltakarane løyste to programmeringsoppgåver med ChatGPT som hjelpemiddel: først reparasjon og vidareutvikling av ein eksisterande «House Manager»-app, deretter utvikling av ein ny matvare- og handlelisteapp med backend, database og API-integrasjon. Vi samla inn ChatGPT-samtalar, kode, prompts, tidsbruk og spørjeskjemasvar for å undersøkje korleis programmeringserfaring og oppgåvevanskegrad påverkar prompting, AI-avhengigheit og løysingskvalitet.',
         tags: ['ChatGPT', 'Brukarforsking', 'Workshop', 'Kvalitativ analyse'],
         url: 'uploads/INFO361.pdf',
         color: '#7B4B8A',
@@ -1142,6 +1363,12 @@
               </div>
 
               <div style={{ flex: mobile ? 'none' : 1, padding: mobile ? '4px 24px 36px' : '56px 48px' }}>
+                {project.video && (
+                  <video controls preload="metadata" playsInline
+                    style={{ width: '100%', borderRadius: 10, marginBottom: 24, display: 'block', background: '#000' }}>
+                    <source src={project.video} />
+                  </video>
+                )}
                 <p style={{ fontSize: 15, lineHeight: 1.75, color: '#2A2620', opacity: 0.75, marginBottom: 24 }}>{project.desc}</p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {project.tags.map(tag => (
@@ -2399,7 +2626,8 @@
           <Cursor />
           <Nav tweaks={tweaks} bp={bp} />
           <Hero tweaks={tweaks} bp={bp} />
-          <About tweaks={tweaks} bp={bp} />
+          <AboutMe tweaks={tweaks} bp={bp} />
+          <Education tweaks={tweaks} bp={bp} />
           <Experience tweaks={tweaks} bp={bp} />
           <Projects tweaks={tweaks} bp={bp} />
           <Skills tweaks={tweaks} bp={bp} />
