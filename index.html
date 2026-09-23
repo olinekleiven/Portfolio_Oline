@@ -933,15 +933,14 @@
       };
 
       const card = cards[dispIdx];
-      const size = bp.isMobile ? 'clamp(220px, 70vw, 320px)' : 320;
-
       return (
         <div className="reveal" style={{ marginBottom: 24 }}>
           <div
             role="group"
             aria-label={`Biletgalleri, bilete ${dispIdx + 1} av ${cards.length}`}
             style={{
-              position: 'relative', width: size, height: size,
+              position: 'relative', width: '100%', maxWidth: bp.isMobile ? 420 : 460,
+              aspectRatio: '3 / 4',
               borderRadius: 20, overflow: 'hidden', border: `3px solid ${tweaks.accent}60`,
               background: `${tweaks.dark}08`
             }}
