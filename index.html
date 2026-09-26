@@ -814,11 +814,11 @@
     const HOBBIES = [
       { label: 'Fotball', detail: 'Leiar i BSI Damefotball — har spelt sidan eg var liten.' },
       { label: 'Surfing', detail: 'Fikk denne interessen etter folkehøgskulen.' },
-      { label: 'Bading', detail: 'Helst når vatnet er litt kaldt, så lenge sola skin.' },
+      { label: 'Bading', detail: 'Badelysten kommer an på været, ikke temperaturen.' },
       { label: 'Ski', detail: 'Glad i å stå på ski, anten det er offpiste, randonee eller langrenn.' },
       { label: 'Musikk', detail: 'Glad i Bruce Springsteen og Odd Nordstoga.', spotifyUrl: null },
-      { label: 'Venner', detail: 'Dei som gjer kvardagen betre.' },
-      { label: 'Motbakkeløp', detail: 'Liker å løpe, særlig oppover.' },
+      { label: 'Familie og venner', detail: 'Veldig viktige for meg — dei som gjer kvardagen betre.' },
+      { label: 'Løping', detail: 'Liker å løpe i fine omgivelser.' },
       { label: 'Strikking', detail: 'Nettopp lært meg å strikke, det er så vibe.' },
     ];
 
@@ -839,18 +839,18 @@
       { img: 'uploads/hobby-ski-2.jpg', label: 'Ski' },
       { img: 'uploads/hobby-ski-3.jpg', label: 'Ski' },
       { img: 'uploads/hobby-ski-4.jpg', label: 'Ski' },
-      { img: 'uploads/hobby-motbakkelop.jpg', label: 'Motbakkeløp' },
-      { img: 'uploads/hobby-motbakkelop-2.jpg', label: 'Motbakkeløp' },
-      { img: 'uploads/hobby-venner.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-venner-2.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-venner-3.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-venner-4.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-venner-5.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-venner-6.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-venner-7.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-venner-8.jpg', label: 'Venner' },
-      { img: 'uploads/hobby-familie.jpg', label: 'Familie' },
-      { img: 'uploads/hobby-familie-2.jpg', label: 'Familie' },
+      { img: 'uploads/hobby-motbakkelop.jpg', label: 'Løping' },
+      { img: 'uploads/hobby-motbakkelop-2.jpg', label: 'Løping' },
+      { img: 'uploads/hobby-venner.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-venner-2.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-venner-3.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-venner-4.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-venner-5.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-venner-6.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-venner-7.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-venner-8.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-familie.jpg', label: 'Familie og venner' },
+      { img: 'uploads/hobby-familie-2.jpg', label: 'Familie og venner' },
       { img: 'uploads/hobby-natur.jpg', label: 'Fjellet' },
       { img: 'uploads/hobby-fisking.jpg', label: 'Fisking' },
     ];
@@ -914,12 +914,71 @@
     // Left-side portrait, now a small photo browser — starts on the plain
     // portrait, then flips through every photo Oline supplied (GALLERY),
     // one at a time, via the overlay controls baked into the image itself.
+    // Drag (or arrow-key) handle on the carousel's right edge, letting the
+    // viewer pull the frame wider/narrower themselves. Pointer capture keeps
+    // the drag tracking even once the cursor leaves the small handle.
+    function ResizeHandle({ width, setWidth, minWidth, maxWidth, tweaks }) {
+      const dragRef = useRef(null);
+      const [active, setActive] = useState(false);
+      const onPointerDown = e => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        dragRef.current = { startX: e.clientX, startWidth: width };
+        setActive(true);
+      };
+      const onPointerMove = e => {
+        if (!dragRef.current) return;
+        const delta = e.clientX - dragRef.current.startX;
+        setWidth(Math.round(Math.min(maxWidth, Math.max(minWidth, dragRef.current.startWidth + delta))));
+      };
+      const endDrag = e => {
+        dragRef.current = null;
+        setActive(false);
+        try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (err) {}
+      };
+      const onKeyDown = e => {
+        if (e.key === 'ArrowLeft') { setWidth(w => Math.max(minWidth, w - 16)); e.preventDefault(); }
+        if (e.key === 'ArrowRight') { setWidth(w => Math.min(maxWidth, w + 16)); e.preventDefault(); }
+      };
+      return (
+        <div
+          role="slider"
+          tabIndex={0}
+          aria-label="Endra biletbreidde"
+          aria-valuemin={minWidth}
+          aria-valuemax={maxWidth}
+          aria-valuenow={Math.round(width)}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onKeyDown={onKeyDown}
+          style={{
+            position: 'absolute', top: '50%', right: -12, transform: 'translateY(-50%)',
+            width: 22, height: 46, borderRadius: 11, cursor: 'ew-resize', touchAction: 'none',
+            background: active ? tweaks.accent : `${tweaks.dark}30`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2,
+            transition: 'background 0.2s ease', zIndex: 6
+          }}
+        >
+          {[0, 1].map(i => (
+            <span key={i} aria-hidden="true" style={{
+              width: 2.5, height: 16, borderRadius: 2, background: tweaks.bg, opacity: 0.9
+            }} />
+          ))}
+        </div>
+      );
+    }
+
     function PhotoCarousel({ tweaks, bp }) {
       const reducedMotion = usePrefersReducedMotion();
       const cards = GALLERY;
       const idxRef = useRef(0);
       const [dispIdx, setDispIdx] = useState(0);
       const [visible, setVisible] = useState(true);
+
+      const minWidth = 200;
+      const maxWidth = bp.isMobile ? 380 : 460;
+      const [width, setWidth] = useState(bp.isMobile ? 300 : 340);
 
       const go = dir => {
         const next = (idxRef.current + dir + cards.length) % cards.length;
@@ -934,12 +993,12 @@
 
       const card = cards[dispIdx];
       return (
-        <div className="reveal" style={{ marginBottom: 24 }}>
+        <div className="reveal" style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}>
           <div
             role="group"
             aria-label={`Biletgalleri, bilete ${dispIdx + 1} av ${cards.length}`}
             style={{
-              position: 'relative', width: '100%', maxWidth: bp.isMobile ? 300 : 340,
+              position: 'relative', width: '100%',
               aspectRatio: '3 / 4',
               borderRadius: 20, overflow: 'hidden', border: `3px solid ${tweaks.accent}60`,
               background: `${tweaks.dark}08`
@@ -977,6 +1036,7 @@
               </CarouselArrow>
             </div>
           </div>
+          <ResizeHandle width={width} setWidth={setWidth} minWidth={minWidth} maxWidth={maxWidth} tweaks={tweaks} />
         </div>
       );
     }
@@ -994,7 +1054,7 @@
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <div style={{
               display: 'grid', gridTemplateColumns: bp.isMobile ? '1fr' : '1fr 1fr',
-              gap: bp.isMobile ? 32 : 80, alignItems: 'center'
+              gap: bp.isMobile ? 32 : 80, alignItems: 'start'
             }}>
               <div>
                 <PhotoCarousel tweaks={tweaks} bp={bp} />
@@ -1013,7 +1073,7 @@
                 </p>
               </div>
 
-              <div className="reveal reveal-delay-2">
+              <div className="reveal reveal-delay-2" style={{ marginTop: bp.isMobile ? 0 : -14 }}>
                 {HOBBIES.map(h => <HobbyRow key={h.label} h={h} tweaks={tweaks} />)}
               </div>
             </div>
