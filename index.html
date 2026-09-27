@@ -976,9 +976,28 @@
       const [dispIdx, setDispIdx] = useState(0);
       const [visible, setVisible] = useState(true);
 
+      // Only the width is adjustable: the height stays locked to the default
+      // 3:4 portrait, so dragging wider reveals more of landscape photos
+      // instead of scaling the whole frame up. Max = whatever the column allows.
+      const startWidth = bp.isMobile ? 300 : 340;
+      const frameHeight = Math.round(startWidth * 4 / 3);
       const minWidth = 200;
-      const maxWidth = bp.isMobile ? 380 : 460;
-      const [width, setWidth] = useState(bp.isMobile ? 300 : 340);
+      const wrapRef = useRef(null);
+      const [maxWidth, setMaxWidth] = useState(startWidth);
+      const [width, setWidth] = useState(startWidth);
+      useEffect(() => {
+        const col = wrapRef.current && wrapRef.current.parentElement;
+        if (!col) return;
+        const measure = () => {
+          const m = Math.max(minWidth, col.clientWidth);
+          setMaxWidth(m);
+          setWidth(w => Math.min(w, m));
+        };
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(col);
+        return () => ro.disconnect();
+      }, []);
 
       const go = dir => {
         const next = (idxRef.current + dir + cards.length) % cards.length;
@@ -993,13 +1012,12 @@
 
       const card = cards[dispIdx];
       return (
-        <div className="reveal" style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}>
+        <div ref={wrapRef} className="reveal" style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}>
           <div
             role="group"
             aria-label={`Biletgalleri, bilete ${dispIdx + 1} av ${cards.length}`}
             style={{
-              position: 'relative', width: '100%',
-              aspectRatio: '3 / 4',
+              position: 'relative', width: '100%', height: frameHeight,
               borderRadius: 20, overflow: 'hidden', border: `3px solid ${tweaks.accent}60`,
               background: `${tweaks.dark}08`
             }}
@@ -1036,7 +1054,7 @@
               </CarouselArrow>
             </div>
           </div>
-          <ResizeHandle width={width} setWidth={setWidth} minWidth={minWidth} maxWidth={maxWidth} tweaks={tweaks} />
+          <ResizeHandle width={Math.min(width, maxWidth)} setWidth={setWidth} minWidth={minWidth} maxWidth={maxWidth} tweaks={tweaks} />
         </div>
       );
     }
