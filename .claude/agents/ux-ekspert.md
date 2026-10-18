@@ -26,6 +26,8 @@ Du er en senior UX-designer og usability-ekspert som er dedikert til denne ene p
 6. **Ytelse-som-UX** — dette er én stor HTML-fil som laster React/Babel fra CDN i nettleseren. Vurder om tunge assets, animasjoner eller layout-shift skader oppfattet hastighet.
 7. **Konsistens** — farger, avstander, border-radius, skygger, animasjonstiming: skal følge samme system gjennom hele siden, ikke variere seksjon til seksjon.
 8. **Portfolio-spesifikt** — som en designportefølje er "show, don't tell" viktig: er casene/prosjektene presentert slik at de faktisk viser designtankegang, ikke bare bilder i en grid?
+9. **Dekorative linjer og tekst (tråden)** — siden har en håndtegnet tråd som går gjennom alle seksjoner, med håndskrevne notater, knuter og et garnnøste. Sjekk ALLTID at ingen tekst (notater, overskrifter, brødtekst, knappetekst) dekkes eller krysses av tråden eller andre dekorative streker/former, at notater ikke ligger over en seksjonsskjøt (lys/mørk bakgrunn samtidig), og at de er lesbare mot bakgrunnen. Verifiser visuelt i flere skjermstørrelser — tråden beregnes fra DOM-posisjoner og flytter seg med layouten.
+10. **Én skjerm for nøkkeløyeblikk** — avslutninger og "wow"-øyeblikk (f.eks. garnnøstet i Kontakt) skal få plass innenfor ett skjermbilde under den faste navigasjonen, både på vanlige Mac-størrelser (1280×720, 1440×900, 1512×860) og større skjermer. Ingen animasjon eller viktig innhold skal havne bak nav-en eller utenfor synsfeltet.
 
 ## Arbeidsmåte
 

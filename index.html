@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Oline Flatabø Kleiven — Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -197,22 +197,94 @@
     .drawn .doodle-blob { animation: heroBlobIn 0.45s ease 0.05s forwards; }
     .drawn.doodle-second .doodle-line { animation-delay: 0.7s; }
     .drawn.doodle-second .doodle-blob { animation-delay: 0.6s; }
-    /* Thread finale in Kontakt: once the line has looped round the content and
-       its arrow reaches "La oss snakke", the label lifts forward a touch. */
-    .kontakt-label-lift {
-      display: inline-block;
-      transition: transform 0.6s cubic-bezier(.34,1.56,.64,1), text-shadow 0.6s ease, letter-spacing 0.6s cubic-bezier(.16,1,.3,1);
+    /* Thread game (PageThread): handwritten notes, knots to untie, and the
+       final ball of yarn. */
+    .thread-note {
+      position: absolute; transform: translate(-50%, -50%) rotate(var(--tilt, -3deg)) translateY(8px);
+      font-family: 'Caveat', cursive; font-weight: 600; font-size: 24px; line-height: 1.1;
+      color: var(--accent); text-align: center; white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      /* Soft halo in the section's own background so notes stay legible
+         where they pass over the thread */
+      text-shadow: 0 0 3px var(--halo, var(--bg)), 0 0 8px var(--halo, var(--bg)), 0 0 14px var(--halo, var(--bg));
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.16,1,.3,1);
     }
-    .thread-arrived .kontakt-label-lift {
-      transform: translateY(-4px) scale(1.18);
-      letter-spacing: 0.24em;
-      text-shadow: 0 0 18px rgba(192,75,34,0.45);
+    .thread-note.shown { opacity: 1; transform: translate(-50%, -50%) rotate(var(--tilt, -3deg)); }
+    .knot { position: absolute; transform: translate(-50%, -50%); }
+    .knot-inner {
+      position: relative; opacity: 0; transform: scale(0.3); pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.6s cubic-bezier(.34,1.56,.64,1);
     }
-    .thread-arrow { opacity: 0; transition: opacity 0.3s ease; }
-    .thread-arrived .thread-arrow { opacity: 1; }
-    @media (prefers-reduced-motion: reduce) {
-      .kontakt-label-lift { transition: none; }
+    .knot.reached .knot-inner { opacity: 1; transform: scale(1); pointer-events: auto; }
+    .knot-btn {
+      display: block; width: 74px; height: 74px; padding: 0; border: none; background: none;
+      border-radius: 50%; cursor: pointer;
     }
+    .knot-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .knot-scribble { transform-box: view-box; transform-origin: 37px 37px; animation: knotWobble 2.4s ease-in-out infinite; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); }
+    .knot-btn:hover .knot-scribble, .knot-btn:focus-visible .knot-scribble { animation-play-state: paused; transform: scale(1.12) rotate(8deg); }
+    @keyframes knotWobble { 0%, 100% { transform: rotate(-5deg) scale(1); } 50% { transform: rotate(5deg) scale(1.05); } }
+    .knot-loop { transform-box: view-box; transform-origin: 37px 37px; transition: transform 0.55s cubic-bezier(.6,0,.4,1), opacity 0.45s ease; }
+    .knot[data-untied] .knot-loop { transform: rotate(var(--spin)) scale(0); opacity: 0; }
+    .knot[data-untied] .knot-btn { pointer-events: none; }
+    .knot .thread-note { transition-delay: 0.15s; }
+    .knot.reached .thread-note { opacity: 1; transform: translate(-50%, -50%) rotate(var(--tilt, -3deg)); }
+    .knot[data-untied] .thread-note.knot-ask { opacity: 0; transition-delay: 0s; }
+    .knot .thread-note.knot-thanks { opacity: 0; }
+    .knot[data-untied] .thread-note.knot-thanks { animation: knotThanks 1.8s ease forwards; }
+    @keyframes knotThanks { 0% { opacity: 0; } 20%, 70% { opacity: 1; } 100% { opacity: 0; } }
+    .thread-chip {
+      position: fixed; left: 50%; bottom: 24px; z-index: 90;
+      transform: translate(-50%, 140%); opacity: 0; pointer-events: none;
+      background: #2A2620; color: #EDE0CF; border: 1.5px solid var(--accent);
+      font-family: 'Caveat', cursive; font-size: 21px; padding: 8px 20px; border-radius: 100px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25); cursor: pointer;
+      transition: transform 0.45s cubic-bezier(.16,1,.3,1), opacity 0.3s ease;
+    }
+    .thread-chip.shown { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+    .thread-chip:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    /* Two endings in Kontakt.
+       - Players who untied every knot (.yarn-ready): a slot opens above the
+         heading and the content waits; once the ball is wound, the content
+         rises in beneath it, and "La oss snakke" gives way to the ball.
+       - Everyone else (no or only some knots untied): the thread never gets
+         this far, and Kontakt is exactly as it always was. */
+    [data-yarn-slot] { height: 0; }
+    #kontakt.yarn-ready [data-kontakt-label] { display: none; }
+    /* Ball size matches YarnBallFinale (clamp(200px, 36vh, 340px)) + its note line above */
+    #kontakt.yarn-ready [data-yarn-slot] { height: calc(clamp(200px, 36vh, 340px) + 64px); }
+    /* Compact layout for the yarn ending: the ball is the star, and ball,
+       heading, text, buttons and footer all fit on one screen together */
+    /* Top padding clears the fixed nav, so the centred block sits in what's actually visible */
+    #kontakt.yarn-ready { padding-top: 92px !important; padding-bottom: 12px !important; }
+    /* Nudge the whole block up a little: the empty space sits above it, not below */
+    #kontakt.yarn-ready [data-yarn-content] { margin-top: -40px !important; }
+    #kontakt.yarn-ready [data-yarn-content] h2 { font-size: clamp(28px, 3.2vw, 46px) !important; margin-bottom: 24px !important; }
+    #kontakt.yarn-ready [data-yarn-content] h2 br { display: none; }
+    /* The ball says it all — the intro sentence would only crowd it */
+    #kontakt.yarn-ready [data-yarn-content] > p { display: none; }
+    #kontakt.yarn-ready [data-thread-anchor="kontakt-actions"] { margin-bottom: 20px !important; }
+    #kontakt.yarn-ready:not(.yarn-gathered) [data-yarn-content] .reveal { opacity: 0 !important; transform: translateY(30px) !important; }
+    #kontakt.yarn-gathered [data-yarn-content] .reveal-delay-1 { transition-delay: 2.7s !important; }
+    #kontakt.yarn-gathered [data-yarn-content] .reveal-delay-2 { transition-delay: 2.85s !important; }
+    #kontakt.yarn-gathered [data-yarn-content] .reveal-delay-3 { transition-delay: 3s !important; }
+    .yarn-ball-spin { transform-box: view-box; transform-origin: 100px 100px; animation: yarnSpin 1.3s cubic-bezier(.16,1,.3,1) forwards; }
+    @keyframes yarnSpin { from { transform: rotate(320deg) scale(0.6); } to { transform: rotate(0deg) scale(1); } }
+    .yarn-final-stroke { stroke-dasharray: 1 2; stroke-dashoffset: 1.01; animation: heroLineDraw 0.35s cubic-bezier(.45,.05,.35,1) forwards; }
+    /* Handwritten reveal: a left-to-right wipe, as if the note is being written
+       (the -30% insets leave room for Caveat's swashes and descenders) */
+    .yarn-write { display: inline-block; clip-path: inset(-30% 100% -30% -2%); animation: yarnWrite 0.7s cubic-bezier(.45,.1,.55,.9) forwards; }
+    @keyframes yarnWrite { to { clip-path: inset(-30% -4% -30% -2%); } }
+    @media (prefers-reduced-motion: reduce) { .yarn-write { animation: none; clip-path: none; } }
+    .yarn-final-msg { opacity: 0; animation: yarnMsgIn 0.8s cubic-bezier(.16,1,.3,1) forwards; }
+    @keyframes yarnMsgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    /* Hobby doodles (HobbyDoodle) — gentle idle loops once a picture is drawn */
+    @keyframes doodleBob { from { transform: translateY(0); } to { transform: translateY(-2.5px); } }
+    @keyframes doodleSway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+    @keyframes doodlePulse { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.12); } 30% { transform: scale(1); } 45% { transform: scale(1.08); } }
+    .doodle-bob { animation: doodleBob 0.38s ease-in-out infinite alternate; }
+    .doodle-sway { animation: doodleSway 2.4s ease-in-out infinite; }
+    .doodle-pulse { animation: doodlePulse 1.4s ease-in-out infinite; }
     /* Lines driven by scroll (PageThread) — JS sets stroke-dashoffset inline */
     .doodle-line.scroll-line, .drawn .doodle-line.scroll-line { animation: none; }
     .hero-sparks line {
@@ -1013,7 +1085,7 @@
       { label: 'Bading', detail: 'Badelysten kommer an på været, ikke temperaturen.' },
       { label: 'Ski', detail: 'Glad i å stå på ski, anten det er offpiste, randonee eller langrenn.' },
       { label: 'Musikk', detail: 'Glad i Bruce Springsteen og Odd Nordstoga.', spotifyUrl: null },
-      { label: 'Familie og venner', detail: 'Veldig viktige for meg — dei som gjer kvardagen betre.' },
+      { label: 'Familie og venner', detail: 'Viktig for meg, støttespillere er fint å ha.' },
       { label: 'Løping', detail: 'Liker å løpe i fine omgivelser.' },
       { label: 'Strikking', detail: 'Nettopp lært meg å strikke, det er så vibe.' },
     ];
@@ -1063,15 +1135,169 @@
           onMouseLeave={() => setHov(false)}
           onFocus={() => setHov(true)}
           onBlur={() => setHov(false)}
-          style={{ padding: '14px 0', borderBottom: `1px solid ${tweaks.dark}12` }}
+          style={{ padding: '14px 0', borderBottom: `1px solid ${tweaks.dark}12`, position: 'relative' }}
         >
+          {HOBBY_DOODLES[h.label] && <HobbyDoodle doodle={HOBBY_DOODLES[h.label]} active={hov} tweaks={tweaks} />}
           <div style={{ fontSize: 17, fontWeight: 500, color: tweaks.dark }}>{h.label}</div>
           <div style={{
             fontSize: 13, color: tweaks.dark, opacity: hov ? 0.55 : 0,
-            maxHeight: hov ? 30 : 0, overflow: 'hidden', marginTop: hov ? 6 : 0,
+            maxHeight: hov ? 54 : 0, overflow: 'hidden', marginTop: hov ? 6 : 0,
+            // Keep clear of the hover doodle at the row's right edge
+            paddingRight: HOBBY_DOODLES[h.label] ? 'min(170px, 36%)' : 0,
             transition: 'opacity 0.25s ease, max-height 0.25s ease, margin-top 0.25s ease'
           }}>{h.detail}</div>
         </div>
+      );
+    }
+
+    // Hobby hover doodles: on hover/focus/tap a loose orange thread (same
+    // stroke as the page thread) runs in along the row and draws a little
+    // picture of the hobby, stroke by stroke — a ball of yarn winding up, a
+    // football rolling in, a runner, and so on. Leaving the row fades the
+    // picture out quickly and resets it for next time.
+    //
+    // Each doodle: `strokes` = [path, duration (s)] drawn in order with a
+    // slight overlap; the first is the loose thread, the rest form the
+    // figure. `from` is the figure's transform before it arrives (it
+    // eases from there to rest while drawing), `loop` an optional idle
+    // animation once drawn, `fill` a soft disc behind the figure. All in a
+    // 160×60 box sitting at the row's right edge.
+    const HOBBY_DOODLES = {
+      'Fotball': {
+        strokes: [
+          ['M4,46 C30,56 52,26 78,38 C94,45 104,46 113,34', 0.45],
+          ['M132,11 A19,19 0 1,1 131.9,11', 0.4],
+          ['M132,24 L137.7,28.1 L135.5,34.9 L128.5,34.9 L126.3,28.1 Z', 0.28],
+          ['M132,24 L132,11 M137.7,28.1 L150.1,24.1 M135.5,34.9 L143.2,45.4 M128.5,34.9 L120.8,45.4 M126.3,28.1 L113.9,24.1', 0.35],
+        ],
+        fill: { cx: 132, cy: 30, r: 19 },
+        from: 'translateX(-34px) rotate(-260deg)', origin: '132px 30px',
+      },
+      'Surfing': {
+        strokes: [
+          ['M4,50 C22,44 36,54 52,48', 0.3],                                                         // thread
+          ['M58,56 C90,53 120,55 156,52', 0.25],                                                     // water
+          ['M52,48 C78,46 104,40 122,26 C134,16 150,12 156,22 C160,30 152,36 146,32 C141,28 145,23 149,25', 0.45], // curling wave
+          ['M84,47 C94,42 108,37 119,35 C112,40 98,46 84,47 Z', 0.25],                              // board
+          ['M94,43 L95,35 L100,28 L104,32 L108,39', 0.2],                                            // bent legs
+          ['M100,28 L103,18', 0.12],                                                                 // body
+          ['M105,9 A4,4 0 1,1 104.9,9', 0.15],                                                       // head
+          ['M93,21 L103,19 L114,14', 0.15],                                                          // arms out for balance
+          ['M78,44 L73,42 M80,39 L76,35 M76,48 L70,48', 0.18],                                       // spray
+        ],
+        from: 'translateX(-16px)', origin: '104px 32px',
+      },
+      'Bading': {
+        strokes: [
+          ['M4,44 C30,50 60,38 90,44', 0.3],
+          ['M90,44 C98,38 106,38 114,44 C122,50 130,50 138,44 C146,38 152,38 158,42', 0.4],
+          ['M96,54 C106,49 114,49 122,54 C130,59 138,59 146,54', 0.3],
+          ['M120,29 A5,5 0 1,1 119.9,29', 0.22],
+          ['M127,37 C130,27 138,26 142,34', 0.22],
+          ['M146,6 A6,6 0 1,1 145.9,6 M146,0 L146,-3 M155,4 L157,2 M137,4 L135,2', 0.3],
+        ],
+        loop: 'doodle-bob', origin: '125px 40px',
+      },
+      'Ski': {
+        strokes: [
+          ['M4,50 C30,54 60,46 84,50', 0.3],
+          ['M84,50 L110,16 L120,28 L130,12 L156,50', 0.45],
+          ['M104,24 L110,29 L114,23 M125,19 L130,24 L135,18', 0.25],
+          ['M130,14 C124,22 140,26 132,32 C124,38 142,42 134,50', 0.4],
+        ],
+      },
+      'Musikk': {
+        strokes: [
+          ['M4,40 C30,48 60,30 92,40', 0.35],
+          ['M99,44 A5,4 0 1,0 109,44 A5,4 0 1,0 99,44', 0.22],
+          ['M109,44 L109,16', 0.18],
+          ['M109,16 L139,10', 0.18],
+          ['M139,10 L139,38', 0.18],
+          ['M129,38 A5,4 0 1,0 139,38 A5,4 0 1,0 129,38', 0.22],
+        ],
+        loop: 'doodle-bob', origin: '120px 30px',
+      },
+      'Familie og venner': {
+        strokes: [
+          ['M4,44 C30,52 60,28 92,36 C104,39 110,44 118,40', 0.4],
+          ['M132,48 C110,34 112,14 124,14 C130,14 132,20 132,22 C132,20 134,14 140,14 C152,14 154,34 132,48 Z', 0.5],
+          ['M153,20 C147,16 147,10 150,10 C152,10 153,12 153,13 C153,12 154,10 156,10 C159,10 159,16 153,20 Z', 0.25],
+        ],
+        loop: 'doodle-pulse', origin: '132px 30px',
+      },
+      'Løping': {
+        strokes: [
+          ['M4,54 C40,50 80,56 156,53', 0.4],
+          ['M134,7 A5,5 0 1,1 133.9,7', 0.2],
+          ['M132,18 L126,34', 0.15],
+          ['M120,20 L125,27 L131,21 L139,25 L143,19', 0.25],
+          ['M133,50 L135,41 L126,34 L120,43 L110,46', 0.25],
+          ['M96,22 L108,22 M92,32 L104,32 M98,42 L106,42', 0.25],
+        ],
+        from: 'translateX(-14px)', origin: '128px 30px', loop: 'doodle-bob',
+      },
+      'Strikking': {
+        strokes: [
+          ['M4,44 C26,58 44,22 68,36 C86,46 98,48 111,40', 0.45],
+          ['M130,10 A20,20 0 1,1 129.9,10', 0.4],
+          ['M112,36 C116,14 146,10 149,26 C151,42 128,52 113,42', 0.3],
+          ['M117,18 C131,27 141,40 137,48', 0.22],
+          ['M125,11 C135,21 147,28 150,33', 0.22],
+          ['M111,27 C124,29 139,35 146,44', 0.22],
+          ['M118,46 C124,36 136,24 146,18', 0.22],
+        ],
+        fill: { cx: 130, cy: 30, r: 20 },
+        from: 'rotate(160deg)', origin: '130px 30px',
+      },
+    };
+    function HobbyDoodle({ doodle, active, tweaks }) {
+      const reducedMotion = usePrefersReducedMotion();
+      const ease = 'cubic-bezier(.45,.05,.35,1)';
+      // Sequential start times, each stroke overlapping the last a little
+      const timed = [];
+      let t = 0;
+      doodle.strokes.forEach(([d, dur]) => { timed.push({ d, dur, delay: t }); t += dur * 0.8; });
+      const total = t + 0.1;
+      const RESET = 0.25; // leave: fade out first, then snap strokes back unseen
+      const stroke = ({ d, dur, delay }, i) => (
+        <path key={i} d={d} pathLength="1" fill="none" stroke={tweaks.accent}
+          strokeWidth={i === 0 ? 1.8 : 1.6} strokeLinecap="round" strokeLinejoin="round"
+          style={{
+            strokeDasharray: '1 2',
+            strokeDashoffset: active ? 0 : 1.01,
+            transition: reducedMotion ? 'none'
+              : active ? `stroke-dashoffset ${dur}s ${ease} ${delay}s` : `stroke-dashoffset 0s linear ${RESET}s`
+          }} />
+      );
+      const [thread, ...figure] = timed;
+      const vb = { transformBox: 'view-box', transformOrigin: doodle.origin || '130px 30px' };
+      return (
+        <svg aria-hidden="true" viewBox="0 0 160 60" style={{
+          position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
+          width: 'min(160px, 34%)', height: 'auto',
+          overflow: 'visible', pointerEvents: 'none',
+          opacity: active ? 1 : 0,
+          transition: reducedMotion ? 'none' : `opacity ${active ? 0.1 : 0.22}s ease`
+        }}>
+          {stroke(thread, 0)}
+          <g style={{
+            ...vb,
+            transform: doodle.from && !active ? doodle.from : 'none',
+            transition: reducedMotion ? 'none'
+              : active ? `transform ${total}s cubic-bezier(.16,1,.3,1) 0.2s` : `transform 0s linear ${RESET}s`
+          }}>
+            <g className={active && doodle.loop && !reducedMotion ? doodle.loop : ''}
+              style={{ ...vb, animationDelay: `${total}s` }}>
+              {doodle.fill && (
+                <circle cx={doodle.fill.cx} cy={doodle.fill.cy} r={doodle.fill.r} fill={tweaks.accent} style={{
+                  opacity: active ? 0.12 : 0,
+                  transition: reducedMotion ? 'none' : `opacity 0.4s ease ${active ? 0.5 : 0}s`
+                }} />
+              )}
+              {figure.map((f, i) => stroke(f, i + 1))}
+            </g>
+          </g>
+        </svg>
       );
     }
 
@@ -1206,40 +1432,11 @@
         }, 110);
       };
 
-      // Sparks off the frame's top-left corner: pop in once the carousel is in
-      // view (after the section's corner doodles), re-burst on hover/tap.
-      const sparksInView = useInViewOnce(wrapRef);
-      const [sparkKey, setSparkKey] = useState(0);
-      const sparkLockRef = useRef(false);
-      const burstSparks = () => {
-        if (reducedMotion || sparkLockRef.current) return;
-        sparkLockRef.current = true;
-        setSparkKey(k => k + 1);
-        setTimeout(() => { sparkLockRef.current = false; }, 800);
-      };
-
       const card = cards[dispIdx];
       return (
         <div ref={wrapRef} className="reveal" style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}>
-          {sparksInView && (
-            <svg aria-hidden="true" viewBox="0 0 60 60" width="90" height="90" style={{
-              position: 'absolute', top: -75, overflow: 'visible', pointerEvents: 'none',
-              // Frame sits flush left on mobile, so mirror the sparks to its top-right corner
-              ...(bp.isMobile ? { right: -75, transform: 'scaleX(-1)' } : { left: -75 })
-            }}>
-              <g key={sparkKey} className="hero-sparks"
-                stroke={tweaks.accent} strokeWidth="2.6" strokeLinecap="round">
-                {/* Radial strokes out from the frame corner at (50,50) */}
-                <line pathLength="1" x1="35.0" y1="44.5" x2="18.0" y2="38.4" />
-                <line pathLength="1" x1="38.7" y1="38.7" x2="26.0" y2="26.0" />
-                <line pathLength="1" x1="44.5" y1="35.0" x2="38.4" y2="18.0" />
-              </g>
-            </svg>
-          )}
           <div
             data-thread-anchor="carousel"
-            onMouseEnter={burstSparks}
-            onClick={burstSparks}
             role="group"
             aria-label={`Biletgalleri, bilete ${dispIdx + 1} av ${cards.length}`}
             style={{
@@ -2457,7 +2654,7 @@
     function Volunteer({ tweaks, bp }) {
       const mobile = bp && bp.isMobile;
       return (
-        <section id="verv" style={{ position: 'relative', isolation: 'isolate', padding: mobile ? '60px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: mobile ? 'auto' : '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="verv" style={{ position: 'relative', isolation: 'isolate', overflowX: 'clip', padding: mobile ? '60px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: mobile ? 'auto' : '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <Doodles tweaks={tweaks} bp={bp} side="left" threadId="verv" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500, paddingLeft: 8 }}>Verv</p>
@@ -2792,24 +2989,27 @@
       const githubLeave = e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; };
       const githubTouchRef = useTouchHoverStyle(githubEnter, githubLeave);
       return (
-        <section id="kontakt" style={{ position: 'relative', isolation: 'isolate', padding: mobile ? '72px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="kontakt" style={{ position: 'relative', isolation: 'isolate', padding: mobile ? '72px 24px 40px' : `${64 * tweaks.spacing}px 48px ${32 * tweaks.spacing}px`, background: tweaks.dark, color: tweaks.bg,
+          minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <Doodles tweaks={tweaks} bp={bp} side="right" onDark threadId="kontakt" bare={!mobile} />
-          <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', textAlign: 'center' }}>
-            <p className="reveal" data-thread-anchor="kontakt-label" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 20, fontWeight: 500 }}>
-              <span className="kontakt-label-lift">La oss snakke</span>
-            </p>
-            <h2 className="reveal reveal-delay-1" style={{
+          <div data-yarn-content="" style={{ maxWidth: 800, margin: '0 auto', width: '100%', textAlign: 'center' }}>
+            {/* Room for the thread game's ball of yarn (opened by PageThread
+                via .yarn-ready on the section, only for players who untied every knot) */}
+            <div data-yarn-slot="" aria-hidden="true" />
+            {/* Shown in the ordinary ending only — the ball of yarn takes its place for players */}
+            <p className="reveal" data-kontakt-label="" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 20, fontWeight: 500 }}>La oss snakke</p>
+            <h2 className="reveal reveal-delay-1" data-thread-anchor="kontakt-heading" style={{
               fontFamily: tweaks.fontHeading, fontSize: mobile ? 'clamp(36px, 11vw, 56px)' : 'clamp(48px, 7vw, 96px)',
               lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 400, marginBottom: mobile ? 20 : 32
             }}>
-              Trenger du min<br/>
+              Trenger du min{' '}<br/>
               <span style={{ fontStyle: 'italic', color: tweaks.accent }}>kompetanse?</span>
             </h2>
             <p className="reveal reveal-delay-2" style={{ fontSize: mobile ? 15 : 18, opacity: 0.6, lineHeight: 1.7, marginBottom: mobile ? 40 : 64, fontWeight: 300 }}>
               Åpen for samarbeid, jobb eller internship innanfor design og utvikling.
             </p>
 
-            <div className="reveal reveal-delay-3" data-thread-anchor="kontakt-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
+            <div className="reveal reveal-delay-3" data-thread-anchor="kontakt-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 36 : 52 }}>
               <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: 'center', gap: mobile ? 12 : 16 }}>
               <a href="mailto:olinefk@outlook.com" ref={emailTouchRef} style={{
                 position: 'relative', overflow: 'visible',
@@ -2885,7 +3085,7 @@
               </div>
             </div>
 
-            <div style={{ borderTop: `1px solid ${tweaks.bg}15`, paddingTop: 32, display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: mobile ? 6 : 0, fontSize: 13, opacity: 0.6 }}>
+            <div style={{ borderTop: `1px solid ${tweaks.bg}15`, paddingTop: 18, display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: mobile ? 4 : 0, fontSize: 12, opacity: 0.55 }}>
               <span>Oline Flatabø Kleiven</span>
               <span>olinefk@outlook.com</span>
               <span>Bergen, Norge</span>
@@ -2921,7 +3121,7 @@
 
     // One continuous hand-drawn thread that carries the doodle lines down
     // the page across every section seam: the hero's bottom-right curve runs
-    // on past the carousel sparks, and each section's side doodle runs on into
+    // on over the carousel, and each section's side doodle runs on into
     // the next section and out the opposite edge. Built from live DOM
     // positions (re-measured on resize) so the ends meet the doodle lines
     // exactly. Each piece is portalled into the doodle layer of both sections
@@ -2929,11 +3129,99 @@
     // its own section — together they read as one line. Desktop/tablet only:
     // on a phone the single-column layout leaves no room for it to wander.
     const THREAD_SECTIONS = ['hero', 'om-meg', 'utdanning', 'erfaring', 'prosjekter', 'skills', 'verv', 'kontakt'];
+    // The thread game: "help me gather the thread, and untangle knots on the
+    // way". Each knot sits on one thread piece (by its starting section) at a
+    // fraction of its length; the drawing stops there until it's untied.
+    // Scrolling itself is never blocked — only the thread waits.
+    const THREAD_KNOTS = [
+      { key: 'om-meg', at: 0.5 },
+      { key: 'erfaring', at: 0.5 },
+      { key: 'skills', at: 0.5 },
+    ];
+    // Scribble loops for a knot (74×74 box): [rx, ry, rotation, spin-away]
+    const KNOT_LOOPS = [
+      [15, 8, -20, 260], [11, 14, 35, -300], [16, 9, 80, 220], [9, 12, -60, -240], [13, 7, 140, 320],
+      [7, 10, 15, -200], [12, 6, 110, 280], [10, 9, -35, -260], [6, 13, 60, 240],
+    ];
+    // The game's finale: a proper ball of yarn winding itself up where the
+    // thread comes to rest. Strands are front halves of great circles (so they
+    // read as wraps round a sphere), in three crossing families; each strand is
+    // laid over a slightly wider stroke in the background colour so later
+    // wraps visibly sit on top of earlier ones. Two knitting needles poke out
+    // behind, and a loose end trails off. 200×200 box, ball radius 70.
+    const YARN_FAMILIES = [
+      { rot: -28, ry: [14, 28, 42, 56], flip: 0 },
+      { rot: 52, ry: [18, 34, 50, 64], flip: 1 },
+      { rot: 104, ry: [10, 26, 42], flip: 0 },
+    ];
+    function YarnBallFinale({ x, y, size = 220, tweaks }) {
+      const R = 70;
+      const strands = [];
+      YARN_FAMILIES.forEach(f => f.ry.forEach(ry => strands.push({ rot: f.rot, d: `M${-R},0 A${R},${ry} 0 0,${f.flip} ${R},0` })));
+      const draw = (i, extra = 0) => ({ animationDelay: `${Math.max(0, 0.1 + i * 0.055 + extra)}s` });
+      const note = { fontFamily: "'Caveat', cursive", fontWeight: 600, color: tweaks.accent, textAlign: 'center', whiteSpace: 'nowrap',
+        position: 'absolute', left: '50%', width: 320, marginLeft: -160, textShadow: `0 0 10px ${tweaks.dark}` };
+      return (
+        <div role="status" style={{ position: 'absolute', left: x, top: y, width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2 }}>
+          {/* Both notes on one line above the ball, the second following the first */}
+          <div style={{ ...note, top: -44, fontSize: 28, width: 520, marginLeft: -260 }}>
+            {/* Written out left to right; the second phrase starts 0.5s after the first finishes */}
+            <span className="yarn-write" style={{ animationDelay: '1.0s' }}>Garnet er samlet!</span>{' '}
+            <span className="yarn-write" style={{ animationDelay: '2.2s' }}>…klar for nytt arbeid!</span>
+          </div>
+          <svg viewBox="0 0 200 200" width={size} height={size} aria-hidden="true" style={{ overflow: 'visible', display: 'block' }}>
+            <defs>
+              <radialGradient id="yarnShade" cx="38%" cy="34%" r="70%">
+                <stop offset="0%" stopColor={tweaks.accent} stopOpacity="0.42" />
+                <stop offset="60%" stopColor={tweaks.accent} stopOpacity="0.16" />
+                <stop offset="100%" stopColor={tweaks.accent} stopOpacity="0.05" />
+              </radialGradient>
+              <clipPath id="yarnClip"><circle cx="100" cy="100" r={R} /></clipPath>
+            </defs>
+            {/* Knitting needles, behind the ball */}
+            <g className="yarn-final-msg" style={{ animationDelay: '0.75s' }} stroke={tweaks.accent} strokeLinecap="round">
+              <line x1="96" y1="104" x2="178" y2="18" strokeWidth="3.2" />
+              <line x1="104" y1="104" x2="190" y2="44" strokeWidth="3.2" />
+              <circle cx="178" cy="18" r="5.5" fill={tweaks.accent} />
+              <circle cx="190" cy="44" r="5.5" fill={tweaks.accent} />
+            </g>
+            <g className="yarn-ball-spin">
+              <circle cx="100" cy="100" r={R} fill={tweaks.dark} />
+              <circle cx="100" cy="100" r={R} fill="url(#yarnShade)" className="yarn-final-msg" style={{ animationDelay: '0.35s' }} />
+              <g clipPath="url(#yarnClip)" fill="none" strokeLinecap="round">
+                {strands.map((st, i) => (
+                  <g key={i} transform={`translate(100 100) rotate(${st.rot})`}>
+                    <path d={st.d} pathLength="1" className="yarn-final-stroke" stroke={tweaks.dark} strokeWidth="5.5" style={draw(i)} />
+                    <path d={st.d} pathLength="1" className="yarn-final-stroke" stroke={tweaks.accent} strokeWidth="2.2" style={draw(i)} />
+                  </g>
+                ))}
+              </g>
+              <circle cx="100" cy="100" r={R} pathLength="1" className="yarn-final-stroke" fill="none" stroke={tweaks.accent} strokeWidth="2.4" style={draw(0, -0.3)} />
+            </g>
+            {/* Loose end trailing off the bottom */}
+            <path d="M62,158 C46,176 30,186 18,180 C6,174 12,160 24,164" pathLength="1" className="yarn-final-stroke"
+              fill="none" stroke={tweaks.accent} strokeWidth="2.2" strokeLinecap="round" style={draw(strands.length)} />
+          </svg>
+        </div>
+      );
+    }
+
     function PageThread({ tweaks, bp }) {
       const [threads, setThreads] = useState(null);
+      // Game state: which knots are untied (render) mirrored in a ref (read
+      // every frame), plus the gathered-ball finale.
+      const [game, setGame] = useState({ untied: {}, gathered: false });
+      const gameRef = useRef({ untied: {}, gathered: null });
+      const kickRef = useRef(() => {});
 
       useEffect(() => {
-        if (bp.isMobile) { setThreads(null); return; }
+        if (bp.isMobile) {
+          setThreads(null);
+          // No game on phones: never leave Kontakt staged for the finale
+          const k = document.getElementById('kontakt');
+          if (k) k.classList.remove('yarn-ready', 'yarn-gathered');
+          return;
+        }
         const pageXY = (x, y) => ({ x: x + window.scrollX, y: y + window.scrollY });
         // End point of a doodle line (in page px) plus its direction there.
         // Mapped by hand from the SVG's box rather than getScreenCTM, since
@@ -3001,33 +3289,47 @@
             if (!start) continue;
             let end = null;
             if (from === 'hero') {
-              // Above the carousel sparks and out the left edge
+              // Above the carousel and out the left edge
               const frame = document.querySelector('[data-thread-anchor="carousel"]');
               if (frame) end = { x: -10, y: restingRect(frame).top - 90 };
             } else if (to === 'kontakt') {
               // Finale: sweep in over the top, loop all the way round the
-              // contact content, and land as an arrow pointing at "La oss snakke".
-              const label = document.querySelector('[data-thread-anchor="kontakt-label"] span');
+              // contact content and come to rest on its left side — where the
+              // yarn gets wound into a ball once the game is done.
+              const label = document.querySelector('[data-thread-anchor="kontakt-heading"]');
               const actions = document.querySelector('[data-thread-anchor="kontakt-actions"]');
               if (label && actions) {
+                const slot = document.querySelector('[data-yarn-slot]');
+                const S = slot ? restingRect(slot) : null;
+                const open = S && S.bottom - S.top > 40;
                 const L = restingRect(label), A = restingRect(actions);
-                const cx = W / 2, cy = (L.top + A.bottom) / 2;
+                const topY = open ? S.top : L.top;
+                const cx = W / 2;
+                let cy = (topY + A.bottom) / 2;
                 const rx = Math.min(W / 2 - 40, Math.max(A.right - A.left, 640) / 2 + 160);
-                const ry = (A.bottom - L.top) / 2 + 50;
-                const ly = (L.top + L.bottom) / 2;
-                const tipPt = { x: L.left - 36, y: ly }; // room for the label to grow when it lifts
+                let ry = (A.bottom - topY) / 2 + 50;
+                // Keep the whole loop inside the one screen of Kontakt the
+                // visitor sees once it sits just under the nav
+                const secTop = top('kontakt');
+                if (secTop !== null) {
+                  const minY = secTop + 96, maxY = secTop + window.innerHeight - 24;
+                  ry = Math.min(ry, (maxY - minY) / 2.04);
+                  cy = Math.max(minY + ry * 1.04, Math.min(maxY - ry, cy));
+                }
+                // Spiral in round the content and finish top-centre: in the
+                // open slot (where the ball winds up), else just above the heading
+                const size = Math.round(Math.max(200, Math.min(340, window.innerHeight * 0.36)));
+                // Ball sits below its one-line note (44px) inside the slot
+                const ball = open ? { x: cx, y: S.top + 48 + size / 2, size } : { x: cx, y: L.top - 50, size };
                 const d = smooth(start, [
                   { x: cx + rx * 0.55, y: cy - ry * 1.04 },
                   { x: cx + rx, y: cy + ry * 0.05 },
                   { x: cx, y: cy + ry },
                   { x: cx - rx, y: cy },
-                  { x: cx - rx * 0.6, y: cy - ry * 0.8 },
-                  tipPt
+                  { x: cx - rx * 0.55, y: cy - ry * 0.9 },
+                  ball
                 ]);
-                // Arrowhead: two short strokes back from the tip, angled off the approach
-                const ah = 11;
-                const arrow = `M${tipPt.x - ah},${tipPt.y - ah * 0.7} L${tipPt.x},${tipPt.y} L${tipPt.x - ah},${tipPt.y + ah * 0.7}`;
-                out.push({ key: from, d, sections: [from, to], finale: true, arrow });
+                out.push({ key: from, d, sections: [from, to], finale: true, ball });
               }
               continue;
             } else {
@@ -3037,14 +3339,118 @@
             }
             if (end) out.push({ key: from, d: stroke(start, end), sections: [from, to] });
           }
+          // Game anchors, all in page px: knots on their pieces, the two intro
+          // notes by the hero curve, and the finale ball on the loop's left side.
+          const probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const probeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          probeSvg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+          probeSvg.appendChild(probe);
+          document.body.appendChild(probeSvg);
+          const pointOn = (d, at) => { probe.setAttribute('d', d); return probe.getPointAtLength(probe.getTotalLength() * at); };
+          // A note written along the thread: just above it at `at`, turned to
+          // follow the line (kept upright, and only gently tilted).
+          const along = (pt, next, gap) => {
+            let tx = next.x - pt.x, ty = next.y - pt.y;
+            const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+            let nx = -ty, ny = tx; if (ny > 0) { nx = -nx; ny = -ny; } // normal pointing up
+            let angle = Math.atan2(ty, tx) * 180 / Math.PI;
+            if (angle > 90) angle -= 180; if (angle < -90) angle += 180;
+            return { x: pt.x + nx * gap, y: pt.y + ny * gap, nx, ny, angle: Math.max(-14, Math.min(14, angle)) };
+          };
+          // Collision avoidance: every note is checked against points sampled
+          // densely along the whole thread (each piece and each doodle line)
+          // and pushed further out along its normal until its real, measured
+          // text box — rotated with the note — clears the thread.
+          const threadPts = [];
+          out.forEach(o => {
+            probe.setAttribute('d', o.d);
+            const len = probe.getTotalLength();
+            for (let l = 0; l <= len; l += 6) { const q = probe.getPointAtLength(l); threadPts.push({ x: q.x, y: q.y }); }
+          });
+          document.querySelectorAll('[data-thread]').forEach(el => {
+            const svg = el.ownerSVGElement, vb = svg.viewBox.baseVal, r = restingRect(svg);
+            const k = (r.bottom - r.top) / vb.height, len = el.getTotalLength(), mirrored = el.dataset.side === 'left';
+            for (let l = 0; l <= len; l += 6 / k) {
+              const q = el.getPointAtLength(l), x = (q.x - vb.x) * k;
+              threadPts.push({ x: mirrored ? r.right - x : r.left + x, y: r.top + (q.y - vb.y) * k });
+            }
+          });
+          const ctx = document.createElement('canvas').getContext('2d');
+          const textW = (str, size) => { ctx.font = `600 ${size}px Caveat, cursive`; return ctx.measureText(str).width; };
+          const clearOf = (c, angle, w, h, extra = []) => {
+            const a = -angle * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
+            return ![...threadPts, ...extra].some(p => {
+              const dx = p.x - c.x, dy = p.y - c.y;
+              return Math.abs(dx * cos - dy * sin) < w / 2 + 10 && Math.abs(dx * sin + dy * cos) < h / 2 + 8;
+            });
+          };
+          const placeClear = (base, n, angle, w, h, extra) => {
+            for (let push = 0; push <= 160; push += 4) {
+              const c = { x: base.x + n.x * push, y: base.y + n.y * push };
+              if (clearOf(c, angle, w, h, extra)) return c;
+            }
+            return { x: base.x + n.x * 160, y: base.y + n.y * 160 };
+          };
+          const sectionAt = y => THREAD_SECTIONS.map(id => document.getElementById(id)).find(el => {
+            if (!el) return false;
+            const r = el.getBoundingClientRect(), t = r.top + window.scrollY;
+            return y >= t && y < t + r.height;
+          });
+          const knots = THREAD_KNOTS.map(k => {
+            const t = out.find(o => o.key === k.key);
+            if (!t) return null;
+            const pt = pointOn(t.d, k.at), nx = pointOn(t.d, k.at + 0.01);
+            // Label goes on the side of the thread facing away from the
+            // nearest section seam, so it never straddles light and dark.
+            const sec = sectionAt(pt.y);
+            let below = false, bg = tweaks.bg;
+            if (sec) {
+              const r = sec.getBoundingClientRect(), top = r.top + window.scrollY;
+              below = pt.y - top < (top + r.height - pt.y);
+              bg = getComputedStyle(sec).backgroundColor;
+            }
+            let tx = nx.x - pt.x, ty = nx.y - pt.y;
+            const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+            let ux = -ty, uy = tx; if ((uy > 0) !== below) { ux = -ux; uy = -uy; }
+            // Keep clear of the thread and of the knot's own scribble (r≈26)
+            const scribble = Array.from({ length: 24 }, (_, i) => ({ x: pt.x + Math.cos(i / 24 * Math.PI * 2) * 26, y: pt.y + Math.sin(i / 24 * Math.PI * 2) * 26 }));
+            const w = Math.max(textW('Knute!', 24), textW('klikk for å nøste den opp', 19));
+            const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, 50, scribble);
+            return { ...k, x: pt.x, y: pt.y, label: { dx: c.x - pt.x, dy: c.y - pt.y }, bg };
+          }).filter(Boolean);
+          const notes = {};
+          const heroLine = document.querySelector('[data-thread="hero"]');
+          if (heroLine) {
+            // Along the hero's bottom-right curve, past its midpoint (clear of the portrait)
+            const svg = heroLine.ownerSVGElement, vb = svg.viewBox.baseVal, r = restingRect(svg);
+            const k = (r.bottom - r.top) / vb.height, len = heroLine.getTotalLength();
+            const at = l => { const q = heroLine.getPointAtLength(l); return { x: r.left + (q.x - vb.x) * k, y: r.top + (q.y - vb.y) * k }; };
+            const a1 = along(at(len * 0.64), at(len * 0.66), 20);
+            notes.intro1 = { ...placeClear(a1, { x: a1.nx, y: a1.ny }, a1.angle, textW('Hjelp meg å samle tråden!', 24), 28), angle: a1.angle };
+          }
+          const heroThread = out.find(o => o.key === 'hero');
+          if (heroThread) {
+            // Where the thread bows down lowest before heading off the left edge
+            let best = 0.5, bestY = -Infinity;
+            for (let f = 0.15; f <= 0.85; f += 0.01) { const q = pointOn(heroThread.d, f); if (q.y > bestY) { bestY = q.y; best = f; } }
+            const a2 = along(pointOn(heroThread.d, best), pointOn(heroThread.d, best + 0.01), 20);
+            notes.intro2 = { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, textW('… og nøste opp i knuter som kan komme', 24), 28), angle: a2.angle };
+          }
+          const finale = out.find(o => o.finale);
+          if (finale) notes.ball = finale.ball;
+          probeSvg.remove();
           const tops = {};
           THREAD_SECTIONS.forEach(id => { tops[id] = top(id); });
-          setThreads({ list: out, tops });
+          setThreads({ list: out, tops, knots, notes });
         };
         // Doodle SVGs need a frame to lay out before they can be measured
         const raf = requestAnimationFrame(measure);
         const ro = new ResizeObserver(() => requestAnimationFrame(measure));
         ro.observe(document.body);
+        // Kontakt's content can change size without the page growing (it's
+        // centred in a 100vh section), e.g. when the yarn ending compacts it
+        const kontaktContent = document.querySelector('[data-yarn-content]');
+        if (kontaktContent) ro.observe(kontaktContent);
         if (document.fonts) document.fonts.ready.then(measure);
         return () => { cancelAnimationFrame(raf); ro.disconnect(); };
       }, [bp.isMobile, bp.width]);
@@ -3084,7 +3490,6 @@
           els.forEach(e => e.classList.add('scroll-line'));
           pieces.push({ els, ys, eff, finale: byKey[els[0].dataset.threadPiece] && byKey[els[0].dataset.threadPiece].finale });
         };
-        const kontakt = document.getElementById('kontakt');
         THREAD_SECTIONS.forEach(id => {
           addPiece([document.querySelector(`[data-thread="${id}"]`)]);
           if (byKey[id]) addPiece([...document.querySelectorAll(`[data-thread-piece="${id}"]`)]);
@@ -3103,24 +3508,105 @@
           return 1;
         };
         const introState = introRef.current;
-        let rafId = null;
+        const g = gameRef.current;
+        const playing = !reducedMotion;
+        // Each knot caps the tip for its own piece and every piece after it,
+        // at the page-y where the drawing reaches the knot. Once untied, the
+        // cap slides on down at a steady pace so the thread visibly carries on.
+        const knots = playing ? (threads.knots || []).map(k => {
+          const idx = pieces.findIndex(p => p.els[0].dataset.threadPiece === k.key);
+          if (idx < 0) return null;
+          const p = pieces[idx], f = k.at * (p.eff.length - 1), i = Math.floor(f);
+          const e = p.eff[i] + ((p.eff[i + 1] ?? p.eff[i]) - p.eff[i]) * (f - i);
+          return { ...k, idx, tipY: p.ys[0] + e, el: document.querySelector(`[data-knot="${k.key}"]`) };
+        }).filter(Boolean) : [];
+        const noteEls = {
+          intro1: document.querySelector('[data-thread-note="intro1"]'),
+          intro2: document.querySelector('[data-thread-note="intro2"]'),
+        };
+        const chip = document.querySelector('[data-thread-chip]');
+        const RELEASE_DELAY = 550, RELEASE_SPEED = 1.3; // ms after untie, px of tip per ms
+        let rafId = null, gatherTimer = null;
         const apply = () => {
           rafId = null;
+          const now = performance.now();
+          let animating = false;
           const tip = reducedMotion ? Infinity : window.scrollY + window.innerHeight * 0.75 * introState.value;
-          pieces.forEach(p => {
+          const limits = knots.map(k => {
+            const t0 = g.untied[k.key];
+            if (t0 === undefined) return k.tipY;
+            const lim = k.tipY + Math.max(0, now - t0 - RELEASE_DELAY) * RELEASE_SPEED;
+            if (lim < tip) animating = true;
+            return lim;
+          });
+          // Finale: once gathered, everything reels in towards the ball
+          let reel = 0;
+          if (g.gathered !== null) {
+            const r = Math.max(0, Math.min(1, (now - g.gathered - 150) / 900));
+            reel = r * r * (3 - 2 * r);
+            if (r < 1) animating = true;
+          }
+          let finaleFrac = 0;
+          pieces.forEach((p, i) => {
+            let pt = tip;
+            knots.forEach((k, j) => { if (k.idx <= i) pt = Math.min(pt, limits[j]); });
             let frac;
-            if (p.finale && tip !== Infinity) {
+            if (p.finale && pt !== Infinity) {
               // The loop doubles back up the page, so y can't drive it: run it
               // over the scroll left between its start reaching the tip and
               // (just short of) the bottom of the page.
-              const endTip = document.documentElement.scrollHeight - window.innerHeight * 0.25 - 40;
-              frac = Math.max(0, Math.min(1, (tip - p.ys[0]) / Math.max(1, endTip - p.ys[0])));
-            } else frac = fracAt(p, tip);
+              // Done as Kontakt fills the screen (or at the page bottom, if
+              // that comes first) so the ball winds up fully in view.
+              const endTip = Math.min(
+                document.documentElement.scrollHeight - window.innerHeight * 0.25 - 40,
+                (threads.tops.kontakt ?? Infinity) + window.innerHeight * 0.75);
+              frac = Math.max(0, Math.min(1, (pt - p.ys[0]) / Math.max(1, endTip - p.ys[0])));
+              finaleFrac = frac;
+            } else frac = fracAt(p, pt);
+            frac *= 1 - reel;
             const off = String(frac <= 0 ? 1.01 : 1 - frac);
             p.els.forEach(e => { e.style.strokeDashoffset = off; });
-            if (p.finale && kontakt) kontakt.classList.toggle('thread-arrived', frac > 0.985);
           });
+          // Knots pop in as the drawing reaches them
+          knots.forEach(k => { if (k.el) k.el.classList.toggle('reached', g.gathered === null && tip >= k.tipY - 20); });
+          const n = threads.notes || {};
+          if (noteEls.intro1) noteEls.intro1.classList.toggle('shown', playing && g.gathered === null && introState.value > 0.6);
+          if (noteEls.intro2 && n.intro2) noteEls.intro2.classList.toggle('shown', playing && g.gathered === null && tip >= n.intro2.y - 40);
+          // Scrolled well past a knot still tied? Offer a way back up.
+          // …but not once they've reached Kontakt: the ordinary ending is a
+          // perfectly good ending, so it shouldn't nag there.
+          const kRect = document.getElementById('kontakt')?.getBoundingClientRect();
+          const inKontakt = kRect && kRect.top < window.innerHeight * 0.5;
+          const stuck = !inKontakt && knots.find(k => g.untied[k.key] === undefined && tip > k.tipY + window.innerHeight * 1.1);
+          if (chip) { chip.classList.toggle('shown', !!stuck); chip.dataset.target = stuck ? String(stuck.tipY) : ''; }
+          // All knots undone and the loop has arrived: gather the yarn
+          const allUntied = knots.every(k => g.untied[k.key] !== undefined);
+          const kontakt = document.getElementById('kontakt');
+          let arrived = finaleFrac > 0.985;
+          if (kontakt) {
+            kontakt.classList.toggle('yarn-ready', playing && allUntied && knots.length > 0);
+            kontakt.classList.toggle('yarn-gathered', g.gathered !== null);
+            // Fallback: Kontakt mostly on screen for a while counts as arrived,
+            // so its content can never stay hidden waiting on the loop.
+            const r = kontakt.getBoundingClientRect();
+            const seen = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0) > window.innerHeight * 0.7;
+            if (seen && allUntied) {
+              if (g.seenSince == null) g.seenSince = now;
+              if (now - g.seenSince > 2500) arrived = true; else animating = true;
+            } else g.seenSince = null;
+          }
+          if (playing && allUntied && arrived && g.gathered === null) {
+            if (!gatherTimer) gatherTimer = setTimeout(() => {
+              gatherTimer = null;
+              if (g.gathered !== null) return;
+              g.gathered = performance.now();
+              setGame(s => ({ ...s, gathered: true }));
+              kickRef.current();
+            }, 0);
+          } else if (gatherTimer && !arrived) { clearTimeout(gatherTimer); gatherTimer = null; }
+          if (animating) rafId = requestAnimationFrame(apply);
         };
+        kickRef.current = () => { if (rafId === null) rafId = requestAnimationFrame(apply); };
         // Starts 0.5s after page load, once the hero's bottom-right blob has faded in
         const tick = now => {
           if (introState.start === null) introState.start = now + 500;
@@ -3136,14 +3622,76 @@
         return () => {
           window.removeEventListener('scroll', onScroll);
           if (rafId !== null) cancelAnimationFrame(rafId);
+          clearTimeout(gatherTimer);
+          kickRef.current = () => {};
           // Hand the doodle lines back to their CSS draw-in (e.g. on phone widths)
           pieces.forEach(p => p.els.forEach(e => { e.classList.remove('scroll-line'); e.style.strokeDashoffset = ''; }));
-          if (kontakt) kontakt.classList.remove('thread-arrived');
         };
       }, [threads, reducedMotion]);
 
       if (!threads) return null;
-      return threads.list.flatMap(t => t.sections.map(sec => {
+      const untie = key => {
+        if (gameRef.current.untied[key] !== undefined) return;
+        gameRef.current.untied[key] = performance.now();
+        setGame(s => ({ ...s, untied: { ...s.untied, [key]: true } }));
+        const pointer = document.getElementById('pointer');
+        if (pointer) pointer.classList.remove('active');
+        kickRef.current();
+      };
+      const pointerOn = () => { const el = document.getElementById('pointer'); if (el) el.classList.add('active'); };
+      const pointerOff = () => { const el = document.getElementById('pointer'); if (el) el.classList.remove('active'); };
+      const notes = threads.notes || {};
+      const overlay = !reducedMotion && (
+        <div key="game" style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, zIndex: 50 }}>
+          {notes.intro1 && (
+            <div className="thread-note" data-thread-note="intro1" style={{ left: notes.intro1.x, top: notes.intro1.y, '--tilt': `${notes.intro1.angle}deg` }}>
+              Hjelp meg å samle tråden!
+            </div>
+          )}
+          {notes.intro2 && (
+            <div className="thread-note" data-thread-note="intro2" style={{ left: notes.intro2.x, top: notes.intro2.y, '--tilt': `${notes.intro2.angle}deg` }}>
+              … og nøste opp i knuter som kan komme
+            </div>
+          )}
+          {(threads.knots || []).map(k => (
+            <div key={k.key} className="knot" data-untied={game.untied[k.key] ? '' : undefined} data-knot={k.key} style={{ left: k.x, top: k.y }}>
+              <div className="knot-inner" style={{ '--halo': k.bg }}>
+                <div className="thread-note knot-ask" style={{ left: 37 + k.label.dx, top: 37 + k.label.dy }}>
+                  Knute!
+                  <span style={{ display: 'block', fontSize: 19, fontWeight: 500 }}>klikk for å nøste den opp</span>
+                </div>
+                <button className="knot-btn" aria-label="Løs opp knuten på tråden"
+                  onClick={() => untie(k.key)} onMouseEnter={pointerOn} onMouseLeave={pointerOff}>
+                  <svg viewBox="0 0 74 74" width="74" height="74" aria-hidden="true" style={{ overflow: 'visible' }}>
+                    <g className="knot-scribble">
+                      {/* Rotation lives on a wrapper <g>: the loop's own CSS transform
+                          (used to spin it away) would otherwise replace it */}
+                      {KNOT_LOOPS.map(([rx, ry, rot, spin], i) => (
+                        <g key={i} transform={`rotate(${rot} 37 37)`}>
+                          <ellipse className="knot-loop" cx={37 + (i % 3 - 1) * 2} cy={37 + (i % 2 ? 2 : -2)} rx={rx * 1.3} ry={ry * 1.3}
+                            fill="none" stroke={tweaks.accent} strokeWidth="1.4"
+                            style={{ '--spin': `${spin}deg`, transitionDelay: `${i * 0.04}s` }} />
+                        </g>
+                      ))}
+                    </g>
+                  </svg>
+                </button>
+                <div className="thread-note knot-thanks" style={{ left: 37 + k.label.dx, top: 37 + k.label.dy }}>Takk!</div>
+              </div>
+            </div>
+          ))}
+          {game.gathered && notes.ball && <YarnBallFinale x={notes.ball.x} y={notes.ball.y} size={notes.ball.size} tweaks={tweaks} />}
+        </div>
+      );
+      const chip = !reducedMotion && (
+        <button key="chip" className="thread-chip" data-thread-chip="" aria-label="Gå tilbake til knuten på tråden"
+          onMouseEnter={pointerOn} onMouseLeave={pointerOff}
+          onClick={e => {
+            const y = Number(e.currentTarget.dataset.target);
+            if (y) window.scrollTo({ top: y - window.innerHeight * 0.55, behavior: 'smooth' });
+          }}>!knute!</button>
+      );
+      return [overlay, chip, ...threads.list.flatMap(t => t.sections.map(sec => {
         const layer = document.querySelector(`[data-doodle-layer="${sec}"]`);
         if (!layer || threads.tops[sec] === null) return null;
         return ReactDOM.createPortal(
@@ -3152,14 +3700,10 @@
           }}>
             <path className="doodle-line scroll-line" pathLength="1" d={t.d} data-thread-piece={t.key}
               fill="none" stroke={tweaks.accent} strokeWidth="1.6" strokeLinecap="round" />
-            {t.arrow && sec === 'kontakt' && (
-              <path className="thread-arrow" d={t.arrow} fill="none" stroke={tweaks.accent}
-                strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            )}
           </svg>,
           layer
         );
-      }));
+      }))];
     }
 
     function App() {
