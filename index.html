@@ -179,25 +179,44 @@
     /* Doodles — hand-drawn corner curves (hero + every section, see Doodles())
        and the little "spark" strokes beside the portrait/carousel. Lines use pathLength="1" so one dash keyframe
        draws any of them in, regardless of real length. */
-    @keyframes heroLineDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    /* Dash pattern "1 2" + hidden offset 1.01 (not 1): with round caps, a
+       zero-length dash sitting exactly at the path's start would still paint
+       a dot, so the hidden state pushes it fully off the path. */
+    @keyframes heroLineDraw { from { stroke-dashoffset: 1.01; } to { stroke-dashoffset: 0; } }
     @keyframes heroBlobIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes heroSparkBurst {
-      0% { stroke-dashoffset: 1; transform: scale(0.92); }
+      0% { stroke-dashoffset: 1.01; transform: scale(0.92); }
       55% { stroke-dashoffset: 0; transform: scale(1.1); }
       100% { stroke-dashoffset: 0; transform: scale(1); }
     }
     /* Load sequence: top-left corner draws first, then bottom-right, and the
        portrait sparks pop last. */
-    .doodle-line { stroke-dasharray: 1; stroke-dashoffset: 1; }
+    .doodle-line { stroke-dasharray: 1 2; stroke-dashoffset: 1.01; }
     .doodle-blob { opacity: 0; }
     .drawn .doodle-line { animation: heroLineDraw 0.55s cubic-bezier(.65,0,.35,1) 0.15s forwards; }
     .drawn .doodle-blob { animation: heroBlobIn 0.45s ease 0.05s forwards; }
     .drawn.doodle-second .doodle-line { animation-delay: 0.7s; }
     .drawn.doodle-second .doodle-blob { animation-delay: 0.6s; }
+    /* Thread finale in Kontakt: once the line has looped round the content and
+       its arrow reaches "La oss snakke", the label lifts forward a touch. */
+    .kontakt-label-lift {
+      display: inline-block;
+      transition: transform 0.6s cubic-bezier(.34,1.56,.64,1), text-shadow 0.6s ease, letter-spacing 0.6s cubic-bezier(.16,1,.3,1);
+    }
+    .thread-arrived .kontakt-label-lift {
+      transform: translateY(-4px) scale(1.18);
+      letter-spacing: 0.24em;
+      text-shadow: 0 0 18px rgba(192,75,34,0.45);
+    }
+    .thread-arrow { opacity: 0; transition: opacity 0.3s ease; }
+    .thread-arrived .thread-arrow { opacity: 1; }
+    @media (prefers-reduced-motion: reduce) {
+      .kontakt-label-lift { transition: none; }
+    }
     /* Lines driven by scroll (PageThread) — JS sets stroke-dashoffset inline */
     .doodle-line.scroll-line, .drawn .doodle-line.scroll-line { animation: none; }
     .hero-sparks line {
-      stroke-dasharray: 1; stroke-dashoffset: 1;
+      stroke-dasharray: 1 2; stroke-dashoffset: 1.01;
       transform-box: view-box; transform-origin: 50px 50px;
       animation: heroSparkBurst 0.7s cubic-bezier(.16,1,.3,1) forwards;
     }
@@ -756,20 +775,22 @@
       blob: 'M200,28 C146,36 104,78 94,132 C84,184 124,230 200,244 Z',
       line: 'M200,10 C158,34 128,74 104,122 C80,170 48,204 10,220'
     };
-    function Doodles({ tweaks, bp, side = 'right', onDark = false, threadId }) {
+    function Doodles({ tweaks, bp, side = 'right', onDark = false, threadId, bare = false }) {
       const ref = useRef(null);
       const inView = useInViewOnce(ref);
       return (
         <div ref={ref} aria-hidden="true" data-doodle-layer={threadId} style={{
           position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: -1
         }}>
-          <div className={inView ? 'drawn' : ''} style={{
-            position: 'absolute', bottom: '9%', [side]: 0,
-            width: bp.isMobile ? 90 : 'clamp(120px, 12vw, 190px)',
-            transform: side === 'left' ? 'scaleX(-1)' : 'none'
-          }}>
-            <DoodleSvg shape={DOODLE_SIDE} tweaks={tweaks} onDark={onDark} threadId={threadId} side={side} />
-          </div>
+          {!bare && (
+            <div className={inView ? 'drawn' : ''} style={{
+              position: 'absolute', bottom: '9%', [side]: 0,
+              width: bp.isMobile ? 90 : 'clamp(120px, 12vw, 190px)',
+              transform: side === 'left' ? 'scaleX(-1)' : 'none'
+            }}>
+              <DoodleSvg shape={DOODLE_SIDE} tweaks={tweaks} onDark={onDark} threadId={threadId} side={side} />
+            </div>
+          )}
         </div>
       );
     }
@@ -1206,7 +1227,7 @@
               // Frame sits flush left on mobile, so mirror the sparks to its top-right corner
               ...(bp.isMobile ? { right: -75, transform: 'scaleX(-1)' } : { left: -75 })
             }}>
-              <g key={sparkKey} className={`hero-sparks${sparkKey === 0 ? ' intro' : ''}`}
+              <g key={sparkKey} className="hero-sparks"
                 stroke={tweaks.accent} strokeWidth="2.6" strokeLinecap="round">
                 {/* Radial strokes out from the frame corner at (50,50) */}
                 <line pathLength="1" x1="35.0" y1="44.5" x2="18.0" y2="38.4" />
@@ -2772,9 +2793,11 @@
       const githubTouchRef = useTouchHoverStyle(githubEnter, githubLeave);
       return (
         <section id="kontakt" style={{ position: 'relative', isolation: 'isolate', padding: mobile ? '72px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <Doodles tweaks={tweaks} bp={bp} side="right" onDark threadId="kontakt" />
+          <Doodles tweaks={tweaks} bp={bp} side="right" onDark threadId="kontakt" bare={!mobile} />
           <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', textAlign: 'center' }}>
-            <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 20, fontWeight: 500 }}>La oss snakke</p>
+            <p className="reveal" data-thread-anchor="kontakt-label" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 20, fontWeight: 500 }}>
+              <span className="kontakt-label-lift">La oss snakke</span>
+            </p>
             <h2 className="reveal reveal-delay-1" style={{
               fontFamily: tweaks.fontHeading, fontSize: mobile ? 'clamp(36px, 11vw, 56px)' : 'clamp(48px, 7vw, 96px)',
               lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 400, marginBottom: mobile ? 20 : 32
@@ -2786,7 +2809,7 @@
               Åpen for samarbeid, jobb eller internship innanfor design og utvikling.
             </p>
 
-            <div className="reveal reveal-delay-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
+            <div className="reveal reveal-delay-3" data-thread-anchor="kontakt-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: mobile ? 12 : 16, marginBottom: mobile ? 40 : 80 }}>
               <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: 'center', gap: mobile ? 12 : 16 }}>
               <a href="mailto:olinefk@outlook.com" ref={emailTouchRef} style={{
                 position: 'relative', overflow: 'visible',
@@ -2940,6 +2963,34 @@
           const f = n => n.toFixed(1);
           return `M${f(start.p.x)},${f(start.p.y)} C${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)} ${f(end.x)},${f(end.y)}`;
         };
+        // Smooth curve through points (Catmull-Rom → cubic Béziers), leaving
+        // along the doodle line's own direction so the join is seamless.
+        const smooth = (start, pts) => {
+          const all = [start.p, ...pts];
+          const f = n => n.toFixed(1);
+          let d = `M${f(all[0].x)},${f(all[0].y)}`;
+          for (let i = 0; i < all.length - 1; i++) {
+            const p0 = all[i - 1] || all[i], p1 = all[i], p2 = all[i + 1], p3 = all[i + 2] || p2;
+            const seg = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            const c1 = i === 0
+              ? { x: p1.x + start.dir.x * seg / 3, y: p1.y + start.dir.y * seg / 3 }
+              : { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
+            const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+            d += ` C${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)} ${f(p2.x)},${f(p2.y)}`;
+          }
+          return d;
+        };
+        // Page rect of an element as laid out, ignoring the scroll-reveal
+        // translateY on it/its ancestors (it may not have revealed yet).
+        const restingRect = el => {
+          const r = el.getBoundingClientRect();
+          let shift = 0;
+          for (let n = el; n && n !== document.body; n = n.parentElement) {
+            const t = getComputedStyle(n).transform;
+            if (t && t !== 'none') shift += new DOMMatrix(t).m42;
+          }
+          return { left: r.left + window.scrollX, right: r.right + window.scrollX, top: r.top + window.scrollY - shift, bottom: r.bottom + window.scrollY - shift };
+        };
         const measure = () => {
           const W = document.documentElement.clientWidth;
           const top = id => { const el = document.getElementById(id); return el ? el.getBoundingClientRect().top + window.scrollY : null; };
@@ -2952,7 +3003,33 @@
             if (from === 'hero') {
               // Above the carousel sparks and out the left edge
               const frame = document.querySelector('[data-thread-anchor="carousel"]');
-              if (frame) end = { x: -10, y: frame.getBoundingClientRect().top + window.scrollY - 90 };
+              if (frame) end = { x: -10, y: restingRect(frame).top - 90 };
+            } else if (to === 'kontakt') {
+              // Finale: sweep in over the top, loop all the way round the
+              // contact content, and land as an arrow pointing at "La oss snakke".
+              const label = document.querySelector('[data-thread-anchor="kontakt-label"] span');
+              const actions = document.querySelector('[data-thread-anchor="kontakt-actions"]');
+              if (label && actions) {
+                const L = restingRect(label), A = restingRect(actions);
+                const cx = W / 2, cy = (L.top + A.bottom) / 2;
+                const rx = Math.min(W / 2 - 40, Math.max(A.right - A.left, 640) / 2 + 160);
+                const ry = (A.bottom - L.top) / 2 + 50;
+                const ly = (L.top + L.bottom) / 2;
+                const tipPt = { x: L.left - 36, y: ly }; // room for the label to grow when it lifts
+                const d = smooth(start, [
+                  { x: cx + rx * 0.55, y: cy - ry * 1.04 },
+                  { x: cx + rx, y: cy + ry * 0.05 },
+                  { x: cx, y: cy + ry },
+                  { x: cx - rx, y: cy },
+                  { x: cx - rx * 0.6, y: cy - ry * 0.8 },
+                  tipPt
+                ]);
+                // Arrowhead: two short strokes back from the tip, angled off the approach
+                const ah = 11;
+                const arrow = `M${tipPt.x - ah},${tipPt.y - ah * 0.7} L${tipPt.x},${tipPt.y} L${tipPt.x - ah},${tipPt.y + ah * 0.7}`;
+                out.push({ key: from, d, sections: [from, to], finale: true, arrow });
+              }
+              continue;
             } else {
               // Diagonally across into the next section, out the opposite edge
               const T = top(to);
@@ -2974,7 +3051,7 @@
 
       // Scroll-linked drawing: the whole chain (each doodle line + the thread
       // after it) acts like a hand-drawn scroll indicator. Its tip follows a
-      // point ~65% down the viewport, so it draws on as you scroll down and
+      // point ~75% down the viewport, so it draws on as you scroll down and
       // retracts as you scroll up. On load the tip sweeps in from the top of
       // the page so the line is visibly drawn top-down. Driven straight on the
       // DOM (stroke-dashoffset) once per frame — no React re-render.
@@ -2993,23 +3070,34 @@
           const el = els[0];
           const len = el.getTotalLength();
           const m = el.getScreenCTM();
-          const ys = [];
-          for (let i = 0; i <= 60; i++) ys.push(el.getPointAtLength(len * i / 60).matrixTransform(m).y + window.scrollY);
+          const ys = [], eff = [0];
+          let prev = null;
+          for (let i = 0; i <= 60; i++) {
+            const pt = el.getPointAtLength(len * i / 60).matrixTransform(m);
+            ys.push(pt.y + window.scrollY);
+            // Scroll "cost" of each step: its vertical travel, but at least
+            // half its horizontal travel, so long flat sweeps draw slowly
+            // instead of racing across the page in a few px of scroll.
+            if (prev) eff.push(eff[eff.length - 1] + Math.max(Math.abs(pt.y - prev.y), Math.abs(pt.x - prev.x) * 0.5));
+            prev = pt;
+          }
           els.forEach(e => e.classList.add('scroll-line'));
-          pieces.push({ els, ys });
+          pieces.push({ els, ys, eff, finale: byKey[els[0].dataset.threadPiece] && byKey[els[0].dataset.threadPiece].finale });
         };
+        const kontakt = document.getElementById('kontakt');
         THREAD_SECTIONS.forEach(id => {
           addPiece([document.querySelector(`[data-thread="${id}"]`)]);
           if (byKey[id]) addPiece([...document.querySelectorAll(`[data-thread-piece="${id}"]`)]);
         });
-        // Fraction of a piece drawn when the tip is at page-y `tip`: up to the
-        // first sample that lies below the tip.
-        const fracAt = (ys, tip) => {
-          for (let i = 0; i < ys.length; i++) {
-            if (ys[i] > tip) {
-              if (i === 0) return 0;
-              const t = (tip - ys[i - 1]) / ((ys[i] - ys[i - 1]) || 1);
-              return (i - 1 + Math.max(0, Math.min(1, t))) / (ys.length - 1);
+        // Fraction of a piece drawn when the tip is at page-y `tip`: the tip's
+        // distance past the piece's start, spent along its scroll-cost curve.
+        const fracAt = (p, tip) => {
+          const d = tip - p.ys[0], eff = p.eff;
+          if (d <= 0) return 0;
+          for (let i = 1; i < eff.length; i++) {
+            if (eff[i] >= d) {
+              const t = (d - eff[i - 1]) / ((eff[i] - eff[i - 1]) || 1);
+              return (i - 1 + t) / (eff.length - 1);
             }
           }
           return 1;
@@ -3018,10 +3106,19 @@
         let rafId = null;
         const apply = () => {
           rafId = null;
-          const tip = reducedMotion ? Infinity : window.scrollY + window.innerHeight * 0.65 * introState.value;
+          const tip = reducedMotion ? Infinity : window.scrollY + window.innerHeight * 0.75 * introState.value;
           pieces.forEach(p => {
-            const off = String(1 - fracAt(p.ys, tip));
+            let frac;
+            if (p.finale && tip !== Infinity) {
+              // The loop doubles back up the page, so y can't drive it: run it
+              // over the scroll left between its start reaching the tip and
+              // (just short of) the bottom of the page.
+              const endTip = document.documentElement.scrollHeight - window.innerHeight * 0.25 - 40;
+              frac = Math.max(0, Math.min(1, (tip - p.ys[0]) / Math.max(1, endTip - p.ys[0])));
+            } else frac = fracAt(p, tip);
+            const off = String(frac <= 0 ? 1.01 : 1 - frac);
             p.els.forEach(e => { e.style.strokeDashoffset = off; });
+            if (p.finale && kontakt) kontakt.classList.toggle('thread-arrived', frac > 0.985);
           });
         };
         // Starts 0.5s after page load, once the hero's bottom-right blob has faded in
@@ -3041,6 +3138,7 @@
           if (rafId !== null) cancelAnimationFrame(rafId);
           // Hand the doodle lines back to their CSS draw-in (e.g. on phone widths)
           pieces.forEach(p => p.els.forEach(e => { e.classList.remove('scroll-line'); e.style.strokeDashoffset = ''; }));
+          if (kontakt) kontakt.classList.remove('thread-arrived');
         };
       }, [threads, reducedMotion]);
 
@@ -3054,6 +3152,10 @@
           }}>
             <path className="doodle-line scroll-line" pathLength="1" d={t.d} data-thread-piece={t.key}
               fill="none" stroke={tweaks.accent} strokeWidth="1.6" strokeLinecap="round" />
+            {t.arrow && sec === 'kontakt' && (
+              <path className="thread-arrow" d={t.arrow} fill="none" stroke={tweaks.accent}
+                strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            )}
           </svg>,
           layer
         );
