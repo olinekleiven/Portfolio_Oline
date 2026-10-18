@@ -175,6 +175,40 @@
       to { opacity: 1; transform: translateY(0); }
     }
     .toolbox-tooltip { animation: toolboxTooltipIn 0.16s cubic-bezier(.16,1,.3,1); }
+
+    /* Doodles — hand-drawn corner curves (hero + every section, see Doodles())
+       and the little "spark" strokes beside the portrait/carousel. Lines use pathLength="1" so one dash keyframe
+       draws any of them in, regardless of real length. */
+    @keyframes heroLineDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes heroBlobIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes heroSparkBurst {
+      0% { stroke-dashoffset: 1; transform: scale(0.92); }
+      55% { stroke-dashoffset: 0; transform: scale(1.1); }
+      100% { stroke-dashoffset: 0; transform: scale(1); }
+    }
+    /* Load sequence: top-left corner draws first, then bottom-right, and the
+       portrait sparks pop last. */
+    .doodle-line { stroke-dasharray: 1; stroke-dashoffset: 1; }
+    .doodle-blob { opacity: 0; }
+    .drawn .doodle-line { animation: heroLineDraw 0.55s cubic-bezier(.65,0,.35,1) 0.15s forwards; }
+    .drawn .doodle-blob { animation: heroBlobIn 0.45s ease 0.05s forwards; }
+    .drawn.doodle-second .doodle-line { animation-delay: 0.7s; }
+    .drawn.doodle-second .doodle-blob { animation-delay: 0.6s; }
+    /* Lines driven by scroll (PageThread) — JS sets stroke-dashoffset inline */
+    .doodle-line.scroll-line, .drawn .doodle-line.scroll-line { animation: none; }
+    .hero-sparks line {
+      stroke-dasharray: 1; stroke-dashoffset: 1;
+      transform-box: view-box; transform-origin: 50px 50px;
+      animation: heroSparkBurst 0.7s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-sparks line:nth-child(2) { animation-delay: 0.07s; }
+    .hero-sparks line:nth-child(3) { animation-delay: 0.14s; }
+    .hero-sparks.intro line { animation-delay: 1.3s; }
+    .hero-sparks.intro line:nth-child(2) { animation-delay: 1.37s; }
+    .hero-sparks.intro line:nth-child(3) { animation-delay: 1.44s; }
+    @media (prefers-reduced-motion: reduce) {
+      .doodle-line, .doodle-blob, .hero-sparks line { animation: none; stroke-dashoffset: 0; opacity: 1; }
+    }
     @media (prefers-reduced-motion: reduce) {
       .toolbox-wobble { animation: none; }
       .toolbox-box, .toolbox-tool, .toolbox-lid, .toolbox-panel, .toolbox-open-reveal { transition-duration: 0.01ms !important; }
@@ -672,6 +706,74 @@
       );
     }
 
+    // Corner doodle shapes, shared by the hero and every section's Doodles.
+    // Drawn for the top-left / bottom-right corners; mirrored for the others.
+    const DOODLE_TOP = {
+      viewBox: '0 0 520 220',
+      blob: 'M-20,-20 H520 C470,55 400,92 300,104 C180,118 80,142 -20,190 Z',
+      line: 'M-20,214 C110,200 225,148 300,84 C332,56 352,28 372,-20'
+    };
+    const DOODLE_BOTTOM = {
+      viewBox: '0 0 540 240',
+      blob: 'M560,92 C500,80 420,70 340,86 C220,110 150,170 190,212 C232,250 420,236 560,226 Z',
+      line: 'M560,-6 C520,30 490,62 445,96 C372,148 262,182 168,238'
+    };
+    function DoodleSvg({ shape, tweaks, onDark, threadId, side }) {
+      return (
+        <svg viewBox={shape.viewBox} style={{ display: 'block', width: '100%', height: 'auto', overflow: 'visible' }}>
+          <path className="doodle-blob" d={shape.blob} fill={onDark ? `${tweaks.bg}0a` : `${tweaks.dark}0c`} />
+          <path className="doodle-line" pathLength="1" d={shape.line} data-thread={threadId} data-side={side}
+            fill="none" stroke={tweaks.accent} strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    // True once the element's top has scrolled ~30% up into the viewport
+    // (never flips back). A rootMargin rather than a ratio threshold, so very
+    // tall sections still trigger.
+    function useInViewOnce(ref) {
+      const [inView, setInView] = useState(false);
+      useEffect(() => {
+        const el = ref.current;
+        if (!el || inView) return;
+        const obs = new IntersectionObserver(entries => {
+          if (entries.some(e => e.isIntersecting)) { setInView(true); obs.disconnect(); }
+        }, { rootMargin: '0px 0px -30% 0px' });
+        obs.observe(el);
+        return () => obs.disconnect();
+      }, [inView]);
+      return inView;
+    }
+
+    // Section doodle: one small, self-contained mark (soft half-moon + a
+    // single hand-drawn sweep across it) hugging a side edge near the section's lower
+    // part. It never touches the section's top/bottom edge, so nothing gets
+    // cut off where two sections meet. Drawn for the right edge; mirrored for
+    // the left. Sits behind content (zIndex -1) — the section needs
+    // position: relative + isolation.
+    const DOODLE_SIDE = {
+      viewBox: '0 0 200 260',
+      blob: 'M200,28 C146,36 104,78 94,132 C84,184 124,230 200,244 Z',
+      line: 'M200,10 C158,34 128,74 104,122 C80,170 48,204 10,220'
+    };
+    function Doodles({ tweaks, bp, side = 'right', onDark = false, threadId }) {
+      const ref = useRef(null);
+      const inView = useInViewOnce(ref);
+      return (
+        <div ref={ref} aria-hidden="true" data-doodle-layer={threadId} style={{
+          position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: -1
+        }}>
+          <div className={inView ? 'drawn' : ''} style={{
+            position: 'absolute', bottom: '9%', [side]: 0,
+            width: bp.isMobile ? 90 : 'clamp(120px, 12vw, 190px)',
+            transform: side === 'left' ? 'scaleX(-1)' : 'none'
+          }}>
+            <DoodleSvg shape={DOODLE_SIDE} tweaks={tweaks} onDark={onDark} threadId={threadId} side={side} />
+          </div>
+        </div>
+      );
+    }
+
     // Hero
     function Hero({ tweaks, bp }) {
       const scrambled = useScramble('Produktdesigner', 600);
@@ -708,6 +810,57 @@
         };
       }, [reducedMotion, bp.isMobile]);
 
+      // The top-left corner doodle drifts a few px with the mouse so the page
+      // feels alive. The bottom-right one stays put: PageThread continues
+      // its line down the page and they must keep meeting exactly.
+      const cornerTLRef = React.useRef(null);
+      React.useEffect(() => {
+        if (reducedMotion || !window.matchMedia('(hover: hover)').matches) return;
+        let rafId = null, mx = 0, my = 0;
+        const apply = () => {
+          rafId = null;
+          if (cornerTLRef.current) cornerTLRef.current.style.transform = `translate(${mx * 14}px, ${my * 10}px)`;
+        };
+        const onMove = e => {
+          mx = e.clientX / window.innerWidth - 0.5;
+          my = e.clientY / window.innerHeight - 0.5;
+          if (rafId === null) rafId = window.requestAnimationFrame(apply);
+        };
+        window.addEventListener('mousemove', onMove, { passive: true });
+        return () => {
+          window.removeEventListener('mousemove', onMove);
+          if (rafId !== null) window.cancelAnimationFrame(rafId);
+        };
+      }, [reducedMotion]);
+
+      // Sparks beside the portrait: drawn in once on load, then re-burst each
+      // time the portrait is hovered/tapped. Re-keying the <g> restarts the
+      // CSS animation; a short lock stops rapid re-hovers from stuttering it.
+      const [sparkKey, setSparkKey] = React.useState(0);
+      const sparkLockRef = React.useRef(false);
+      const burstSparks = () => {
+        if (reducedMotion || sparkLockRef.current) return;
+        sparkLockRef.current = true;
+        setSparkKey(k => k + 1);
+        setTimeout(() => { sparkLockRef.current = false; }, 800);
+      };
+      const sparks = (
+        <svg aria-hidden="true" viewBox="-40 -40 180 180" style={{
+          position: 'absolute', top: '-40%', left: '-40%', width: '180%', height: '180%',
+          overflow: 'visible', pointerEvents: 'none',
+          // Mobile portrait sits flush left, so mirror the sparks to its right side
+          transform: bp.isMobile ? 'scaleX(-1)' : 'none'
+        }}>
+          <g key={sparkKey} className={`hero-sparks${sparkKey === 0 ? ' intro' : ''}`}
+            stroke={tweaks.accent} strokeWidth="1.3" strokeLinecap="round">
+            {/* Radial strokes off the circle (r=50 around 50,50), up-left side */}
+            <line pathLength="1" x1="-4.1" y1="35.5" x2="-15.7" y2="32.4" />
+            <line pathLength="1" x1="10.4" y1="10.4" x2="1.9" y2="1.9" />
+            <line pathLength="1" x1="30.8" y1="-2.6" x2="26.7" y2="-13.9" />
+          </g>
+        </svg>
+      );
+
       // Portrait: same position as desktop on tablet, just proportionally smaller
       const portraitSize = bp.isMobile ? 200 : bp.isTablet ? Math.round(bp.width * 0.28) : 380;
       const sidePad = bp.isMobile ? '24px' : '48px';
@@ -720,16 +873,33 @@
           background: tweaks.bg, position: 'relative', overflow: 'hidden'
         }}>
 
+          <div data-doodle-layer="hero" aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }} />
+          {/* Corner doodles — soft blob + thin hand-drawn curve, top-left and bottom-right */}
+          <div ref={cornerTLRef} className="drawn" aria-hidden="true" style={{
+            position: 'absolute', top: 0, left: 0, width: bp.isMobile ? '78vw' : 'clamp(280px, 36vw, 560px)',
+            pointerEvents: 'none', zIndex: 0, transition: 'transform 0.6s cubic-bezier(.16,1,.3,1)'
+          }}>
+            <DoodleSvg shape={DOODLE_TOP} tweaks={tweaks} />
+          </div>
+          <div className="drawn doodle-second" aria-hidden="true" style={{
+            position: 'absolute', bottom: 0, right: 0, width: bp.isMobile ? '78vw' : 'clamp(300px, 38vw, 600px)',
+            pointerEvents: 'none', zIndex: 0
+          }}>
+            <DoodleSvg shape={DOODLE_BOTTOM} tweaks={tweaks} threadId="hero" />
+          </div>
+
           {/* Portrait — inline on mobile, absolute top-right on tablet+desktop */}
           {bp.isMobile ? (
-            <div style={{
-              width: portraitSize, height: portraitSize, borderRadius: '50%', overflow: 'hidden',
-              border: `2px solid ${tweaks.accent}50`,
-              boxShadow: `0 0 0 8px ${tweaks.accent}10`,
-              marginBottom: 28, flexShrink: 0
-            }}>
-              <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
+            <div style={{ position: 'relative', width: portraitSize, height: portraitSize, marginBottom: 28, flexShrink: 0, zIndex: 1 }}>
+              <div onClick={burstSparks} style={{
+                width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden',
+                border: `2px solid ${tweaks.accent}50`,
+                boxShadow: `0 0 0 8px ${tweaks.accent}10`
+              }}>
+                <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
+              </div>
+              {sparks}
             </div>
           ) : (
             <div ref={portraitRef} style={{
@@ -738,17 +908,22 @@
               right: '6%',
               transform: 'translateY(-50%)',
               width: portraitSize, height: portraitSize,
-              borderRadius: '50%', overflow: 'hidden',
-              border: `3px solid ${tweaks.accent}40`,
-              boxShadow: `0 0 0 12px ${tweaks.accent}10`,
               pointerEvents: 'none', willChange: reducedMotion ? 'auto' : 'transform'
             }}>
-              <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
+              <div onMouseEnter={burstSparks} style={{
+                width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden',
+                border: `3px solid ${tweaks.accent}40`,
+                boxShadow: `0 0 0 12px ${tweaks.accent}10`,
+                pointerEvents: 'auto'
+              }}>
+                <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
+              </div>
+              {sparks}
             </div>
           )}
 
-          <div style={{ maxWidth: 900 }}>
+          <div style={{ maxWidth: 900, position: 'relative', zIndex: 1 }}>
             <p className="reveal" style={{
               fontSize: 16, letterSpacing: '0.16em', textTransform: 'uppercase',
               color: tweaks.accent, fontWeight: 500, marginBottom: 24
@@ -1010,10 +1185,40 @@
         }, 110);
       };
 
+      // Sparks off the frame's top-left corner: pop in once the carousel is in
+      // view (after the section's corner doodles), re-burst on hover/tap.
+      const sparksInView = useInViewOnce(wrapRef);
+      const [sparkKey, setSparkKey] = useState(0);
+      const sparkLockRef = useRef(false);
+      const burstSparks = () => {
+        if (reducedMotion || sparkLockRef.current) return;
+        sparkLockRef.current = true;
+        setSparkKey(k => k + 1);
+        setTimeout(() => { sparkLockRef.current = false; }, 800);
+      };
+
       const card = cards[dispIdx];
       return (
         <div ref={wrapRef} className="reveal" style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}>
+          {sparksInView && (
+            <svg aria-hidden="true" viewBox="0 0 60 60" width="90" height="90" style={{
+              position: 'absolute', top: -75, overflow: 'visible', pointerEvents: 'none',
+              // Frame sits flush left on mobile, so mirror the sparks to its top-right corner
+              ...(bp.isMobile ? { right: -75, transform: 'scaleX(-1)' } : { left: -75 })
+            }}>
+              <g key={sparkKey} className={`hero-sparks${sparkKey === 0 ? ' intro' : ''}`}
+                stroke={tweaks.accent} strokeWidth="2.6" strokeLinecap="round">
+                {/* Radial strokes out from the frame corner at (50,50) */}
+                <line pathLength="1" x1="35.0" y1="44.5" x2="18.0" y2="38.4" />
+                <line pathLength="1" x1="38.7" y1="38.7" x2="26.0" y2="26.0" />
+                <line pathLength="1" x1="44.5" y1="35.0" x2="38.4" y2="18.0" />
+              </g>
+            </svg>
+          )}
           <div
+            data-thread-anchor="carousel"
+            onMouseEnter={burstSparks}
+            onClick={burstSparks}
             role="group"
             aria-label={`Biletgalleri, bilete ${dispIdx + 1} av ${cards.length}`}
             style={{
@@ -1065,10 +1270,12 @@
       const sidePad = bp.isMobile ? '24px' : '48px';
       return (
         <section id="om-meg" style={{
+          position: 'relative', isolation: 'isolate',
           padding: `${80 * tweaks.spacing}px ${sidePad}`,
           background: tweaks.bg, color: tweaks.dark,
           minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
         }}>
+          <Doodles tweaks={tweaks} bp={bp} side="right" threadId="om-meg" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <div style={{
               display: 'grid', gridTemplateColumns: bp.isMobile ? '1fr' : '1fr 1fr',
@@ -1105,10 +1312,12 @@
       const sidePad = bp.isMobile ? '24px' : '48px';
       return (
         <section id="utdanning" style={{
+          position: 'relative', isolation: 'isolate',
           padding: `${80 * tweaks.spacing}px ${sidePad}`,
           background: tweaks.dark, color: tweaks.bg,
           minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
         }}>
+          <Doodles tweaks={tweaks} bp={bp} side="left" onDark threadId="utdanning" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
 
             {/* Top row: photo + label, with Utdanning label aligned alongside on desktop */}
@@ -1514,11 +1723,13 @@
       const narrow = bp && bp.width < 800;
       return (
         <section id="prosjekter" style={{
+          position: 'relative', isolation: 'isolate',
           padding: `${80 * tweaks.spacing}px ${narrow ? '24px' : '48px'}`,
           background: tweaks.dark,
           color: tweaks.bg,
           minHeight: '115vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: `${140 * tweaks.spacing}px`
         }}>
+          <Doodles tweaks={tweaks} bp={bp} side="left" onDark threadId="prosjekter" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 40 : 64, gap: narrow ? 8 : 0 }}>
               <div>
@@ -1554,7 +1765,7 @@
         role: 'Seminarleiar',
         company: 'Universitetet i Bergen',
         fullname: 'Universitetet i Bergen — INFO100, Innføring i informasjonsvitskap',
-        desc: 'Underviser studentar som seminarleiar i INFO100 — Innføring i informasjonsvitskap. Følgjer studentane frå nettbutikk, HTML og CSS til XML, JSON, SQL og UML gjennom semesteret.',
+        desc: 'Underviser studentar som seminarleiar i INFO100 — Innføring i informasjonsvitskap. Held workshops og rettleier studentane gjennom innføring i HTML, CSS, XML, JSON, SQL og UML.',
         color: '#8A5B7C',
         tags: ['Undervisning', 'Webutvikling', 'SQL & XML/JSON'],
         url: 'https://www.uib.no',
@@ -1614,7 +1825,8 @@
     function Experience({ tweaks, bp }) {
       const sidePad = bp.isMobile ? '24px' : bp.isTablet ? '32px' : '48px';
       return (
-        <section id="erfaring" style={{ padding: `${80 * tweaks.spacing}px ${sidePad}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowX: 'hidden' }}>
+        <section id="erfaring" style={{ position: 'relative', isolation: 'isolate', padding: `${80 * tweaks.spacing}px ${sidePad}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowX: 'hidden' }}>
+          <Doodles tweaks={tweaks} bp={bp} side="right" threadId="erfaring" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Erfaring</p>
             <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: bp.isTablet ? 'clamp(28px, 6vw, 40px)' : 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: bp.isTablet ? 28 : 64 }}>
@@ -1652,7 +1864,9 @@
             onKeyDown={(ev) => { if (exp.url && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); open(); } }}
             style={{
               padding: '14px 16px',
-              background: hovered ? exp.color : tweaks.bg,
+              // Transparent at rest (same hue, zero alpha so the hover fade stays clean)
+              // so the page thread behind the section shows through the rows
+              background: hovered ? exp.color : `${tweaks.bg}00`,
               borderRadius: 10,
               border: `2px solid ${hovered ? 'rgba(255,255,255,0.25)' : exp.color}`,
               display: 'flex', flexDirection: 'column', gap: 6,
@@ -1698,7 +1912,7 @@
             display: 'grid', gridTemplateColumns: '200px 1fr auto',
             alignItems: 'center', gap: 40,
             padding: '28px 40px',
-            background: hovered ? exp.color : tweaks.bg,
+            background: hovered ? exp.color : `${tweaks.bg}00`, // transparent at rest, see tablet variant
             borderBottom: `1px solid ${tweaks.dark}12`,
             borderRadius: index === 0 ? '12px 12px 0 0' : index === experiences.length - 1 ? '0 0 12px 12px' : 0,
             cursor: exp.url ? 'pointer' : 'default',
@@ -2174,7 +2388,8 @@
       }, [stage]);
 
       return (
-        <section id="skills" style={{ padding: `${80 * tweaks.spacing}px ${mobile ? '20px' : '48px'}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="skills" style={{ position: 'relative', isolation: 'isolate', padding: `${80 * tweaks.spacing}px ${mobile ? '20px' : '48px'}`, background: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Doodles tweaks={tweaks} bp={bp} side="right" threadId="skills" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Skills</p>
             <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 16 }}>
@@ -2221,7 +2436,8 @@
     function Volunteer({ tweaks, bp }) {
       const mobile = bp && bp.isMobile;
       return (
-        <section id="verv" style={{ padding: mobile ? '60px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: mobile ? 'auto' : '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="verv" style={{ position: 'relative', isolation: 'isolate', padding: mobile ? '60px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.bg, minHeight: mobile ? 'auto' : '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Doodles tweaks={tweaks} bp={bp} side="left" threadId="verv" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500, paddingLeft: 8 }}>Verv</p>
             <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.dark, marginBottom: 32, paddingLeft: 16 }}>
@@ -2555,7 +2771,8 @@
       const githubLeave = e => { e.currentTarget.style.opacity = '0.65'; e.currentTarget.style.transform = 'translateY(0)'; };
       const githubTouchRef = useTouchHoverStyle(githubEnter, githubLeave);
       return (
-        <section id="kontakt" style={{ padding: mobile ? '72px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <section id="kontakt" style={{ position: 'relative', isolation: 'isolate', padding: mobile ? '72px 24px' : `${80 * tweaks.spacing}px 48px`, background: tweaks.dark, color: tweaks.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Doodles tweaks={tweaks} bp={bp} side="right" onDark threadId="kontakt" />
           <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', textAlign: 'center' }}>
             <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 20, fontWeight: 500 }}>La oss snakke</p>
             <h2 className="reveal reveal-delay-1" style={{
@@ -2679,6 +2896,170 @@
       );
     }
 
+    // One continuous hand-drawn thread that carries the doodle lines down
+    // the page across every section seam: the hero's bottom-right curve runs
+    // on past the carousel sparks, and each section's side doodle runs on into
+    // the next section and out the opposite edge. Built from live DOM
+    // positions (re-measured on resize) so the ends meet the doodle lines
+    // exactly. Each piece is portalled into the doodle layer of both sections
+    // it crosses, so it sits behind their content and each copy is clipped to
+    // its own section — together they read as one line. Desktop/tablet only:
+    // on a phone the single-column layout leaves no room for it to wander.
+    const THREAD_SECTIONS = ['hero', 'om-meg', 'utdanning', 'erfaring', 'prosjekter', 'skills', 'verv', 'kontakt'];
+    function PageThread({ tweaks, bp }) {
+      const [threads, setThreads] = useState(null);
+
+      useEffect(() => {
+        if (bp.isMobile) { setThreads(null); return; }
+        const pageXY = (x, y) => ({ x: x + window.scrollX, y: y + window.scrollY });
+        // End point of a doodle line (in page px) plus its direction there.
+        // Mapped by hand from the SVG's box rather than getScreenCTM, since
+        // left-side doodles are mirrored with a CSS transform.
+        const lineEnd = id => {
+          const el = document.querySelector(`[data-thread="${id}"]`);
+          if (!el) return null;
+          const svg = el.ownerSVGElement, vb = svg.viewBox.baseVal, r = svg.getBoundingClientRect();
+          const k = r.height / vb.height;
+          const mirrored = el.dataset.side === 'left';
+          const toPage = l => {
+            const pt = el.getPointAtLength(l);
+            const x = (pt.x - vb.x) * k;
+            return pageXY(mirrored ? r.right - x : r.left + x, r.top + (pt.y - vb.y) * k);
+          };
+          const len = el.getTotalLength();
+          const a = toPage(len), b = toPage(len - 4);
+          const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+          return { p: a, dir: { x: (a.x - b.x) / d, y: (a.y - b.y) / d } };
+        };
+        // One simple stroke: a single cubic that leaves along the doodle
+        // line's own direction and eases out flat-ish at the far edge.
+        const stroke = (start, end) => {
+          const dist = Math.hypot(end.x - start.p.x, end.y - start.p.y);
+          const c1 = { x: start.p.x + start.dir.x * dist * 0.35, y: start.p.y + start.dir.y * dist * 0.35 };
+          const c2 = { x: end.x - Math.sign(end.x - start.p.x) * dist * 0.35, y: end.y - dist * 0.05 };
+          const f = n => n.toFixed(1);
+          return `M${f(start.p.x)},${f(start.p.y)} C${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)} ${f(end.x)},${f(end.y)}`;
+        };
+        const measure = () => {
+          const W = document.documentElement.clientWidth;
+          const top = id => { const el = document.getElementById(id); return el ? el.getBoundingClientRect().top + window.scrollY : null; };
+          const out = [];
+          for (let i = 0; i < THREAD_SECTIONS.length - 1; i++) {
+            const from = THREAD_SECTIONS[i], to = THREAD_SECTIONS[i + 1];
+            const start = lineEnd(from);
+            if (!start) continue;
+            let end = null;
+            if (from === 'hero') {
+              // Above the carousel sparks and out the left edge
+              const frame = document.querySelector('[data-thread-anchor="carousel"]');
+              if (frame) end = { x: -10, y: frame.getBoundingClientRect().top + window.scrollY - 90 };
+            } else {
+              // Diagonally across into the next section, out the opposite edge
+              const T = top(to);
+              if (T !== null) end = { x: start.dir.x < 0 ? -10 : W + 10, y: T + 110 };
+            }
+            if (end) out.push({ key: from, d: stroke(start, end), sections: [from, to] });
+          }
+          const tops = {};
+          THREAD_SECTIONS.forEach(id => { tops[id] = top(id); });
+          setThreads({ list: out, tops });
+        };
+        // Doodle SVGs need a frame to lay out before they can be measured
+        const raf = requestAnimationFrame(measure);
+        const ro = new ResizeObserver(() => requestAnimationFrame(measure));
+        ro.observe(document.body);
+        if (document.fonts) document.fonts.ready.then(measure);
+        return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+      }, [bp.isMobile, bp.width]);
+
+      // Scroll-linked drawing: the whole chain (each doodle line + the thread
+      // after it) acts like a hand-drawn scroll indicator. Its tip follows a
+      // point ~65% down the viewport, so it draws on as you scroll down and
+      // retracts as you scroll up. On load the tip sweeps in from the top of
+      // the page so the line is visibly drawn top-down. Driven straight on the
+      // DOM (stroke-dashoffset) once per frame — no React re-render.
+      const reducedMotion = usePrefersReducedMotion();
+      // Intro progress survives re-measures (images/fonts loading re-run the
+      // effect below) so the top-down sweep never restarts.
+      const introRef = useRef({ value: 0, start: null });
+      useEffect(() => {
+        if (!threads) return;
+        const byKey = {};
+        threads.list.forEach(t => { byKey[t.key] = t; });
+        const pieces = [];
+        const addPiece = (els) => {
+          els = els.filter(Boolean);
+          if (!els.length) return;
+          const el = els[0];
+          const len = el.getTotalLength();
+          const m = el.getScreenCTM();
+          const ys = [];
+          for (let i = 0; i <= 60; i++) ys.push(el.getPointAtLength(len * i / 60).matrixTransform(m).y + window.scrollY);
+          els.forEach(e => e.classList.add('scroll-line'));
+          pieces.push({ els, ys });
+        };
+        THREAD_SECTIONS.forEach(id => {
+          addPiece([document.querySelector(`[data-thread="${id}"]`)]);
+          if (byKey[id]) addPiece([...document.querySelectorAll(`[data-thread-piece="${id}"]`)]);
+        });
+        // Fraction of a piece drawn when the tip is at page-y `tip`: up to the
+        // first sample that lies below the tip.
+        const fracAt = (ys, tip) => {
+          for (let i = 0; i < ys.length; i++) {
+            if (ys[i] > tip) {
+              if (i === 0) return 0;
+              const t = (tip - ys[i - 1]) / ((ys[i] - ys[i - 1]) || 1);
+              return (i - 1 + Math.max(0, Math.min(1, t))) / (ys.length - 1);
+            }
+          }
+          return 1;
+        };
+        const introState = introRef.current;
+        let rafId = null;
+        const apply = () => {
+          rafId = null;
+          const tip = reducedMotion ? Infinity : window.scrollY + window.innerHeight * 0.65 * introState.value;
+          pieces.forEach(p => {
+            const off = String(1 - fracAt(p.ys, tip));
+            p.els.forEach(e => { e.style.strokeDashoffset = off; });
+          });
+        };
+        // Starts 0.5s after page load, once the hero's bottom-right blob has faded in
+        const tick = now => {
+          if (introState.start === null) introState.start = now + 500;
+          const t = Math.max(0, Math.min(1, (now - introState.start) / 1400));
+          introState.value = 1 - Math.pow(1 - t, 3);
+          apply();
+          rafId = t < 1 ? requestAnimationFrame(tick) : null;
+        };
+        const onScroll = () => { if (rafId === null) rafId = requestAnimationFrame(apply); };
+        if (!reducedMotion && introState.value < 1) rafId = requestAnimationFrame(tick);
+        else apply();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+          window.removeEventListener('scroll', onScroll);
+          if (rafId !== null) cancelAnimationFrame(rafId);
+          // Hand the doodle lines back to their CSS draw-in (e.g. on phone widths)
+          pieces.forEach(p => p.els.forEach(e => { e.classList.remove('scroll-line'); e.style.strokeDashoffset = ''; }));
+        };
+      }, [threads, reducedMotion]);
+
+      if (!threads) return null;
+      return threads.list.flatMap(t => t.sections.map(sec => {
+        const layer = document.querySelector(`[data-doodle-layer="${sec}"]`);
+        if (!layer || threads.tops[sec] === null) return null;
+        return ReactDOM.createPortal(
+          <svg key={`${t.key}-${sec}`} style={{
+            position: 'absolute', top: -threads.tops[sec], left: 0, width: 1, height: 1, overflow: 'visible'
+          }}>
+            <path className="doodle-line scroll-line" pathLength="1" d={t.d} data-thread-piece={t.key}
+              fill="none" stroke={tweaks.accent} strokeWidth="1.6" strokeLinecap="round" />
+          </svg>,
+          layer
+        );
+      }));
+    }
+
     function App() {
       const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
       const [tweaksOpen, setTweaksOpen] = useState(false);
@@ -2710,6 +3091,7 @@
           <Skills tweaks={tweaks} bp={bp} />
           <Volunteer tweaks={tweaks} bp={bp} />
           <Contact tweaks={tweaks} bp={bp} />
+          <PageThread tweaks={tweaks} bp={bp} />
           <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} open={tweaksOpen} />
         </>
       );
