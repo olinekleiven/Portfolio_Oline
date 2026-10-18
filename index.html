@@ -253,6 +253,8 @@
     #kontakt.yarn-ready [data-kontakt-label] { display: none; }
     /* Ball size matches YarnBallFinale (clamp(200px, 36vh, 340px)) + its note line above */
     #kontakt.yarn-ready [data-yarn-slot] { height: calc(clamp(200px, 36vh, 340px) + 64px); }
+    /* On a phone: a smaller ball, with its note wrapping onto two lines above it */
+    @media (max-width: 639px) { #kontakt.yarn-ready [data-yarn-slot] { height: calc(min(max(150px, 28vh), 55vw) + 100px); } }
     /* Compact layout for the yarn ending: the ball is the star, and ball,
        heading, text, buttons and footer all fit on one screen together */
     /* Top padding clears the fixed nav, so the centred block sits in what's actually visible */
@@ -856,8 +858,10 @@
         }}>
           {!bare && (
             <div className={inView ? 'drawn' : ''} style={{
-              position: 'absolute', bottom: '9%', [side]: 0,
-              width: bp.isMobile ? 90 : 'clamp(120px, 12vw, 190px)',
+              // On a phone the content runs nearly to the section's bottom, so the
+              // mark tucks into the bottom padding instead of beside the text
+              position: 'absolute', bottom: bp.isMobile ? 0 : '9%', [side]: 0,
+              width: bp.isMobile ? 70 : 'clamp(120px, 12vw, 190px)',
               transform: side === 'left' ? 'scaleX(-1)' : 'none'
             }}>
               <DoodleSvg shape={DOODLE_SIDE} tweaks={tweaks} onDark={onDark} threadId={threadId} side={side} />
@@ -3014,7 +3018,7 @@
       return (
         <section id="kontakt" style={{ position: 'relative', isolation: 'isolate', padding: mobile ? '72px 24px 40px' : `${64 * tweaks.spacing}px 48px ${32 * tweaks.spacing}px`, background: tweaks.dark, color: tweaks.bg,
           minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <Doodles tweaks={tweaks} bp={bp} side="right" onDark threadId="kontakt" bare={!mobile} />
+          <Doodles tweaks={tweaks} bp={bp} side="right" onDark threadId="kontakt" bare />
           <div data-yarn-content="" style={{ maxWidth: 800, margin: '0 auto', width: '100%', textAlign: 'center' }}>
             {/* Room for the thread game's ball of yarn (opened by PageThread
                 via .yarn-ready on the section, only for players who untied every knot) */}
@@ -3187,7 +3191,8 @@
       return (
         <div role="status" style={{ position: 'absolute', left: x, top: y, width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2 }}>
           {/* Both notes on one line above the ball, the second following the first */}
-          <div style={{ ...note, top: -44, fontSize: 28, width: 520, marginLeft: -260 }}>
+          <div style={{ ...note, top: 'auto', bottom: '100%', marginBottom: 6, fontSize: 'clamp(23px, 6.4vw, 28px)', lineHeight: 1.15,
+            width: 'min(520px, calc(100vw - 32px))', marginLeft: 'calc(min(520px, calc(100vw - 32px)) / -2)', whiteSpace: 'normal' }}>
             {/* Written out left to right; the second phrase starts 0.5s after the first finishes */}
             <span className="yarn-write" style={{ animationDelay: '1.0s' }}>Garnet er samlet</span>{' '}
             <span className="yarn-write" style={{ animationDelay: '2.2s' }}>…og eg er klar for nytt arbeid!</span>
@@ -3238,13 +3243,6 @@
       const kickRef = useRef(() => {});
 
       useEffect(() => {
-        if (bp.isMobile) {
-          setThreads(null);
-          // No game on phones: never leave Kontakt staged for the finale
-          const k = document.getElementById('kontakt');
-          if (k) k.classList.remove('yarn-ready', 'yarn-gathered');
-          return;
-        }
         const pageXY = (x, y) => ({ x: x + window.scrollX, y: y + window.scrollY });
         // End point of a doodle line (in page px) plus its direction there.
         // Mapped by hand from the SVG's box rather than getScreenCTM, since
@@ -3329,7 +3327,9 @@
                 const topY = open ? S.top : L.top;
                 const cx = W / 2;
                 let cy = (topY + A.bottom) / 2;
-                const rx = Math.min(W / 2 - 40, Math.max(A.right - A.left, 640) / 2 + 160);
+                // On a phone the content spans the screen, so the loop runs in
+                // the side gutters instead of across the text
+                const rx = W < 640 ? W / 2 - 12 : Math.min(W / 2 - 40, Math.max(A.right - A.left, 640) / 2 + 160);
                 let ry = (A.bottom - topY) / 2 + 50;
                 // Keep the whole loop inside the one screen of Kontakt the
                 // visitor sees once it sits just under the nav
@@ -3341,9 +3341,12 @@
                 }
                 // Spiral in round the content and finish top-centre: in the
                 // open slot (where the ball winds up), else just above the heading
-                const size = Math.round(Math.max(200, Math.min(340, window.innerHeight * 0.36)));
-                // Ball sits below its one-line note (44px) inside the slot
-                const ball = open ? { x: cx, y: S.top + 48 + size / 2, size } : { x: cx, y: L.top - 50, size };
+                // Phones get a smaller ball so it and the content share one screen
+                const size = Math.round(W < 640
+                  ? Math.min(Math.max(150, window.innerHeight * 0.28), W * 0.55)
+                  : Math.max(200, Math.min(340, window.innerHeight * 0.36)));
+                // Ball sits below its note (one line, or two on a phone) inside the slot
+                const ball = open ? { x: cx, y: S.top + (W < 640 ? 84 : 48) + size / 2, size } : { x: cx, y: L.top - 50, size };
                 const d = smooth(start, [
                   { x: cx + rx * 0.55, y: cy - ry * 1.04 },
                   { x: cx + rx, y: cy + ry * 0.05 },
@@ -3400,19 +3403,75 @@
           });
           const ctx = document.createElement('canvas').getContext('2d');
           const textW = (str, size) => { ctx.font = `600 ${size}px Caveat, cursive`; return ctx.measureText(str).width; };
+          // Page content is an obstacle too: every heading, paragraph, link,
+          // button, card and photo, so a note never sits on top of text
+          // (it matters most on phones, where content fills the width).
+          const contentRects = [];
+          const skip = el => el.closest('[data-knot], [data-doodle-layer], .thread-note, .thread-chip');
+          // Every visible run of text, measured line by line (so wrapped text
+          // doesn't block its whole box), shifted back to its resting
+          // position if a scroll-reveal hasn't played yet…
+          const shiftOf = el => {
+            let s = 0;
+            for (let n = el; n && n !== document.body; n = n.parentElement) {
+              const t = getComputedStyle(n).transform;
+              if (t && t !== 'none') s += new DOMMatrix(t).m42;
+            }
+            return s;
+          };
+          const walker = document.createTreeWalker(document.getElementById('root'), NodeFilter.SHOW_TEXT);
+          for (let tn; (tn = walker.nextNode());) {
+            if (!tn.textContent.trim()) continue;
+            const el = tn.parentElement;
+            if (!el || skip(el) || el.closest('nav')) continue;
+            const box = el.getBoundingClientRect();
+            if (box.height < 2) continue; // collapsed, e.g. a hobby's hidden detail line
+            const shift = shiftOf(el), range = document.createRange();
+            range.selectNodeContents(tn);
+            for (const r of range.getClientRects()) {
+              if (r.width > 1 && r.height > 1) contentRects.push({ left: r.left + window.scrollX, right: r.right + window.scrollX, top: r.top + window.scrollY - shift, bottom: r.bottom + window.scrollY - shift });
+            }
+          }
+          // …plus photos, buttons, links, cards and the carousel frame
+          document.querySelectorAll('section img, section button, section a, section [role="link"], section [role="group"]').forEach(el => {
+            if (skip(el)) return;
+            const r = restingRect(el);
+            if (r.right - r.left > 2 && r.bottom - r.top > 2) contentRects.push(r);
+          });
+          const seams = THREAD_SECTIONS.map(id => top(id)).filter(y => y !== null);
+          // A box (centred on c) that covers no content and doesn't straddle a
+          // seam between a light and a dark section. Notes are only gently
+          // tilted, so an axis-aligned box is close enough for them.
+          const boxClear = (c, w, h) => {
+            const L = c.x - w / 2 - 6, R = c.x + w / 2 + 6, T = c.y - h / 2 - 4, B = c.y + h / 2 + 4;
+            if (seams.some(y => y > T && y < B)) return false;
+            return !contentRects.some(r => r.left < R && r.right > L && r.top < B && r.bottom > T);
+          };
           const clearOf = (c, angle, w, h, extra = []) => {
             const a = -angle * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
-            return ![...threadPts, ...extra].some(p => {
+            if ([...threadPts, ...extra].some(p => {
               const dx = p.x - c.x, dy = p.y - c.y;
               return Math.abs(dx * cos - dy * sin) < w / 2 + 10 && Math.abs(dx * sin + dy * cos) < h / 2 + 8;
-            });
+            })) return false;
+            return boxClear(c, w, h);
           };
-          const placeClear = (base, n, angle, w, h, extra) => {
-            for (let push = 0; push <= 160; push += 4) {
-              const c = { x: base.x + n.x * push, y: base.y + n.y * push };
-              if (clearOf(c, angle, w, h, extra)) return c;
+          // Notes are also kept on screen: on a phone a note centred on the
+          // thread could otherwise hang off either edge.
+          const W0 = document.documentElement.clientWidth;
+          const inView = (c, w) => ({ x: Math.max(12 + w / 2, Math.min(W0 - 12 - w / 2, c.x)), y: c.y });
+          // Push the note out along the thread's normal until it's clear; if
+          // that side is crowded, try the other side and take the nearer fit.
+          // `from` is the note's distance from the thread before pushing.
+          const placeClear = (base, n, angle, w, h, extra, from = 0) => {
+            const origin = { x: base.x - n.x * from, y: base.y - n.y * from };
+            for (let push = from; push <= 220; push += 4) {
+              for (const sgn of [1, -1]) {
+                if (sgn < 0 && push < from + 24) continue; // stay on the preferred side unless it's well and truly blocked
+                const c = inView({ x: origin.x + n.x * push * sgn, y: origin.y + n.y * push * sgn }, w);
+                if (clearOf(c, angle, w, h, extra)) return c;
+              }
             }
-            return { x: base.x + n.x * 160, y: base.y + n.y * 160 };
+            return inView(base, w);
           };
           const sectionAt = y => THREAD_SECTIONS.map(id => document.getElementById(id)).find(el => {
             if (!el) return false;
@@ -3422,7 +3481,14 @@
           const knots = THREAD_KNOTS.map(k => {
             const t = out.find(o => o.key === k.key);
             if (!t) return null;
-            const pt = pointOn(t.d, k.at), nx = pointOn(t.d, k.at + 0.01);
+            // Slide the knot along its piece to the nearest spot (from the
+            // middle outwards) where it covers no content
+            let at = k.at;
+            for (let d = 0; d <= 0.3; d += 0.02) {
+              const cand = [k.at + d, k.at - d].find(a => a > 0.08 && a < 0.92 && boxClear(pointOn(t.d, a), 64, 64));
+              if (cand !== undefined) { at = cand; break; }
+            }
+            const pt = pointOn(t.d, at), nx = pointOn(t.d, at + 0.01);
             // Label goes on the side of the thread facing away from the
             // nearest section seam, so it never straddles light and dark.
             const sec = sectionAt(pt.y);
@@ -3438,8 +3504,11 @@
             // Keep clear of the thread and of the knot's own scribble (r≈26)
             const scribble = Array.from({ length: 24 }, (_, i) => ({ x: pt.x + Math.cos(i / 24 * Math.PI * 2) * 26, y: pt.y + Math.sin(i / 24 * Math.PI * 2) * 26 }));
             const w = Math.max(textW('Knute!', 24), textW('klikk for å nøste den opp', 19));
-            const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, 50, scribble);
-            return { ...k, x: pt.x, y: pt.y, label: { dx: c.x - pt.x, dy: c.y - pt.y }, bg };
+            const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, 50, scribble, 40);
+            // Halo matches wherever the label ended up, which may be the other section
+            const labelSec = sectionAt(c.y);
+            if (labelSec) bg = getComputedStyle(labelSec).backgroundColor;
+            return { ...k, at, x: pt.x, y: pt.y, label: { dx: c.x - pt.x, dy: c.y - pt.y }, bg };
           }).filter(Boolean);
           const notes = {};
           const heroLine = document.querySelector('[data-thread="hero"]');
@@ -3449,7 +3518,10 @@
             const k = (r.bottom - r.top) / vb.height, len = heroLine.getTotalLength();
             const at = l => { const q = heroLine.getPointAtLength(l); return { x: r.left + (q.x - vb.x) * k, y: r.top + (q.y - vb.y) * k }; };
             const a1 = along(at(len * 0.64), at(len * 0.66), 20);
-            notes.intro1 = { ...placeClear(a1, { x: a1.nx, y: a1.ny }, a1.angle, textW('Hjelp meg å samle tråden!', 24), 28), angle: a1.angle };
+            const w1 = textW('Hjelp meg å samle tråden!', 24);
+            notes.intro1 = { ...placeClear(a1, { x: a1.nx, y: a1.ny }, a1.angle, w1, 28, [], 20), angle: a1.angle };
+            // The second note must keep clear of this one too
+            contentRects.push({ left: notes.intro1.x - w1 / 2, right: notes.intro1.x + w1 / 2, top: notes.intro1.y - 20, bottom: notes.intro1.y + 20 });
           }
           const heroThread = out.find(o => o.key === 'hero');
           if (heroThread) {
@@ -3457,7 +3529,7 @@
             let best = 0.5, bestY = -Infinity;
             for (let f = 0.15; f <= 0.85; f += 0.01) { const q = pointOn(heroThread.d, f); if (q.y > bestY) { bestY = q.y; best = f; } }
             const a2 = along(pointOn(heroThread.d, best), pointOn(heroThread.d, best + 0.01), 20);
-            notes.intro2 = { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, textW('…knuter kan oppstå', 24), 28), angle: a2.angle };
+            notes.intro2 = { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, textW('…knuter kan oppstå', 24), 28, [], 20), angle: a2.angle };
           }
           const finale = out.find(o => o.finale);
           if (finale) notes.ball = finale.ball;
@@ -3474,7 +3546,13 @@
         // centred in a 100vh section), e.g. when the yarn ending compacts it
         const kontaktContent = document.querySelector('[data-yarn-content]');
         if (kontaktContent) ro.observe(kontaktContent);
-        if (document.fonts) document.fonts.ready.then(measure);
+        if (document.fonts) {
+          document.fonts.ready.then(measure);
+          // Caveat (the notes' hand) is only fetched once a note renders, after
+          // the first measure, so ask for it outright and re-measure once it's
+          // in: note widths measured in a fallback font would be wrong.
+          document.fonts.load("600 24px 'Caveat'").then(() => requestAnimationFrame(measure)).catch(() => {});
+        }
         return () => { cancelAnimationFrame(raf); ro.disconnect(); };
       }, [bp.isMobile, bp.width]);
 
