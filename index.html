@@ -1091,36 +1091,39 @@
     ];
 
     // Every photo Oline supplied, one card per image — the carousel below
-    // browses the full set, not just a curated few.
+    // browses the full set, not just a curated few. Each is a WebP in two
+    // sizes (800 and 1600px on the short side, from the originals in
+    // uploads/Bilder, metadata stripped); `aspect` (w/h) lets the carousel
+    // tell the browser how wide the photo really renders under object-fit: cover.
     const GALLERY = [
-      { img: 'uploads/Oline.jpg', label: null },
-      { img: 'uploads/hobby-fotball.jpg', label: 'Fotball' },
-      { img: 'uploads/hobby-fotball-2.jpg', label: 'Fotball' },
-      { img: 'uploads/hobby-fotball-3.jpg', label: 'Fotball' },
-      { img: 'uploads/hobby-fotball-4.jpg', label: 'Fotball' },
-      { img: 'uploads/hobby-fotball-5.jpg', label: 'Fotball' },
-      { img: 'uploads/hobby-fotball-6.jpg', label: 'Fotball' },
-      { img: 'uploads/hobby-fotball-7.jpg', label: 'Fotball' },
-      { img: 'uploads/hobby-surfing.jpg', label: 'Surfing' },
-      { img: 'uploads/hobby-bading.jpg', label: 'Bading' },
-      { img: 'uploads/hobby-ski.jpg', label: 'Ski' },
-      { img: 'uploads/hobby-ski-2.jpg', label: 'Ski' },
-      { img: 'uploads/hobby-ski-3.jpg', label: 'Ski' },
-      { img: 'uploads/hobby-ski-4.jpg', label: 'Ski' },
-      { img: 'uploads/hobby-motbakkelop.jpg', label: 'Løping' },
-      { img: 'uploads/hobby-motbakkelop-2.jpg', label: 'Løping' },
-      { img: 'uploads/hobby-venner.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-venner-2.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-venner-3.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-venner-4.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-venner-5.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-venner-6.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-venner-7.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-venner-8.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-familie.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-familie-2.jpg', label: 'Familie og venner' },
-      { img: 'uploads/hobby-natur.jpg', label: 'Fjellet' },
-      { img: 'uploads/hobby-fisking.jpg', label: 'Fisking' },
+      { img: 'uploads/carousel/Oline-800.webp', srcset: 'uploads/carousel/Oline-800.webp 800w, uploads/carousel/Oline-1600.webp 1600w', aspect: 0.975, label: null },
+      { img: 'uploads/carousel/hobby-fotball-800.webp', srcset: 'uploads/carousel/hobby-fotball-800.webp 800w, uploads/carousel/hobby-fotball-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/carousel/hobby-fotball-2-800.webp', srcset: 'uploads/carousel/hobby-fotball-2-800.webp 800w, uploads/carousel/hobby-fotball-2-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/carousel/hobby-fotball-3-800.webp', srcset: 'uploads/carousel/hobby-fotball-3-800.webp 800w, uploads/carousel/hobby-fotball-3-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/carousel/hobby-fotball-4-800.webp', srcset: 'uploads/carousel/hobby-fotball-4-800.webp 800w, uploads/carousel/hobby-fotball-4-1600.webp 1600w', aspect: 0.8, label: 'Fotball' },
+      { img: 'uploads/carousel/hobby-fotball-5-800.webp', srcset: 'uploads/carousel/hobby-fotball-5-800.webp 800w, uploads/carousel/hobby-fotball-5-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/carousel/hobby-fotball-6-800.webp', srcset: 'uploads/carousel/hobby-fotball-6-800.webp 800w, uploads/carousel/hobby-fotball-6-1600.webp 1600w', aspect: 0.8, label: 'Fotball' },
+      { img: 'uploads/carousel/hobby-fotball-7-800.webp', srcset: 'uploads/carousel/hobby-fotball-7-800.webp 800w, uploads/carousel/hobby-fotball-7-1169.webp 1169w', aspect: 0.566, label: 'Fotball' },
+      { img: 'uploads/carousel/hobby-surfing-800.webp', srcset: 'uploads/carousel/hobby-surfing-800.webp 800w, uploads/carousel/hobby-surfing-1344.webp 1344w', aspect: 0.75, label: 'Surfing' },
+      { img: 'uploads/carousel/hobby-bading-800.webp', srcset: 'uploads/carousel/hobby-bading-800.webp 800w, uploads/carousel/hobby-bading-1600.webp 1600w', aspect: 0.75, label: 'Bading' },
+      { img: 'uploads/carousel/hobby-ski-800.webp', srcset: 'uploads/carousel/hobby-ski-800.webp 800w, uploads/carousel/hobby-ski-1600.webp 1600w', aspect: 0.75, label: 'Ski' },
+      { img: 'uploads/carousel/hobby-ski-2-1067.webp', srcset: 'uploads/carousel/hobby-ski-2-1067.webp 1067w, uploads/carousel/hobby-ski-2-2133.webp 2133w', aspect: 1.333, label: 'Ski' },
+      { img: 'uploads/carousel/hobby-ski-3-1067.webp', srcset: 'uploads/carousel/hobby-ski-3-1067.webp 1067w, uploads/carousel/hobby-ski-3-2133.webp 2133w', aspect: 1.333, label: 'Ski' },
+      { img: 'uploads/carousel/hobby-ski-4-800.webp', srcset: 'uploads/carousel/hobby-ski-4-800.webp 800w, uploads/carousel/hobby-ski-4-1600.webp 1600w', aspect: 0.75, label: 'Ski' },
+      { img: 'uploads/carousel/hobby-motbakkelop-800.webp', srcset: 'uploads/carousel/hobby-motbakkelop-800.webp 800w, uploads/carousel/hobby-motbakkelop-1536.webp 1536w', aspect: 0.75, label: 'Løping' },
+      { img: 'uploads/carousel/hobby-motbakkelop-2-800.webp', srcset: 'uploads/carousel/hobby-motbakkelop-2-800.webp 800w, uploads/carousel/hobby-motbakkelop-2-1167.webp 1167w', aspect: 0.857, label: 'Løping' },
+      { img: 'uploads/carousel/hobby-venner-800.webp', srcset: 'uploads/carousel/hobby-venner-800.webp 800w, uploads/carousel/hobby-venner-1170.webp 1170w', aspect: 0.562, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-venner-2-1067.webp', srcset: 'uploads/carousel/hobby-venner-2-1067.webp 1067w, uploads/carousel/hobby-venner-2-2133.webp 2133w', aspect: 1.333, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-venner-3-800.webp', srcset: 'uploads/carousel/hobby-venner-3-800.webp 800w, uploads/carousel/hobby-venner-3-1600.webp 1600w', aspect: 0.562, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-venner-4-800.webp', srcset: 'uploads/carousel/hobby-venner-4-800.webp 800w, uploads/carousel/hobby-venner-4-1242.webp 1242w', aspect: 0.562, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-venner-5-800.webp', srcset: 'uploads/carousel/hobby-venner-5-800.webp 800w, uploads/carousel/hobby-venner-5-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-venner-6-800.webp', srcset: 'uploads/carousel/hobby-venner-6-800.webp 800w, uploads/carousel/hobby-venner-6-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-venner-7-800.webp', srcset: 'uploads/carousel/hobby-venner-7-800.webp 800w, uploads/carousel/hobby-venner-7-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-venner-8-800.webp', srcset: 'uploads/carousel/hobby-venner-8-800.webp 800w, uploads/carousel/hobby-venner-8-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-familie-800.webp', srcset: 'uploads/carousel/hobby-familie-800.webp 800w, uploads/carousel/hobby-familie-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-familie-2-1169.webp', srcset: 'uploads/carousel/hobby-familie-2-1169.webp 1169w', aspect: 1.55, label: 'Familie og venner' },
+      { img: 'uploads/carousel/hobby-natur-800.webp', srcset: 'uploads/carousel/hobby-natur-800.webp 800w, uploads/carousel/hobby-natur-1600.webp 1600w', aspect: 0.75, label: 'Fjellet' },
+      { img: 'uploads/carousel/hobby-fisking-800.webp', srcset: 'uploads/carousel/hobby-fisking-800.webp 800w, uploads/carousel/hobby-fisking-1600.webp 1600w', aspect: 0.75, label: 'Fisking' },
     ];
 
     function HobbyRow({ h, tweaks }) {
@@ -1432,6 +1435,23 @@
         }, 110);
       };
 
+      // Under object-fit: cover a photo renders at whichever is larger: the
+      // frame's width, or its height scaled by the photo's aspect ratio
+      const frameW = Math.min(width, maxWidth);
+      const sizesFor = c => `${Math.round(Math.max(frameW, frameHeight * c.aspect))}px`;
+
+      // Warm the cache for the photos either side, so stepping through the
+      // carousel never waits on a download
+      useEffect(() => {
+        [1, -1].forEach(dir => {
+          const c = cards[(dispIdx + dir + cards.length) % cards.length];
+          const im = new Image();
+          im.sizes = sizesFor(c);
+          im.srcset = c.srcset;
+          im.src = c.img;
+        });
+      }, [dispIdx, frameW]);
+
       const card = cards[dispIdx];
       return (
         <div ref={wrapRef} className="reveal" style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}>
@@ -1447,6 +1467,9 @@
           >
             <img
               src={card.img}
+              srcSet={card.srcset}
+              sizes={sizesFor(card)}
+              decoding="async"
               alt={card.label ? `Oline driv med ${card.label.toLowerCase()}` : 'Portrett av Oline'}
               style={{
                 width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top',
@@ -3434,7 +3457,7 @@
             let best = 0.5, bestY = -Infinity;
             for (let f = 0.15; f <= 0.85; f += 0.01) { const q = pointOn(heroThread.d, f); if (q.y > bestY) { bestY = q.y; best = f; } }
             const a2 = along(pointOn(heroThread.d, best), pointOn(heroThread.d, best + 0.01), 20);
-            notes.intro2 = { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, textW('… og nøste opp i knuter som kan komme', 24), 28), angle: a2.angle };
+            notes.intro2 = { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, textW('…knuter kan oppstå', 24), 28), angle: a2.angle };
           }
           const finale = out.find(o => o.finale);
           if (finale) notes.ball = finale.ball;
@@ -3650,7 +3673,7 @@
           )}
           {notes.intro2 && (
             <div className="thread-note" data-thread-note="intro2" style={{ left: notes.intro2.x, top: notes.intro2.y, '--tilt': `${notes.intro2.angle}deg` }}>
-              … og nøste opp i knuter som kan komme
+              …knuter kan oppstå
             </div>
           )}
           {(threads.knots || []).map(k => (
