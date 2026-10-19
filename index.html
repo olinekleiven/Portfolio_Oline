@@ -209,6 +209,8 @@
       text-shadow: 0 0 3px var(--halo, var(--bg)), 0 0 8px var(--halo, var(--bg)), 0 0 14px var(--halo, var(--bg));
       transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.16,1,.3,1);
     }
+    /* Smaller handwriting on phones, where the notes share the width with content */
+    @media (max-width: 639px) { .thread-note { font-size: 19px; } .thread-chip { font-size: 18px; } }
     .thread-note.shown { opacity: 1; transform: translate(-50%, -50%) rotate(var(--tilt, -3deg)); }
     .knot { position: absolute; transform: translate(-50%, -50%); }
     .knot-inner {
@@ -3402,6 +3404,8 @@
             }
           });
           const ctx = document.createElement('canvas').getContext('2d');
+          // Matches the .thread-note font size (smaller on phones)
+          const noteSize = document.documentElement.clientWidth < 640 ? 19 : 24;
           const textW = (str, size) => { ctx.font = `600 ${size}px Caveat, cursive`; return ctx.measureText(str).width; };
           // Page content is an obstacle too: every heading, paragraph, link,
           // button, card and photo, so a note never sits on top of text
@@ -3442,7 +3446,11 @@
           // A box (centred on c) that covers no content and doesn't straddle a
           // seam between a light and a dark section. Notes are only gently
           // tilted, so an axis-aligned box is close enough for them.
-          const boxClear = (c, w, h) => {
+          const boxClear = (c, w, h, angle = 0) => {
+            // A tilted note covers more than its own width and height: use
+            // the axis-aligned box around it as rotated
+            const a = Math.abs(angle) * Math.PI / 180;
+            [w, h] = [w * Math.cos(a) + h * Math.sin(a), w * Math.sin(a) + h * Math.cos(a)];
             const L = c.x - w / 2 - 6, R = c.x + w / 2 + 6, T = c.y - h / 2 - 4, B = c.y + h / 2 + 4;
             if (seams.some(y => y > T && y < B)) return false;
             return !contentRects.some(r => r.left < R && r.right > L && r.top < B && r.bottom > T);
@@ -3453,7 +3461,7 @@
               const dx = p.x - c.x, dy = p.y - c.y;
               return Math.abs(dx * cos - dy * sin) < w / 2 + 10 && Math.abs(dx * sin + dy * cos) < h / 2 + 8;
             })) return false;
-            return boxClear(c, w, h);
+            return boxClear(c, w, h, angle);
           };
           // Notes are also kept on screen: on a phone a note centred on the
           // thread could otherwise hang off either edge.
@@ -3472,6 +3480,23 @@
               }
             }
             return inView(base, w);
+          };
+          // A note that should hug the thread: try spots along it (`pt(f)`
+          // for each fraction, preferred first) on either side, nearest
+          // distance first, so a crowded spot moves the note along the
+          // thread instead of far away from it.
+          const snug = (pt, fractions, w, h) => {
+            for (let push = 20; push <= 64; push += 4) {
+              for (const f of fractions) {
+                const a = along(pt(f), pt(f + 0.01), 0);
+                for (const sgn of [1, -1]) {
+                  if (sgn < 0 && push < 24) continue;
+                  const c = inView({ x: a.x + a.nx * push * sgn, y: a.y + a.ny * push * sgn }, w);
+                  if (clearOf(c, a.angle, w, h)) return { ...c, angle: a.angle };
+                }
+              }
+            }
+            return null;
           };
           const sectionAt = y => THREAD_SECTIONS.map(id => document.getElementById(id)).find(el => {
             if (!el) return false;
@@ -3503,8 +3528,8 @@
             let ux = -ty, uy = tx; if ((uy > 0) !== below) { ux = -ux; uy = -uy; }
             // Keep clear of the thread and of the knot's own scribble (r≈26)
             const scribble = Array.from({ length: 24 }, (_, i) => ({ x: pt.x + Math.cos(i / 24 * Math.PI * 2) * 26, y: pt.y + Math.sin(i / 24 * Math.PI * 2) * 26 }));
-            const w = Math.max(textW('Knute!', 24), textW('klikk for å nøste den opp', 19));
-            const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, 50, scribble, 40);
+            const w = Math.max(textW('Knute!', noteSize), textW('klikk for å nøste den opp', noteSize * 0.8));
+            const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, noteSize * 2.1, scribble, 40);
             // Halo matches wherever the label ended up, which may be the other section
             const labelSec = sectionAt(c.y);
             if (labelSec) bg = getComputedStyle(labelSec).backgroundColor;
@@ -3517,19 +3542,28 @@
             const svg = heroLine.ownerSVGElement, vb = svg.viewBox.baseVal, r = restingRect(svg);
             const k = (r.bottom - r.top) / vb.height, len = heroLine.getTotalLength();
             const at = l => { const q = heroLine.getPointAtLength(l); return { x: r.left + (q.x - vb.x) * k, y: r.top + (q.y - vb.y) * k }; };
+            const w1 = textW('Hjelp meg å samle tråden!', noteSize);
+            // Where content crowds the curve (on phones the buttons sit right
+            // above it), slide along the curve to a spot close to the thread
+            // rather than pushing the note far away from it
             const a1 = along(at(len * 0.64), at(len * 0.66), 20);
-            const w1 = textW('Hjelp meg å samle tråden!', 24);
-            notes.intro1 = { ...placeClear(a1, { x: a1.nx, y: a1.ny }, a1.angle, w1, 28, [], 20), angle: a1.angle };
+            notes.intro1 = snug(f => at(len * f), [0.64, 0.7, 0.58, 0.76, 0.52, 0.82, 0.46, 0.88, 0.4], w1, noteSize * 1.2)
+              || { ...placeClear(a1, { x: a1.nx, y: a1.ny }, a1.angle, w1, noteSize * 1.2, [], 20), angle: a1.angle };
             // The second note must keep clear of this one too
-            contentRects.push({ left: notes.intro1.x - w1 / 2, right: notes.intro1.x + w1 / 2, top: notes.intro1.y - 20, bottom: notes.intro1.y + 20 });
+            const t1 = Math.abs(a1.angle) * Math.PI / 180, hw = (w1 * Math.cos(t1) + noteSize * Math.sin(t1)) / 2, hh = (w1 * Math.sin(t1) + noteSize * Math.cos(t1)) / 2 + 6;
+            contentRects.push({ left: notes.intro1.x - hw, right: notes.intro1.x + hw, top: notes.intro1.y - hh, bottom: notes.intro1.y + hh });
           }
           const heroThread = out.find(o => o.key === 'hero');
           if (heroThread) {
             // Where the thread bows down lowest before heading off the left edge
             let best = 0.5, bestY = -Infinity;
             for (let f = 0.15; f <= 0.85; f += 0.01) { const q = pointOn(heroThread.d, f); if (q.y > bestY) { bestY = q.y; best = f; } }
+            // …or the nearest spot along it where the note fits snugly
+            const w2 = textW('…knuter kan oppstå', noteSize);
             const a2 = along(pointOn(heroThread.d, best), pointOn(heroThread.d, best + 0.01), 20);
-            notes.intro2 = { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, textW('…knuter kan oppstå', 24), 28, [], 20), angle: a2.angle };
+            const fr = [0, 0.06, -0.06, 0.12, -0.12, 0.18, -0.18, 0.24, -0.24].map(d => best + d).filter(f => f > 0.08 && f < 0.92);
+            notes.intro2 = snug(f => pointOn(heroThread.d, f), fr, w2, noteSize * 1.2)
+              || { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, w2, noteSize * 1.2, [], 20), angle: a2.angle };
           }
           const finale = out.find(o => o.finale);
           if (finale) notes.ball = finale.ball;
@@ -3759,7 +3793,7 @@
               <div className="knot-inner" style={{ '--halo': k.bg }}>
                 <div className="thread-note knot-ask" style={{ left: 37 + k.label.dx, top: 37 + k.label.dy }}>
                   Knute!
-                  <span style={{ display: 'block', fontSize: 19, fontWeight: 500 }}>klikk for å nøste den opp</span>
+                  <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 500 }}>klikk for å nøste den opp</span>
                 </div>
                 <button className="knot-btn" aria-label="Løs opp knuten på tråden"
                   onClick={() => untie(k.key)} onMouseEnter={pointerOn} onMouseLeave={pointerOff}>
