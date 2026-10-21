@@ -817,9 +817,25 @@
       return (
         <svg viewBox={shape.viewBox} style={{ display: 'block', width: '100%', height: 'auto', overflow: 'visible' }}>
           <path className="doodle-blob" d={shape.blob} fill={onDark ? `${tweaks.bg}0a` : `${tweaks.dark}0c`} />
-          <path className="doodle-line" pathLength="1" d={shape.line} data-thread={threadId} data-side={side}
-            fill="none" stroke={tweaks.accent} strokeWidth="1.6" strokeLinecap="round" />
+          <ThreadStroke className="doodle-line" d={shape.line} layer={`line:${threadId}`} tweaks={tweaks}
+            main={{ 'data-thread': threadId, 'data-side': side }} />
         </svg>
+      );
+    }
+
+    // The thread, drawn like a real cord: a soft shadow, the body, twisted
+    // strands (#thread-twist) and a thin sheen on top. Only the body carries
+    // the data-* hooks that get measured; the other layers are found by
+    // `data-thread-layer` and drawn on in step with it.
+    function ThreadStroke({ d, className, layer, main, tweaks }) {
+      const common = { className, d, pathLength: 1, fill: 'none', strokeLinecap: 'round' };
+      return (
+        <>
+          <path {...common} data-thread-layer={layer} stroke={tweaks.dark} strokeOpacity="0.16" strokeWidth="3.8" transform="translate(0.5 1.4)" />
+          <path {...common} {...main} stroke={tweaks.accent} strokeWidth="2.8" />
+          <path {...common} data-thread-layer={layer} stroke="url(#thread-twist)" strokeWidth="2.8" />
+          <path {...common} data-thread-layer={layer} stroke="#fff" strokeOpacity="0.28" strokeWidth="0.7" transform="translate(0 -0.6)" />
+        </>
       );
     }
 
@@ -875,7 +891,7 @@
 
     // Hero
     function Hero({ tweaks, bp }) {
-      const scrambled = useScramble('Produktdesigner', 600);
+      const scrambled = useScramble('Oline Flatabø Kleiven', 600);
       const reducedMotion = usePrefersReducedMotion();
       const portraitRef = React.useRef(null);
       const heroPrimaryEnter = e => { e.target.style.transform = 'translateY(-2px)'; };
@@ -995,7 +1011,7 @@
                 border: `2px solid ${tweaks.accent}50`,
                 boxShadow: `0 0 0 8px ${tweaks.accent}10`
               }}>
-                <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
+                <img src="uploads/bilete/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
               </div>
               {sparks}
@@ -1015,7 +1031,7 @@
                 boxShadow: `0 0 0 12px ${tweaks.accent}10`,
                 pointerEvents: 'auto'
               }}>
-                <img src="uploads/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
+                <img src="uploads/bilete/profilbilde_oline.png" alt="Oline Flatabø Kleiven"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(1.22)' }} />
               </div>
               {sparks}
@@ -1026,31 +1042,22 @@
             <p className="reveal" style={{
               fontSize: 16, letterSpacing: '0.16em', textTransform: 'uppercase',
               color: tweaks.accent, fontWeight: 500, marginBottom: 24
-            }}>Oline Flatabø Kleiven</p>
+            }}>UX-, produkt- og webdesigner</p>
 
             <h1 className="reveal reveal-delay-1" style={{
               fontFamily: tweaks.fontHeading,
-              fontSize: bp.isMobile ? 'clamp(38px, 10vw, 60px)' : 'clamp(52px, 7.5vw, 108px)',
+              fontSize: bp.isMobile ? 'clamp(30px, 8vw, 44px)' : 'clamp(40px, 5vw, 72px)',
               lineHeight: 1.0, letterSpacing: '-0.03em', color: tweaks.dark,
-              marginBottom: 32, fontWeight: 400, whiteSpace: bp.isMobile ? 'normal' : 'nowrap'
+              marginBottom: 20, fontWeight: 400, whiteSpace: bp.isMobile ? 'normal' : 'nowrap'
             }}>
               {scrambled}
             </h1>
 
-            <p className="reveal reveal-delay-1" style={{
+            <p className="reveal reveal-delay-2" style={{
               fontFamily: tweaks.fontHeading,
               fontSize: bp.isMobile ? 'clamp(20px, 4.5vw, 26px)' : 'clamp(23px, 2.6vw, 32px)',
-              color: tweaks.accent, fontStyle: 'italic', marginTop: -24,
-              marginBottom: 32, fontWeight: 400
-            }}>
-              med teknisk kompetanse
-            </p>
-
-            <p className="reveal reveal-delay-2" style={{
-              fontSize: bp.isMobile ? 16 : 18, lineHeight: 1.7,
-              maxWidth: bp.isMobile ? '100%' : 480,
-              color: tweaks.dark, opacity: 0.65, marginBottom: 48,
-              fontWeight: 300
+              color: tweaks.accent, fontStyle: 'italic',
+              marginBottom: 48, fontWeight: 400
             }}>
               Brobygger mellom design og utvikling
             </p>
@@ -1066,7 +1073,7 @@
               onMouseLeave={heroPrimaryLeave}
               >Prosjekter ↓</a>
 
-              <a href="uploads/Oline_Kleiven_CV.pdf?v=2026-10-18" download="Oline_Kleiven_CV.pdf" ref={heroCvTouchRef} style={{
+              <a href="uploads/dokument/Oline_Kleiven_CV.pdf?v=2026-10-18" download="Oline_Kleiven_CV.pdf" ref={heroCvTouchRef} style={{
                 color: tweaks.dark, background: 'transparent',
                 padding: '14px 32px', borderRadius: 100,
                 textDecoration: 'none', fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
@@ -1099,37 +1106,37 @@
     // Every photo Oline supplied, one card per image — the carousel below
     // browses the full set, not just a curated few. Each is a WebP in two
     // sizes (800 and 1600px on the short side, from the originals in
-    // uploads/Bilder, metadata stripped); `aspect` (w/h) lets the carousel
+    // uploads/bilete/original, metadata stripped); `aspect` (w/h) lets the carousel
     // tell the browser how wide the photo really renders under object-fit: cover.
     const GALLERY = [
-      { img: 'uploads/carousel/Oline-800.webp', srcset: 'uploads/carousel/Oline-800.webp 800w, uploads/carousel/Oline-1600.webp 1600w', aspect: 0.975, label: null },
-      { img: 'uploads/carousel/hobby-fotball-800.webp', srcset: 'uploads/carousel/hobby-fotball-800.webp 800w, uploads/carousel/hobby-fotball-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
-      { img: 'uploads/carousel/hobby-fotball-2-800.webp', srcset: 'uploads/carousel/hobby-fotball-2-800.webp 800w, uploads/carousel/hobby-fotball-2-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
-      { img: 'uploads/carousel/hobby-fotball-3-800.webp', srcset: 'uploads/carousel/hobby-fotball-3-800.webp 800w, uploads/carousel/hobby-fotball-3-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
-      { img: 'uploads/carousel/hobby-fotball-4-800.webp', srcset: 'uploads/carousel/hobby-fotball-4-800.webp 800w, uploads/carousel/hobby-fotball-4-1600.webp 1600w', aspect: 0.8, label: 'Fotball' },
-      { img: 'uploads/carousel/hobby-fotball-5-800.webp', srcset: 'uploads/carousel/hobby-fotball-5-800.webp 800w, uploads/carousel/hobby-fotball-5-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
-      { img: 'uploads/carousel/hobby-fotball-6-800.webp', srcset: 'uploads/carousel/hobby-fotball-6-800.webp 800w, uploads/carousel/hobby-fotball-6-1600.webp 1600w', aspect: 0.8, label: 'Fotball' },
-      { img: 'uploads/carousel/hobby-fotball-7-800.webp', srcset: 'uploads/carousel/hobby-fotball-7-800.webp 800w, uploads/carousel/hobby-fotball-7-1169.webp 1169w', aspect: 0.566, label: 'Fotball' },
-      { img: 'uploads/carousel/hobby-surfing-800.webp', srcset: 'uploads/carousel/hobby-surfing-800.webp 800w, uploads/carousel/hobby-surfing-1344.webp 1344w', aspect: 0.75, label: 'Surfing' },
-      { img: 'uploads/carousel/hobby-bading-800.webp', srcset: 'uploads/carousel/hobby-bading-800.webp 800w, uploads/carousel/hobby-bading-1600.webp 1600w', aspect: 0.75, label: 'Bading' },
-      { img: 'uploads/carousel/hobby-ski-800.webp', srcset: 'uploads/carousel/hobby-ski-800.webp 800w, uploads/carousel/hobby-ski-1600.webp 1600w', aspect: 0.75, label: 'Ski' },
-      { img: 'uploads/carousel/hobby-ski-2-1067.webp', srcset: 'uploads/carousel/hobby-ski-2-1067.webp 1067w, uploads/carousel/hobby-ski-2-2133.webp 2133w', aspect: 1.333, label: 'Ski' },
-      { img: 'uploads/carousel/hobby-ski-3-1067.webp', srcset: 'uploads/carousel/hobby-ski-3-1067.webp 1067w, uploads/carousel/hobby-ski-3-2133.webp 2133w', aspect: 1.333, label: 'Ski' },
-      { img: 'uploads/carousel/hobby-ski-4-800.webp', srcset: 'uploads/carousel/hobby-ski-4-800.webp 800w, uploads/carousel/hobby-ski-4-1600.webp 1600w', aspect: 0.75, label: 'Ski' },
-      { img: 'uploads/carousel/hobby-motbakkelop-800.webp', srcset: 'uploads/carousel/hobby-motbakkelop-800.webp 800w, uploads/carousel/hobby-motbakkelop-1536.webp 1536w', aspect: 0.75, label: 'Løping' },
-      { img: 'uploads/carousel/hobby-motbakkelop-2-800.webp', srcset: 'uploads/carousel/hobby-motbakkelop-2-800.webp 800w, uploads/carousel/hobby-motbakkelop-2-1167.webp 1167w', aspect: 0.857, label: 'Løping' },
-      { img: 'uploads/carousel/hobby-venner-800.webp', srcset: 'uploads/carousel/hobby-venner-800.webp 800w, uploads/carousel/hobby-venner-1170.webp 1170w', aspect: 0.562, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-venner-2-1067.webp', srcset: 'uploads/carousel/hobby-venner-2-1067.webp 1067w, uploads/carousel/hobby-venner-2-2133.webp 2133w', aspect: 1.333, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-venner-3-800.webp', srcset: 'uploads/carousel/hobby-venner-3-800.webp 800w, uploads/carousel/hobby-venner-3-1600.webp 1600w', aspect: 0.562, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-venner-4-800.webp', srcset: 'uploads/carousel/hobby-venner-4-800.webp 800w, uploads/carousel/hobby-venner-4-1242.webp 1242w', aspect: 0.562, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-venner-5-800.webp', srcset: 'uploads/carousel/hobby-venner-5-800.webp 800w, uploads/carousel/hobby-venner-5-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-venner-6-800.webp', srcset: 'uploads/carousel/hobby-venner-6-800.webp 800w, uploads/carousel/hobby-venner-6-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-venner-7-800.webp', srcset: 'uploads/carousel/hobby-venner-7-800.webp 800w, uploads/carousel/hobby-venner-7-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-venner-8-800.webp', srcset: 'uploads/carousel/hobby-venner-8-800.webp 800w, uploads/carousel/hobby-venner-8-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-familie-800.webp', srcset: 'uploads/carousel/hobby-familie-800.webp 800w, uploads/carousel/hobby-familie-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-familie-2-1169.webp', srcset: 'uploads/carousel/hobby-familie-2-1169.webp 1169w', aspect: 1.55, label: 'Familie og venner' },
-      { img: 'uploads/carousel/hobby-natur-800.webp', srcset: 'uploads/carousel/hobby-natur-800.webp 800w, uploads/carousel/hobby-natur-1600.webp 1600w', aspect: 0.75, label: 'Fjellet' },
-      { img: 'uploads/carousel/hobby-fisking-800.webp', srcset: 'uploads/carousel/hobby-fisking-800.webp 800w, uploads/carousel/hobby-fisking-1600.webp 1600w', aspect: 0.75, label: 'Fisking' },
+      { img: 'uploads/bilete/karusell/Oline-800.webp', srcset: 'uploads/bilete/karusell/Oline-800.webp 800w, uploads/bilete/karusell/Oline-1600.webp 1600w', aspect: 0.975, label: null },
+      { img: 'uploads/bilete/karusell/hobby-fotball-800.webp', srcset: 'uploads/bilete/karusell/hobby-fotball-800.webp 800w, uploads/bilete/karusell/hobby-fotball-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/bilete/karusell/hobby-fotball-2-800.webp', srcset: 'uploads/bilete/karusell/hobby-fotball-2-800.webp 800w, uploads/bilete/karusell/hobby-fotball-2-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/bilete/karusell/hobby-fotball-3-800.webp', srcset: 'uploads/bilete/karusell/hobby-fotball-3-800.webp 800w, uploads/bilete/karusell/hobby-fotball-3-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/bilete/karusell/hobby-fotball-4-800.webp', srcset: 'uploads/bilete/karusell/hobby-fotball-4-800.webp 800w, uploads/bilete/karusell/hobby-fotball-4-1600.webp 1600w', aspect: 0.8, label: 'Fotball' },
+      { img: 'uploads/bilete/karusell/hobby-fotball-5-800.webp', srcset: 'uploads/bilete/karusell/hobby-fotball-5-800.webp 800w, uploads/bilete/karusell/hobby-fotball-5-1333.webp 1333w', aspect: 0.666, label: 'Fotball' },
+      { img: 'uploads/bilete/karusell/hobby-fotball-6-800.webp', srcset: 'uploads/bilete/karusell/hobby-fotball-6-800.webp 800w, uploads/bilete/karusell/hobby-fotball-6-1600.webp 1600w', aspect: 0.8, label: 'Fotball' },
+      { img: 'uploads/bilete/karusell/hobby-fotball-7-800.webp', srcset: 'uploads/bilete/karusell/hobby-fotball-7-800.webp 800w, uploads/bilete/karusell/hobby-fotball-7-1169.webp 1169w', aspect: 0.566, label: 'Fotball' },
+      { img: 'uploads/bilete/karusell/hobby-surfing-800.webp', srcset: 'uploads/bilete/karusell/hobby-surfing-800.webp 800w, uploads/bilete/karusell/hobby-surfing-1344.webp 1344w', aspect: 0.75, label: 'Surfing' },
+      { img: 'uploads/bilete/karusell/hobby-bading-800.webp', srcset: 'uploads/bilete/karusell/hobby-bading-800.webp 800w, uploads/bilete/karusell/hobby-bading-1600.webp 1600w', aspect: 0.75, label: 'Bading' },
+      { img: 'uploads/bilete/karusell/hobby-ski-800.webp', srcset: 'uploads/bilete/karusell/hobby-ski-800.webp 800w, uploads/bilete/karusell/hobby-ski-1600.webp 1600w', aspect: 0.75, label: 'Ski' },
+      { img: 'uploads/bilete/karusell/hobby-ski-2-1067.webp', srcset: 'uploads/bilete/karusell/hobby-ski-2-1067.webp 1067w, uploads/bilete/karusell/hobby-ski-2-2133.webp 2133w', aspect: 1.333, label: 'Ski' },
+      { img: 'uploads/bilete/karusell/hobby-ski-3-1067.webp', srcset: 'uploads/bilete/karusell/hobby-ski-3-1067.webp 1067w, uploads/bilete/karusell/hobby-ski-3-2133.webp 2133w', aspect: 1.333, label: 'Ski' },
+      { img: 'uploads/bilete/karusell/hobby-ski-4-800.webp', srcset: 'uploads/bilete/karusell/hobby-ski-4-800.webp 800w, uploads/bilete/karusell/hobby-ski-4-1600.webp 1600w', aspect: 0.75, label: 'Ski' },
+      { img: 'uploads/bilete/karusell/hobby-motbakkelop-800.webp', srcset: 'uploads/bilete/karusell/hobby-motbakkelop-800.webp 800w, uploads/bilete/karusell/hobby-motbakkelop-1536.webp 1536w', aspect: 0.75, label: 'Løping' },
+      { img: 'uploads/bilete/karusell/hobby-motbakkelop-2-800.webp', srcset: 'uploads/bilete/karusell/hobby-motbakkelop-2-800.webp 800w, uploads/bilete/karusell/hobby-motbakkelop-2-1167.webp 1167w', aspect: 0.857, label: 'Løping' },
+      { img: 'uploads/bilete/karusell/hobby-venner-800.webp', srcset: 'uploads/bilete/karusell/hobby-venner-800.webp 800w, uploads/bilete/karusell/hobby-venner-1170.webp 1170w', aspect: 0.562, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-venner-2-1067.webp', srcset: 'uploads/bilete/karusell/hobby-venner-2-1067.webp 1067w, uploads/bilete/karusell/hobby-venner-2-2133.webp 2133w', aspect: 1.333, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-venner-3-800.webp', srcset: 'uploads/bilete/karusell/hobby-venner-3-800.webp 800w, uploads/bilete/karusell/hobby-venner-3-1600.webp 1600w', aspect: 0.562, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-venner-4-800.webp', srcset: 'uploads/bilete/karusell/hobby-venner-4-800.webp 800w, uploads/bilete/karusell/hobby-venner-4-1242.webp 1242w', aspect: 0.562, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-venner-5-800.webp', srcset: 'uploads/bilete/karusell/hobby-venner-5-800.webp 800w, uploads/bilete/karusell/hobby-venner-5-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-venner-6-800.webp', srcset: 'uploads/bilete/karusell/hobby-venner-6-800.webp 800w, uploads/bilete/karusell/hobby-venner-6-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-venner-7-800.webp', srcset: 'uploads/bilete/karusell/hobby-venner-7-800.webp 800w, uploads/bilete/karusell/hobby-venner-7-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-venner-8-800.webp', srcset: 'uploads/bilete/karusell/hobby-venner-8-800.webp 800w, uploads/bilete/karusell/hobby-venner-8-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-familie-800.webp', srcset: 'uploads/bilete/karusell/hobby-familie-800.webp 800w, uploads/bilete/karusell/hobby-familie-1600.webp 1600w', aspect: 0.75, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-familie-2-1169.webp', srcset: 'uploads/bilete/karusell/hobby-familie-2-1169.webp 1169w', aspect: 1.55, label: 'Familie og venner' },
+      { img: 'uploads/bilete/karusell/hobby-natur-800.webp', srcset: 'uploads/bilete/karusell/hobby-natur-800.webp 800w, uploads/bilete/karusell/hobby-natur-1600.webp 1600w', aspect: 0.75, label: 'Fjellet' },
+      { img: 'uploads/bilete/karusell/hobby-fisking-800.webp', srcset: 'uploads/bilete/karusell/hobby-fisking-800.webp 800w, uploads/bilete/karusell/hobby-fisking-1600.webp 1600w', aspect: 0.75, label: 'Fisking' },
     ];
 
     function HobbyRow({ h, tweaks }) {
@@ -1580,7 +1587,7 @@
                   overflow: 'hidden', border: `3px solid ${tweaks.accent}60`,
                   transform: 'rotate(-4deg)', flexShrink: 0
                 }}>
-                  <img src="uploads/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'rotate(4deg) scale(1.15)' }} />
+                  <img src="uploads/bilete/Oline.jpg" alt="Oline" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'rotate(4deg) scale(1.15)' }} />
                 </div>
               </div>
               {!bp.isMobile && (
@@ -1621,7 +1628,7 @@
                 )}
                 {[
                   { school: 'Universitetet i Bergen', degree: 'Master — Medie- og interaksjonsdesign', period: '2025 – 2027', url: 'https://www4.uib.no/program/medie-og-interaksjonsdesign-master' },
-                  { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025', url: 'https://www4.uib.no/program/informasjonsvitskap-bachelor', diplomaUrl: 'uploads/Bachelorgrad_vitnemal.pdf' },
+                  { school: 'Universitetet i Bergen', degree: 'Bachelor — Informasjonsvitenskap', period: '2022 – 2025', url: 'https://www4.uib.no/program/informasjonsvitskap-bachelor', diplomaUrl: 'uploads/dokument/Bachelorgrad_vitnemal.pdf' },
                   { school: 'Møre Folkehøgskule', degree: 'Ekstremsport', period: '2021 – 2022', url: 'https://more.fhs.no' },
                 ].map((e, i) => {
                   const [hov, setHov] = React.useState(false);
@@ -1719,7 +1726,7 @@
         desc: 'Var interaksjonsdesignar i gruppa og utvikla prototypen. Eit innovasjonsprosjekt der vi bygde eit verdiforslag frå idé til pitch — med lean canvas, personas (Jenny og Geir) og storyboarding som strukturerande verktøy undervegs.',
         tags: ['Interaksjonsdesign', 'Prototyping', 'Lean Canvas', 'Personas'],
         url: 'https://ai-treet.vercel.app',
-        extraLink: { label: 'Bransjerapport', url: 'uploads/AiTreet.pdf' },
+        extraLink: { label: 'Bransjerapport', url: 'uploads/dokument/AiTreet.pdf' },
         color: '#9B7B5E',
       },
       {
@@ -1729,7 +1736,7 @@
         desc: 'Mi førre portefølje, koda heilt åleine for hand i 2024 — utan bruk av KI-verktøy — og levert med A i faget Web Design 1. Hovudvekt på HTML og CSS, med fokus på responsivt design, tilgjengelegheit og kreative frontend-løysingar, bygd på fagstoff frå «Learning Web Design», «Accessibility for Everyone», «White Space Is Not Your Enemy» og «The Design of Everyday Things».',
         tags: ['HTML', 'CSS', 'JavaScript', 'Tilgjengelegheit'],
         url: 'https://olinekleiven.github.io/Portfolio/',
-        extraLink: { label: 'Essay', url: 'uploads/Webdesign_essay.pdf' },
+        extraLink: { label: 'Essay', url: 'uploads/dokument/Webdesign_essay.pdf' },
         color: '#5B7C8A',
       },
       {
@@ -1738,8 +1745,8 @@
         subtitle: 'Dataspelforteljingar (MIX333) — Universitetet i Bergen',
         desc: '«Cookie Care» er eit 2D management- og simuleringsspel der spelaren driv ein liten cookie-kafé arva frå bestemora si. Spelaren bakar og serverer cookies til éin kunde om gongen, og «matchar» deig, toppings, farge og steiketid til kunden sin emosjonelle tilstand — glad, trist, sint, stressa eller einsam — i staden for å følgje ei fast oppskrift. Rundt 20 faste kundar går igjen gjennom spelet med genererte historier som endrar seg over tid, og spelaren lærer meir om dei gjennom dialog, kroppsspråk og ein notatbok som lagrar tidlegare møte. Vi utvikla konseptet frå elevator pitch og designprinsipp — empati gjennom baking, ein roleg atmosfære inspirert av Stardew Valley, og «små historier over tid» — til eit fullt game design document med gameplay-loop, score-system og progresjon. Prosessen inkluderte òg prototyping av startcutscenen, spelromma (kjøkken og spiserom) og logoen, med fokus på forteljeteknikkar, sjangerkonvensjonar og forholdet mellom spelar og avatar.',
         tags: ['Spelkonsept', 'Narrativt design', 'MIX333'],
-        url: 'uploads/MIX333_Cookie_care.pdf',
-        video: 'uploads/cookiecare_introscene.mov',
+        url: 'uploads/dokument/MIX333_Cookie_care.pdf',
+        video: 'uploads/video/cookiecare_introscene.mov',
         color: '#3F7A78',
       },
       {
@@ -1748,7 +1755,7 @@
         subtitle: 'INFO361 — Universitetet i Bergen',
         desc: '«How does difficulty and prior experience impact solution quality, time, and prompts in AI-assisted coding?». Gruppeprosjekt der vi gjennomførte ein workshop med 10 deltakarar, frå nybegynnarar til erfarne programmerarar. Deltakarane løyste to programmeringsoppgåver med ChatGPT som hjelpemiddel: først reparasjon og vidareutvikling av ein eksisterande «House Manager»-app, deretter utvikling av ein ny matvare- og handlelisteapp med backend, database og API-integrasjon. Vi samla inn ChatGPT-samtalar, kode, prompts, tidsbruk og spørjeskjemasvar for å undersøkje korleis programmeringserfaring og oppgåvevanskegrad påverkar prompting, AI-avhengigheit og løysingskvalitet.',
         tags: ['ChatGPT', 'Brukarforsking', 'Workshop', 'Kvalitativ analyse'],
-        url: 'uploads/INFO361.pdf',
+        url: 'uploads/dokument/INFO361.pdf',
         color: '#7B4B8A',
       },
     ];
@@ -2192,7 +2199,7 @@
 
     // Skills
     const TOOLS = [
-      { id: 'figma', name: 'Figma', icon: '🖊️', iconImg: 'uploads/Figma.svg', category: 'Design', color: '#C04B22',
+      { id: 'figma', name: 'Figma', icon: '🖊️', iconImg: 'uploads/ikon/Figma.svg', category: 'Design', color: '#C04B22',
         what: 'Design- og prototypeverktøy for å byggje grensesnitt digitalt.',
         why: 'Lèt meg raskt visualisere og teste idear før noko blir koda.',
         how: 'Designa og prototypa Snarveg i Figma — frå low-fi skisser til eit ferdig grensesnitt, med fokus på enkel navigasjon og låg kognitiv last for studentar.',
@@ -2207,7 +2214,7 @@
         why: 'Gjer det raskt å teste struktur og prioritering før detaljane kjem på plass.',
         how: 'Starta Snarveg med wireframes for å strukturere innhald og prioritere det studentar treng raskast tilgang til. Brukte det same i mi tidlegare portefølje, for å planleggje struktur før visuelt design og koding.',
         project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
-      { id: 'interaction-design', name: 'Interaction Design', icon: '🧭', iconImg: 'uploads/Interaksjon.png', category: 'Design', color: '#C04B22',
+      { id: 'interaction-design', name: 'Interaction Design', icon: '🧭', iconImg: 'uploads/ikon/Interaksjon.png', category: 'Design', color: '#C04B22',
         what: 'Design av korleis ein brukar samhandlar med eit system, steg for steg.',
         why: 'Sikrar at brukarflyten er intuitiv og føreseieleg.',
         how: 'Designa brukarflyten i EU Digital Wallet-prosjektet hos Digdir — frå autentisering via Ansattporten til levering av verifiserbare identitetskort via QR-kode.',
@@ -2217,7 +2224,7 @@
         why: 'Skaper tillit og gjer produktet lettare å forstå og bruke.',
         how: 'Utforska visuelt uttrykk og animasjonar gjennom interaktive digitale bursdagskort, koda frå botn av med eige design og personlege bodskap.',
         project: { label: 'Digitale bursdagskort', url: 'https://ida24.vercel.app' } },
-      { id: 'brukertesting', name: 'Brukertesting', icon: '🧪', iconImg: 'uploads/brukertesting.png', category: 'Research', color: '#5B7C8A',
+      { id: 'brukertesting', name: 'Brukertesting', icon: '🧪', iconImg: 'uploads/ikon/brukertesting.png', category: 'Research', color: '#5B7C8A',
         what: 'Å observere korleis brukarar faktisk brukar ei løysing, for å avdekkje problem og forbetringsmoglegheiter.',
         why: 'Gir innsikt i friksjon og behov som ikkje alltid kjem fram gjennom antakingar aleine.',
         how: 'Brukar iterativ brukertesting i alle prosjekt for å sjå om løysinga faktisk blir forstått slik ho er meint.',
@@ -2242,7 +2249,7 @@
         why: 'Avgjer om brukaren når målet sitt utan unødig frustrasjon.',
         how: 'Testar og forbetrar Snarveg undervegs gjennom iterativ brukertesting og observasjon.',
         project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
-      { id: 'react', name: 'React', icon: '⚛️', iconImg: 'uploads/React.svg', category: 'Utvikling', color: '#7A8E6F',
+      { id: 'react', name: 'React', icon: '⚛️', iconImg: 'uploads/ikon/React.svg', category: 'Utvikling', color: '#7A8E6F',
         what: 'Eit JavaScript-bibliotek for å byggje brukargrensesnitt.',
         why: 'Gjer det raskt å byggje gjenbrukbare, interaktive komponentar.',
         how: 'Bygde Snarveg som ein React-webapp — rask tilgang til ressursar, varslar og verktøy studentar treng, samla på éin stad.',
@@ -2257,7 +2264,7 @@
         why: 'Lett å lese og raskt å jobbe med.',
         how: 'Lærte Python gjennom studiet i informasjonsvitskap ved UiB.',
         project: { label: 'UiB — Informasjonsvitskap', url: null } },
-      { id: 'mysql', name: 'mySQL', icon: '🗄️', iconImg: 'uploads/sql.png', category: 'Utvikling', color: '#7A8E6F',
+      { id: 'mysql', name: 'mySQL', icon: '🗄️', iconImg: 'uploads/ikon/sql.png', category: 'Utvikling', color: '#7A8E6F',
         what: 'Eit relasjonsdatabasesystem for å lagre og hente strukturert data.',
         why: 'Naudsynt for nesten alle system som skal lagre informasjon.',
         how: 'Lærte mykje om SQL i faget INFO125, og gjennom resten av studiet i informasjonsvitskap. Underviser no i det same som seminarleiar i INFO100 ved UiB.',
@@ -2267,7 +2274,7 @@
         why: 'Gir ferdige løysingar for vanlege behov, som innlogging og databasehandtering.',
         how: 'Min praktiske kompetanse her er frå faget «Web Science», der vi laga eit innloggingssystem for å låne bibliotekbøker.',
         project: { label: 'UiB — Web Science', url: null } },
-      { id: 'claude', name: 'Claude', iconImg: 'uploads/claude.png', category: 'Prosess', color: '#8A5B7C',
+      { id: 'claude', name: 'Claude', iconImg: 'uploads/ikon/claude.png', category: 'Prosess', color: '#8A5B7C',
         what: 'Eit AI-verktøy for koding og design — Claude Code — som eg har brukt til å byggje heile denne porteføljen saman med Claude.',
         why: 'Å meistre nye verktøy som dette er ein sentral del av å vere ein moderne designar/utviklar i dag. Det endrar korleis ein jobbar, ikkje berre kva ein til slutt lagar.',
         how: 'I dette prosjektet har eg oppretta tre eigne agentar som kvalitetssikrar arbeidet mitt undervegs: ein interaksjonsdesignar (animasjon og mikrointeraksjonar), ein kode-ekspert (kodekvalitet og tryggleik) og ein ux-ekspert (brukaroppleving). Dei hjelper meg sikre design, kode og flyt gjennom heile porteføljen.',
@@ -3084,7 +3091,7 @@
                 )}
               </a>
 
-              <a href="uploads/Oline_Kleiven_CV.pdf?v=2026-10-18" download="Oline_Kleiven_CV.pdf" ref={cvTouchRef} style={{
+              <a href="uploads/dokument/Oline_Kleiven_CV.pdf?v=2026-10-18" download="Oline_Kleiven_CV.pdf" ref={cvTouchRef} style={{
                 background: 'transparent', color: tweaks.bg, padding: mobile ? '13px 32px' : '14px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 14, fontWeight: 400,
                 whiteSpace: 'nowrap',
@@ -3265,15 +3272,6 @@
           const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
           return { p: a, dir: { x: (a.x - b.x) / d, y: (a.y - b.y) / d } };
         };
-        // One simple stroke: a single cubic that leaves along the doodle
-        // line's own direction and eases out flat-ish at the far edge.
-        const stroke = (start, end) => {
-          const dist = Math.hypot(end.x - start.p.x, end.y - start.p.y);
-          const c1 = { x: start.p.x + start.dir.x * dist * 0.35, y: start.p.y + start.dir.y * dist * 0.35 };
-          const c2 = { x: end.x - Math.sign(end.x - start.p.x) * dist * 0.35, y: end.y - dist * 0.05 };
-          const f = n => n.toFixed(1);
-          return `M${f(start.p.x)},${f(start.p.y)} C${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)} ${f(end.x)},${f(end.y)}`;
-        };
         // Smooth curve through points (Catmull-Rom → cubic Béziers), leaving
         // along the doodle line's own direction so the join is seamless.
         const smooth = (start, pts) => {
@@ -3290,6 +3288,35 @@
             d += ` C${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)} ${f(p2.x)},${f(p2.y)}`;
           }
           return d;
+        };
+        // One stroke per seam: a single cubic that leaves along the doodle
+        // line's own direction and eases out flat-ish at the far edge, but
+        // loose like a real thread: points along it are
+        // nudged sideways by two gentle overlapping waves, tapered to nothing
+        // at both ends so the joins stay seamless. `seed` varies the waves
+        // per piece; they're fixed, so the thread doesn't shimmer on resize.
+        const threadStroke = (start, end, seed) => {
+          const dist = Math.hypot(end.x - start.p.x, end.y - start.p.y);
+          const c1 = { x: start.p.x + start.dir.x * dist * 0.35, y: start.p.y + start.dir.y * dist * 0.35 };
+          const c2 = { x: end.x - Math.sign(end.x - start.p.x) * dist * 0.35, y: end.y - dist * 0.05 };
+          const at = t => {
+            const u = 1 - t;
+            return {
+              x: u * u * u * start.p.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * end.x,
+              y: u * u * u * start.p.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * end.y
+            };
+          };
+          const n = Math.max(6, Math.round(dist / 55));
+          const amp = Math.min(15, dist * 0.02), waves = dist / 420;
+          const pts = [];
+          for (let i = 1; i <= n; i++) {
+            const t = i / n, p = at(t), q = at(Math.min(1, t + 0.01)), o = at(Math.max(0, t - 0.01));
+            const l = Math.hypot(q.x - o.x, q.y - o.y) || 1;
+            const taper = Math.sin(Math.PI * t);
+            const off = amp * taper * (Math.sin(t * waves * Math.PI * 2 + seed * 2.1) * 0.8 + Math.sin(t * waves * Math.PI * 2.7 + seed * 1.3) * 0.2);
+            pts.push({ x: p.x - (q.y - o.y) / l * off, y: p.y + (q.x - o.x) / l * off });
+          }
+          return smooth(start, pts);
         };
         // Page rect of an element as laid out, ignoring the scroll-reveal
         // translateY on it/its ancestors (it may not have revealed yet).
@@ -3314,7 +3341,7 @@
             if (from === 'hero') {
               // Above the carousel and out the left edge
               const frame = document.querySelector('[data-thread-anchor="carousel"]');
-              if (frame) end = { x: -10, y: restingRect(frame).top - 90 };
+              if (frame) end = { x: -10, y: restingRect(frame).top - 140 };
             } else if (to === 'kontakt') {
               // Finale: sweep in over the top, loop all the way round the
               // contact content and come to rest on its left side — where the
@@ -3365,7 +3392,7 @@
               const T = top(to);
               if (T !== null) end = { x: start.dir.x < 0 ? -10 : W + 10, y: T + 110 };
             }
-            if (end) out.push({ key: from, d: stroke(start, end), sections: [from, to] });
+            if (end) out.push({ key: from, d: threadStroke(start, end, i + 1), sections: [from, to] });
           }
           // Game anchors, all in page px: knots on their pieces, the two intro
           // notes by the hero curve, and the finale ball on the loop's left side.
@@ -3442,7 +3469,16 @@
             const r = restingRect(el);
             if (r.right - r.left > 2 && r.bottom - r.top > 2) contentRects.push(r);
           });
-          const seams = THREAD_SECTIONS.map(id => top(id)).filter(y => y !== null);
+          // Only seams where the background actually changes: a note may sit
+          // across two sections of the same colour (e.g. hero → Om meg)
+          const seams = [];
+          THREAD_SECTIONS.reduce((prevBg, id) => {
+            const el = document.getElementById(id);
+            if (!el) return prevBg;
+            const bg = getComputedStyle(el).backgroundColor;
+            if (prevBg !== null && bg !== prevBg) seams.push(top(id));
+            return bg;
+          }, null);
           // A box (centred on c) that covers no content and doesn't straddle a
           // seam between a light and a dark section. Notes are only gently
           // tilted, so an axis-aligned box is close enough for them.
@@ -3455,11 +3491,12 @@
             if (seams.some(y => y > T && y < B)) return false;
             return !contentRects.some(r => r.left < R && r.right > L && r.top < B && r.bottom > T);
           };
-          const clearOf = (c, angle, w, h, extra = []) => {
+          // `gap` is the clearance kept from the thread (smaller for notes that hug it)
+          const clearOf = (c, angle, w, h, extra = [], gap = 8) => {
             const a = -angle * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
             if ([...threadPts, ...extra].some(p => {
               const dx = p.x - c.x, dy = p.y - c.y;
-              return Math.abs(dx * cos - dy * sin) < w / 2 + 10 && Math.abs(dx * sin + dy * cos) < h / 2 + 8;
+              return Math.abs(dx * cos - dy * sin) < w / 2 + gap + 2 && Math.abs(dx * sin + dy * cos) < h / 2 + gap;
             })) return false;
             return boxClear(c, w, h, angle);
           };
@@ -3486,13 +3523,13 @@
           // distance first, so a crowded spot moves the note along the
           // thread instead of far away from it.
           const snug = (pt, fractions, w, h) => {
-            for (let push = 20; push <= 64; push += 4) {
+            for (let push = 12; push <= 64; push += 2) {
               for (const f of fractions) {
                 const a = along(pt(f), pt(f + 0.01), 0);
                 for (const sgn of [1, -1]) {
                   if (sgn < 0 && push < 24) continue;
                   const c = inView({ x: a.x + a.nx * push * sgn, y: a.y + a.ny * push * sgn }, w);
-                  if (clearOf(c, a.angle, w, h)) return { ...c, angle: a.angle };
+                  if (clearOf(c, a.angle, w, h, [], 3)) return { ...c, angle: a.angle };
                 }
               }
             }
@@ -3536,6 +3573,26 @@
             return { ...k, at, x: pt.x, y: pt.y, label: { dx: c.x - pt.x, dy: c.y - pt.y }, bg };
           }).filter(Boolean);
           const notes = {};
+          // A placed note becomes an obstacle for the next one
+          const reserve = (n, w) => {
+            const t = Math.abs(n.angle) * Math.PI / 180, hw = (w * Math.cos(t) + noteSize * Math.sin(t)) / 2, hh = (w * Math.sin(t) + noteSize * Math.cos(t)) / 2 + 6;
+            contentRects.push({ left: n.x - hw, right: n.x + hw, top: n.y - hh, bottom: n.y + hh });
+          };
+          // The dip in the thread has few spots that fit, so its note goes first
+          // and the curve's note (with many spots to choose from) makes room
+          const heroThread = out.find(o => o.key === 'hero');
+          if (heroThread) {
+            // Where the thread bows down lowest before heading off the left edge
+            let best = 0.5, bestY = -Infinity;
+            for (let f = 0.15; f <= 0.85; f += 0.01) { const q = pointOn(heroThread.d, f); if (q.y > bestY) { bestY = q.y; best = f; } }
+            // …or the nearest spot along it where the note fits snugly
+            const w2 = textW('…knuter kan oppstå', noteSize);
+            const a2 = along(pointOn(heroThread.d, best), pointOn(heroThread.d, best + 0.01), 20);
+            const fr = [0, 0.06, -0.06, 0.12, -0.12, 0.18, -0.18, 0.24, -0.24].map(d => best + d).filter(f => f > 0.08 && f < 0.92);
+            notes.intro2 = snug(f => pointOn(heroThread.d, f), fr, w2, noteSize * 1.2)
+              || { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, w2, noteSize * 1.2, [], 20), angle: a2.angle };
+            reserve(notes.intro2, w2);
+          }
           const heroLine = document.querySelector('[data-thread="hero"]');
           if (heroLine) {
             // Along the hero's bottom-right curve, past its midpoint (clear of the portrait)
@@ -3549,21 +3606,6 @@
             const a1 = along(at(len * 0.64), at(len * 0.66), 20);
             notes.intro1 = snug(f => at(len * f), [0.64, 0.7, 0.58, 0.76, 0.52, 0.82, 0.46, 0.88, 0.4], w1, noteSize * 1.2)
               || { ...placeClear(a1, { x: a1.nx, y: a1.ny }, a1.angle, w1, noteSize * 1.2, [], 20), angle: a1.angle };
-            // The second note must keep clear of this one too
-            const t1 = Math.abs(a1.angle) * Math.PI / 180, hw = (w1 * Math.cos(t1) + noteSize * Math.sin(t1)) / 2, hh = (w1 * Math.sin(t1) + noteSize * Math.cos(t1)) / 2 + 6;
-            contentRects.push({ left: notes.intro1.x - hw, right: notes.intro1.x + hw, top: notes.intro1.y - hh, bottom: notes.intro1.y + hh });
-          }
-          const heroThread = out.find(o => o.key === 'hero');
-          if (heroThread) {
-            // Where the thread bows down lowest before heading off the left edge
-            let best = 0.5, bestY = -Infinity;
-            for (let f = 0.15; f <= 0.85; f += 0.01) { const q = pointOn(heroThread.d, f); if (q.y > bestY) { bestY = q.y; best = f; } }
-            // …or the nearest spot along it where the note fits snugly
-            const w2 = textW('…knuter kan oppstå', noteSize);
-            const a2 = along(pointOn(heroThread.d, best), pointOn(heroThread.d, best + 0.01), 20);
-            const fr = [0, 0.06, -0.06, 0.12, -0.12, 0.18, -0.18, 0.24, -0.24].map(d => best + d).filter(f => f > 0.08 && f < 0.92);
-            notes.intro2 = snug(f => pointOn(heroThread.d, f), fr, w2, noteSize * 1.2)
-              || { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, w2, noteSize * 1.2, [], 20), angle: a2.angle };
           }
           const finale = out.find(o => o.finale);
           if (finale) notes.ball = finale.ball;
@@ -3626,8 +3668,11 @@
           pieces.push({ els, ys, eff, finale: byKey[els[0].dataset.threadPiece] && byKey[els[0].dataset.threadPiece].finale });
         };
         THREAD_SECTIONS.forEach(id => {
-          addPiece([document.querySelector(`[data-thread="${id}"]`)]);
-          if (byKey[id]) addPiece([...document.querySelectorAll(`[data-thread-piece="${id}"]`)]);
+          // The measured path first, then its cord layers (see ThreadStroke)
+          const layers = key => [...document.querySelectorAll(`[data-thread-layer="${key}"]`)];
+          const line = document.querySelector(`[data-thread="${id}"]`);
+          if (line) addPiece([line, ...layers(`line:${id}`)]);
+          if (byKey[id]) addPiece([...document.querySelectorAll(`[data-thread-piece="${id}"]`), ...layers(`piece:${id}`)]);
         });
         // Fraction of a piece drawn when the tip is at page-y `tip`: the tip's
         // distance past the piece's start, spent along its scroll-cost curve.
@@ -3833,8 +3878,8 @@
           <svg key={`${t.key}-${sec}`} style={{
             position: 'absolute', top: -threads.tops[sec], left: 0, width: 1, height: 1, overflow: 'visible'
           }}>
-            <path className="doodle-line scroll-line" pathLength="1" d={t.d} data-thread-piece={t.key}
-              fill="none" stroke={tweaks.accent} strokeWidth="1.6" strokeLinecap="round" />
+            <ThreadStroke className="doodle-line scroll-line" d={t.d} layer={`piece:${t.key}`} tweaks={tweaks}
+              main={{ 'data-thread-piece': t.key }} />
           </svg>,
           layer
         );
@@ -3862,6 +3907,12 @@
 
       return (
         <>
+          {/* Twisted-strand texture for the thread (ThreadStroke) */}
+          <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+            <pattern id="thread-twist" patternUnits="userSpaceOnUse" width="3.6" height="3.6" patternTransform="rotate(58)">
+              <rect width="1.3" height="3.6" fill={tweaks.dark} fillOpacity="0.3" />
+            </pattern>
+          </svg>
           <Cursor />
           <Nav tweaks={tweaks} bp={bp} />
           <Hero tweaks={tweaks} bp={bp} />
