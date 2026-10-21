@@ -1693,6 +1693,33 @@
     // Projects
     const projects = [
       {
+        // The "hovudbok": how this very portfolio was made. Stands out on the
+        // shelf (see Book's `featured`) and lists its steps in the modal.
+        num: '00',
+        featured: true,
+        title: 'Slik ble denne porteføljen til',
+        spineTitle: 'Bak porteføljen',
+        subtitle: 'Designprosessen og arbeidsflyten',
+        desc: 'Porteføljen har egentlig vært min egen øvingsarena for designmetodikk: her har jeg prøvd ut metodene jeg lærer, på et prosjekt som betyr mye for meg. Hvordan gikk jeg frem? Her er stegene underveis — fra problemforståelse til ferdig, kodet løsning.',
+        steps: [
+          { title: 'Problemforståelse og mål', text: 'Jeg trengte en portefølje. Målet var å gjøre den personlig — et sted som beskriver meg best mulig, ikke bare lister opp hva jeg har gjort.' },
+          { title: 'Målgruppe og brukerinnsikt', text: 'Den viktigste brukeren er egentlig meg selv. Spørsmålet jeg stadig stiller er: beskriver denne meg godt? Deretter kommer arbeidsgivere og andre som vil bli kjent med meg og arbeidet mitt.' },
+          { title: 'Designvalg og alternativer', text: 'I stedet for et tradisjonelt rutenett med prosjektkort valgte jeg en bokhylle der hvert prosjekt er en bok, og en rød tråd som går gjennom hele siden — med knuter som kan nøstes opp. Slike valg gjør porteføljen leken og personlig, og binder seksjonene sammen til én historie.' },
+          { title: 'Wireframes', text: 'Jeg startet med wireframes for å utforske struktur, navigasjon og mulige løsninger tidlig i arbeidet.' },
+          { title: 'Idéutvikling', text: 'Brainstorming, brukerreiser (user journeys), storyboards og innspill fra andre. Gjennom samarbeid kom jeg frem til ideen om nøkkelen til kisten, mens bokhyllen var en idé jeg utviklet selv — for å gjøre løsningen mer personlig og skape en sterkere tilknytning mellom konseptet og brukeren.' },
+          { title: 'Claude Design', text: 'Brukt som utgangspunkt i den tidlige designfasen.' },
+          { title: 'Claude Code', text: 'Brukt som verktøy i videreutviklingen og implementeringen av løsningen.' },
+          { title: 'Iterativ brukertesting', text: 'Så langt har jeg testet med seks deltakere på ulike stadier i utviklingen, med think aloud og Wizard of Oz som metoder. Tilbakemeldingene har vist meg utfordringer og hvordan brukerne forstår løsningen, slik at jeg kunne justere underveis — i stedet for å vente til sluttfasen med å evaluere designet.' },
+          { title: 'Tilgjengelighet og brukskvalitet', text: 'Porteføljen er tilpasset alle skjermstørrelser med media queries og testet på ulike skjermer. Siden jeg deler den på LinkedIn, kommer mange besøkende fra mobil, så mobilversjonen er like viktig som desktop. Animasjonene skrus av for dem som har valgt redusert bevegelse.' },
+          { title: 'Refleksjon og forbedring', text: 'Prosessen har ikke vært helt lineær: designet har vokst frem gradvis gjennom testing, refleksjon og kontinuerlige forbedringer.' },
+        ],
+        tags: ['Wireframes', 'Brukerreiser', 'Storyboards', 'Brukertesting', 'Think aloud', 'Wizard of Oz', 'Responsivt design', 'Claude Design', 'Claude Code'],
+        // A personal aside under the title, ending in a handwritten line
+        note: 'Porteføljen er et levende prosjekt: jeg utvikler og tester den hver uke, legger inn nye ideer når de dukker opp i hodet, og lærer alltid noe nytt underveis.',
+        noteHand: 'Et drømmeprosjekt, spør du meg!',
+        color: '#24314A',
+      },
+      {
         num: '01',
         title: 'EU Digital Wallet',
         subtitle: 'Digdir — Sommerstudent 2024',
@@ -1764,15 +1791,19 @@
     const BOOK_HEIGHTS = [330, 352, 314, 342, 322, 336];
     const BOOK_TILT = [-1.4, 1.1, -0.7, 1.6, -1.1, 0.9];
     const PAGE_EDGE = '#F3E9D8';
+    const BOOK_GOLD = '#E2C27D';
 
     function Book({ project, index, tweaks, mobile, onOpen }) {
       const [hov, setHov] = useState(false);
       const [bookTouchRef, bookTouchHover] = useTouchHover();
       useEffect(() => { setHov(bookTouchHover); }, [bookTouchHover]);
       const scale = mobile ? 0.8 : 1;
-      const w = Math.round(BOOK_WIDTHS[index % BOOK_WIDTHS.length] * scale);
-      const h = Math.round(BOOK_HEIGHTS[index % BOOK_HEIGHTS.length] * scale);
-      const tilt = BOOK_TILT[index % BOOK_TILT.length];
+      // The featured book is bigger, stands up straight and is gold-tooled
+      const featured = !!project.featured;
+      const w = Math.round((featured ? 104 : BOOK_WIDTHS[index % BOOK_WIDTHS.length]) * scale);
+      const h = Math.round((featured ? 372 : BOOK_HEIGHTS[index % BOOK_HEIGHTS.length]) * scale);
+      const tilt = featured ? 0 : BOOK_TILT[index % BOOK_TILT.length];
+      const band = featured ? BOOK_GOLD : 'rgba(255,255,255,0.45)';
       const pageW = Math.max(5, Math.round(w * 0.09));
       return (
         <button
@@ -1800,21 +1831,33 @@
             background: `repeating-linear-gradient(180deg, ${PAGE_EDGE} 0px, ${PAGE_EDGE} 2px, #E4D6BE 2px, #E4D6BE 3px)`,
             borderRadius: '0 3px 3px 0', boxShadow: 'inset 2px 0 3px rgba(0,0,0,0.25)'
           }} />
-          {/* headband / tailband */}
-          <div style={{ position: 'absolute', top: '10%', left: 0, right: pageW, height: 3, background: 'rgba(255,255,255,0.45)' }} />
-          <div style={{ position: 'absolute', bottom: '10%', left: 0, right: pageW, height: 3, background: 'rgba(255,255,255,0.45)' }} />
+          {/* headband / tailband (doubled in gold on the featured book) */}
+          <div style={{ position: 'absolute', top: '10%', left: 0, right: pageW, height: 3, background: band }} />
+          <div style={{ position: 'absolute', bottom: '10%', left: 0, right: pageW, height: 3, background: band }} />
+          {featured && <>
+            <div style={{ position: 'absolute', top: 'calc(10% + 7px)', left: 0, right: pageW, height: 1, background: band }} />
+            <div style={{ position: 'absolute', bottom: 'calc(10% + 7px)', left: 0, right: pageW, height: 1, background: band }} />
+            <span aria-hidden="true" style={{ position: 'absolute', top: '4%', left: 0, right: pageW, textAlign: 'center', color: BOOK_GOLD, fontSize: mobile ? 11 : 13 }}>✦</span>
+          </>}
           {/* bookmark ribbon */}
           <div style={{
             position: 'absolute', top: -8, left: '58%', width: Math.max(6, Math.round(w * 0.1)), height: 22,
-            background: 'rgba(255,255,255,0.55)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)'
+            background: featured ? tweaks.accent : 'rgba(255,255,255,0.55)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)'
           }} />
+          {featured && (
+            <span aria-hidden="true" style={{
+              position: 'absolute', bottom: '100%', left: '50%', transform: 'translate(-50%, -14px) rotate(-6deg)',
+              fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: mobile ? 18 : 21,
+              color: BOOK_GOLD, whiteSpace: 'nowrap', pointerEvents: 'none'
+            }}>Start her!</span>
+          )}
           <span style={{
             writingMode: 'vertical-rl', transform: 'rotate(180deg)',
             fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontWeight: 400,
-            fontSize: mobile ? 13 : 15, color: '#fff', letterSpacing: '0.01em',
+            fontSize: featured ? (mobile ? 15 : 17) : (mobile ? 13 : 15), color: featured ? BOOK_GOLD : '#fff', letterSpacing: '0.01em',
             maxHeight: '74%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             marginRight: pageW * 0.4
-          }}>{project.title}</span>
+          }}>{project.spineTitle || project.title}</span>
         </button>
       );
     }
@@ -1900,6 +1943,14 @@
                     }}>{project.extraLink.label} ↗</a>
                   )}
                 </div>
+                {project.note && (
+                  <div style={{ marginTop: 4, paddingLeft: 16, borderLeft: `2px solid ${project.color}30` }}>
+                    <p style={{ fontSize: 15, lineHeight: 1.75, color: '#2A2620', opacity: 0.75 }}>{project.note}</p>
+                    {project.noteHand && (
+                      <p style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: mobile ? 24 : 28, color: tweaks.accent, marginTop: 10, transform: 'rotate(-2deg)', transformOrigin: 'left center' }}>{project.noteHand}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div style={{ flex: mobile ? 'none' : 1, padding: mobile ? '4px 24px 36px' : '56px 48px' }}>
@@ -1910,6 +1961,24 @@
                   </video>
                 )}
                 <p style={{ fontSize: 15, lineHeight: 1.75, color: '#2A2620', opacity: 0.75, marginBottom: 24 }}>{project.desc}</p>
+                {project.steps && (
+                  <ol style={{ listStyle: 'none', padding: 0, margin: '0 0 28px' }}>
+                    {project.steps.map((st, i) => (
+                      <li key={st.title} style={{ display: 'flex', gap: 14, paddingBottom: i < project.steps.length - 1 ? 18 : 0, position: 'relative' }}>
+                        {/* numbered dot on a line running down the steps */}
+                        {i < project.steps.length - 1 && <span aria-hidden="true" style={{ position: 'absolute', left: 13, top: 28, bottom: 0, width: 1.5, background: project.color + '30' }} />}
+                        <span aria-hidden="true" style={{
+                          flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: project.color, color: BOOK_GOLD,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600
+                        }}>{i + 1}</span>
+                        <div style={{ paddingTop: 3 }}>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#2A2620', marginBottom: 4 }}>{st.title}</p>
+                          <p style={{ fontSize: 14, lineHeight: 1.7, color: '#2A2620', opacity: 0.75 }}>{st.text}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {project.tags.map(tag => (
                     <span key={tag} style={{
@@ -1949,11 +2018,12 @@
             <div style={{
               display: 'flex', alignItems: 'flex-end', justifyContent: mobile ? 'flex-start' : 'center',
               gap: mobile ? 14 : 22, overflowX: 'auto', overflowY: 'visible',
-              position: 'relative', zIndex: 1, paddingTop: mobile ? 24 : 34, paddingBottom: 2,
+              position: 'relative', zIndex: 1, paddingTop: mobile ? 44 : 34, paddingBottom: 2,
               WebkitOverflowScrolling: 'touch'
             }}>
               {projects.map((p, i) => (
-                <Book key={p.num} project={p} index={i} tweaks={tweaks} mobile={mobile} onOpen={setOpenProject} />
+                // Featured books don't count, so the others keep their own sizes and tilts
+                <Book key={p.num} project={p} index={i - projects.slice(0, i).filter(q => q.featured).length} tweaks={tweaks} mobile={mobile} onOpen={setOpenProject} />
               ))}
             </div>
             <div style={{
@@ -1966,8 +2036,11 @@
           <p style={{ fontSize: 12, color: tweaks.bg, opacity: 0.6, marginTop: 16, textAlign: mobile ? 'left' : 'center' }}>
             Klikk på ei bok for å opne prosjektet
           </p>
-          {openProject && (
-            <BookModal project={openProject} onClose={() => setOpenProject(null)} tweaks={tweaks} mobile={mobile} />
+          {/* Rendered on <body>: inside the section's stacking context it would
+              sit under the thread game's notes and knots */}
+          {openProject && ReactDOM.createPortal(
+            <BookModal project={openProject} onClose={() => setOpenProject(null)} tweaks={tweaks} mobile={mobile} />,
+            document.body
           )}
         </>
       );
