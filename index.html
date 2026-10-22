@@ -1709,11 +1709,13 @@
           { title: 'Idéutvikling', text: 'Brainstorming, brukerreiser (user journeys), storyboards og innspill fra andre. Gjennom samarbeid kom jeg frem til ideen om nøkkelen til kisten, mens bokhyllen var en idé jeg utviklet selv — for å gjøre løsningen mer personlig og skape en sterkere tilknytning mellom konseptet og brukeren.' },
           { title: 'Claude Design', text: 'Brukt som utgangspunkt i den tidlige designfasen.' },
           { title: 'Claude Code', text: 'Brukt som verktøy i videreutviklingen og implementeringen av løsningen.' },
-          { title: 'Iterativ brukertesting', text: 'Så langt har jeg testet med seks deltakere på ulike stadier i utviklingen, med think aloud og Wizard of Oz som metoder. Tilbakemeldingene har vist meg utfordringer og hvordan brukerne forstår løsningen, slik at jeg kunne justere underveis — i stedet for å vente til sluttfasen med å evaluere designet.' },
-          { title: 'Tilgjengelighet og brukskvalitet', text: 'Porteføljen er tilpasset alle skjermstørrelser med media queries og testet på ulike skjermer. Siden jeg deler den på LinkedIn, kommer mange besøkende fra mobil, så mobilversjonen er like viktig som desktop. Animasjonene skrus av for dem som har valgt redusert bevegelse.' },
+          { title: 'Egne AI-agenter', text: 'Jeg ville utforske hvordan jeg kan bruke AI i designprosessen, så jeg laget tre egne agenter i Claude Code, hver med sitt fagområde. Interaksjonsdesigneren hjalp meg med animasjoner, overganger og mikrointeraksjoner, slik at bevegelsene føles gjennomtenkte og konsistente i stedet for å distrahere. UX-eksperten hjalp meg med layout, visuelt hierarki, navigasjon, lesbarhet og tilgjengelighet, og med at siden fungerer like godt på mobil som på desktop. Kode-eksperten hjalp meg med å skrive god kode og strukturere den, og sjekket at den var fri for sikkerhetshull før jeg publiserte. Det ga meg et lite team av spesialister å sparre med underveis.' },
+          { title: 'Iterativ brukertesting', text: 'Så langt har jeg testet med seks deltakere på ulike stadier i utviklingen, med think aloud og Wizard of Oz som metoder. Tilbakemeldingene har vist meg utfordringer og hvordan brukerne forstår løsningen, slik at jeg kunne justere underveis — i stedet for å vente til sluttfasen med å evaluere designet. Siden jeg stadig gjør endringer, får jeg en ny person til å teste hver uke. Et eksempel: en av de første testpersonene virket lite begeistret over verktøyene mine, som da bare var listet opp. Det ble ikke sagt høyt, men jeg la merke til det og spurte, og svaret var at ja, det var litt kjedelig. Da tenkte jeg: hvordan tar man vare på verktøy i praksis? I en verktøykasse. Jeg bygde en, og lot en ny person teste den. Tilbakemeldingen var: «Det hadde vært fett med en nøkkel til.» Så jeg la til en nøkkel. Slik har det fortsatt, og hver testrunde gir meg nye innsikter som gjør at jeg alltid forbedrer siden.' },
+          { title: 'Wizard of Oz: tråden og knutene', text: 'Jeg brukte Wizard of Oz til å teste en funksjon der brukeren følger en tråd gjennom prototypen. Først kunne brukeren passere knutene uten å løse dem. Etter testing endret jeg funksjonen slik at knutene måtte løses for å komme videre. Ved å simulere funksjonaliteten kunne jeg teste ideen før jeg kodet den, og gjøre knutene til en meningsfull del av brukeropplevelsen – ikke bare dekor.' },
+          { title: 'Tilgjengelighet og brukskvalitet', text: 'Porteføljen er tilpasset alle skjermstørrelser med media queries og testet på ulike skjermer. Siden jeg deler den på LinkedIn, kommer mange besøkende fra mobil, så mobilversjonen er like viktig som desktop.' },
           { title: 'Refleksjon og forbedring', text: 'Prosessen har ikke vært helt lineær: designet har vokst frem gradvis gjennom testing, refleksjon og kontinuerlige forbedringer.' },
         ],
-        tags: ['Wireframes', 'Brukerreiser', 'Storyboards', 'Brukertesting', 'Think aloud', 'Wizard of Oz', 'Responsivt design', 'Claude Design', 'Claude Code'],
+        tags: ['Wireframes', 'Brukerreiser', 'Storyboards', 'Brukertesting', 'Think aloud', 'Wizard of Oz', 'Responsivt design', 'Claude Design', 'Claude Code', 'AI-agenter'],
         // A personal aside under the title, ending in a handwritten line
         note: 'Porteføljen er et levende prosjekt: jeg utvikler og tester den hver uke, legger inn nye ideer når de dukker opp i hodet, og lærer alltid noe nytt underveis.',
         noteHand: 'Et drømmeprosjekt, spør du meg!',
@@ -2018,7 +2020,7 @@
             <div style={{
               display: 'flex', alignItems: 'flex-end', justifyContent: mobile ? 'flex-start' : 'center',
               gap: mobile ? 14 : 22, overflowX: 'auto', overflowY: 'visible',
-              position: 'relative', zIndex: 1, paddingTop: mobile ? 44 : 34, paddingBottom: 2,
+              position: 'relative', zIndex: 1, paddingTop: mobile ? 60 : 64, paddingBottom: 2,
               WebkitOverflowScrolling: 'touch'
             }}>
               {projects.map((p, i) => (
