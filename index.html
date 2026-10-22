@@ -2742,8 +2742,10 @@
               {stage !== 'closed' && (
                 <>
                   <ToolboxOpen tools={TOOLS} layout={TOOL_LAYOUT} hoveredId={hoveredId} setHoveredId={setHoveredId} onPick={pickTool} onClose={stepBack} mobile={mobile} reducedMotion={reducedMotion} />
-                  {stage === 'detail' && selected && (
-                    <ToolDetail tool={selected} onClose={stepBack} tweaks={tweaks} mobile={mobile} />
+                  {/* Rendered on <body> so the thread game's notes and knots stay behind it */}
+                  {stage === 'detail' && selected && ReactDOM.createPortal(
+                    <ToolDetail tool={selected} onClose={stepBack} tweaks={tweaks} mobile={mobile} />,
+                    document.body
                   )}
                 </>
               )}
