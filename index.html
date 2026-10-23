@@ -1073,7 +1073,7 @@
               onMouseLeave={heroPrimaryLeave}
               >Prosjekter ↓</a>
 
-              <a href="uploads/dokument/Oline_Kleiven_CV.pdf?v=2026-10-18" download="Oline_Kleiven_CV.pdf" ref={heroCvTouchRef} style={{
+              <a href="uploads/dokument/OLINE_CV.pdf?v=2026-10-23" download="OLINE_CV.pdf" ref={heroCvTouchRef} style={{
                 color: tweaks.dark, background: 'transparent',
                 padding: '14px 32px', borderRadius: 100,
                 textDecoration: 'none', fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
@@ -1728,17 +1728,20 @@
         desc: 'Implementerte ein credential-utsteder-teneste basert på EU eIDAS 2.0-standarden. Løysinga let tilsette ta med seg verifiserbare digitale identitetskort i si eiga wallet-app — via Mattr API, ansattporten og OAuth2.',
         tags: ['Java', 'Spring Boot', 'OAuth2', 'UX', 'eIDAS 2.0'],
         url: 'https://github.com/felleslosninger/dc24-eu-wallet',
-        extraLink: { label: 'Sluttrapport', url: 'uploads/dokument/Sluttrapport___Digdir_sommercamp_2024.pdf' },
+        extraLinks: [{ label: 'Sluttrapport', url: 'uploads/dokument/Sluttrapport___Digdir_sommercamp_2024.pdf' }],
         color: '#C04B22',
       },
       {
         num: '02',
         title: 'Snarveg',
         subtitle: 'Medieteknologi — Universitetet i Bergen',
-        desc: 'Ein webapp som hjelper studentar å navigere studiekvardagen smartare — rask tilgang til viktige ressursar, varslar og verktøy samla på éin stad. Bygd med fokus på enkel navigasjon og lav kognitiv last.',
-        tags: ['React', 'UX Design', 'Prototyping', 'Figma'],
+        desc: 'Ein webapp som hjelper studentar å navigere studiekvardagen smartare — rask tilgang til viktige ressursar, varslar og verktøy samla på éin stad. Bygd med fokus på enkel navigasjon og låg kognitiv last. Eksamen i faget var eit akademisk essay om det vi hadde laga: gjennom Actor-Network Theory analyserte eg korleis appen vart til i samspelet mellom mange aktørar — oss som designarar, KI-verktøy, skisser og kode — og kva det betyr for makt, ansvar og kontroll når ein utviklar med KI.',
+        tags: ['React', 'UX Design', 'Prototyping', 'Figma', 'Actor-Network Theory'],
         url: 'https://snarveg-emzo.vercel.app',
-        extraLink: { label: 'Bransjerapport', url: 'uploads/dokument/Prototype%20description_%20Snarveg.pdf' },
+        extraLinks: [
+          { label: 'Bransjerapport', url: 'uploads/dokument/Prototype%20description_%20Snarveg.pdf' },
+          { label: 'Essay', url: 'uploads/dokument/Exam_MIX301.pdf' },
+        ],
         color: '#8A5B7C',
       },
       {
@@ -1757,7 +1760,7 @@
         desc: 'Var interaksjonsdesignar i gruppa og utvikla prototypen. Eit innovasjonsprosjekt der vi bygde eit verdiforslag frå idé til pitch — med lean canvas, personas (Jenny og Geir) og storyboarding som strukturerande verktøy undervegs.',
         tags: ['Interaksjonsdesign', 'Prototyping', 'Lean Canvas', 'Personas'],
         url: 'https://ai-treet.vercel.app',
-        extraLink: { label: 'Bransjerapport', url: 'uploads/dokument/AiTreet.pdf' },
+        extraLinks: [{ label: 'Bransjerapport', url: 'uploads/dokument/AiTreet.pdf' }],
         color: '#9B7B5E',
       },
       {
@@ -1767,7 +1770,7 @@
         desc: 'Mi førre portefølje, koda heilt åleine for hand i 2024 — utan bruk av KI-verktøy — og levert med A i faget Web Design 1. Hovudvekt på HTML og CSS, med fokus på responsivt design, tilgjengelegheit og kreative frontend-løysingar, bygd på fagstoff frå «Learning Web Design», «Accessibility for Everyone», «White Space Is Not Your Enemy» og «The Design of Everyday Things».',
         tags: ['HTML', 'CSS', 'JavaScript', 'Tilgjengelegheit'],
         url: 'https://olinekleiven.github.io/Portfolio/',
-        extraLink: { label: 'Essay', url: 'uploads/dokument/Webdesign_essay.pdf' },
+        extraLinks: [{ label: 'Essay', url: 'uploads/dokument/Webdesign_essay.pdf' }],
         color: '#5B7C8A',
       },
       {
@@ -1937,15 +1940,15 @@
                       fontSize: 13, fontWeight: 500
                     }}>Prosjektet ↗</a>
                   )}
-                  {project.extraLink && (
-                    <a href={project.extraLink.url} target="_blank" rel="noopener" style={{
+                  {(project.extraLinks || []).map(link => (
+                    <a key={link.url} href={link.url} target="_blank" rel="noopener" style={{
                       display: 'inline-flex', alignItems: 'center', gap: 8,
                       padding: '10px 20px', borderRadius: 100,
                       background: 'transparent', color: project.color, textDecoration: 'none',
                       border: `1.5px solid ${project.color}50`,
                       fontSize: 13, fontWeight: 500
-                    }}>{project.extraLink.label} ↗</a>
-                  )}
+                    }}>{link.label} ↗</a>
+                  ))}
                 </div>
                 {project.note && (
                   <div style={{ marginTop: 4, paddingLeft: 16, borderLeft: `2px solid ${project.color}30` }}>
@@ -2760,7 +2763,7 @@
     // Volunteer
     const volunteerData = [
       { org: 'Studentradioen i Bergen', role: 'Designer', sub: 'IT-gruppen', period: '2026', color: '#C04B22' },
-      { org: 'UX Bergen', role: 'Styremedlem', sub: 'Fagleg nettverk', period: '2026 – d.d.', color: '#5B7C8A' },
+      { org: 'UX Bergen', role: 'Styremedlem', sub: 'Fagleg nettverk', period: '2026', color: '#5B7C8A' },
       { org: 'BSI Damefotball', role: 'Leiar', sub: 'Studentidrett', period: '2025 – d.d.', color: '#7A8E6F' },
       { org: 'BSI Damefotball', role: 'So-Me ansvarleg', sub: 'Kommunikasjon', period: '2024 – 2025', color: '#7A8E6F' },
       { org: 'X2-festivalen', role: 'Frivillig', sub: 'Tidtakar på elvepadling', period: '2022', color: '#8A5B7C' },
@@ -2796,7 +2799,7 @@
         org: 'UX Bergen',
         role: 'Styremedlem',
         sub: 'Fagleg nettverk for UX-profesjonelle',
-        period: '2026 – d.d.',
+        period: '2026',
         color: '#5B7C8A',
         size: 178,
         x: 27, y: 40,
@@ -3170,7 +3173,7 @@
                 )}
               </a>
 
-              <a href="uploads/dokument/Oline_Kleiven_CV.pdf?v=2026-10-18" download="Oline_Kleiven_CV.pdf" ref={cvTouchRef} style={{
+              <a href="uploads/dokument/OLINE_CV.pdf?v=2026-10-23" download="OLINE_CV.pdf" ref={cvTouchRef} style={{
                 background: 'transparent', color: tweaks.bg, padding: mobile ? '13px 32px' : '14px 56px',
                 borderRadius: 100, textDecoration: 'none', fontSize: 14, fontWeight: 400,
                 whiteSpace: 'nowrap',
