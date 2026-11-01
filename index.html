@@ -83,9 +83,12 @@
     .reveal-delay-4 { transition-delay: 0.5s; }
 
     /* Scrollbar */
-    ::-webkit-scrollbar { width: 4px; }
+    /* Page scrollbar: wide enough to see and grab, with a clear thumb */
+    html { scrollbar-color: #C04B22 #EDE0CF; }
+    ::-webkit-scrollbar { width: 12px; height: 8px; }
     ::-webkit-scrollbar-track { background: #EDE0CF; }
-    ::-webkit-scrollbar-thumb { background: #C04B22; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb { background: #C04B22; border-radius: 6px; border: 2px solid #EDE0CF; }
+    ::-webkit-scrollbar-thumb:hover { background: #A33D1A; }
 
     /* Tweaks panel */
     #tweaks-panel { position: fixed; bottom: 24px; right: 24px; background: #2A2620; color: #EDE0CF; padding: 20px; border-radius: 12px; width: 240px; z-index: 9000; font-family: 'DM Sans', sans-serif; font-size: 13px; display: none; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -204,9 +207,6 @@
       font-family: 'Caveat', cursive; font-weight: 600; font-size: 24px; line-height: 1.1;
       color: var(--accent); text-align: center; white-space: nowrap;
       opacity: 0; pointer-events: none;
-      /* Soft halo in the section's own background so notes stay legible
-         where they pass over the thread */
-      text-shadow: 0 0 3px var(--halo, var(--bg)), 0 0 8px var(--halo, var(--bg)), 0 0 14px var(--halo, var(--bg));
       transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.16,1,.3,1);
     }
     /* Smaller handwriting on phones, where the notes share the width with content */
@@ -340,7 +340,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect, useLayoutEffect, useRef } = React;
 
     const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
       "accent": "#b95d3c",
@@ -633,20 +633,20 @@
     }
 
     // Nav
-    const NAV_SECTIONS = ['hero', 'om-meg', 'utdanning', 'prosjekter', 'erfaring', 'skills', 'verv', 'kontakt'];
+    const NAV_SECTIONS = ['hero', 'prosjekter', 'om-meg', 'utdanning', 'erfaring', 'skills', 'verv', 'kontakt'];
     const NAV_DARK_SECTIONS = new Set(['utdanning', 'prosjekter', 'kontakt']);
     function Nav({ tweaks, bp }) {
       const [scrolled, setScrolled] = useState(false);
       const [activeSection, setActiveSection] = useState('hero');
       const [menuOpen, setMenuOpen] = useState(false);
-      const toTopEnter = e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.transform = 'translateY(-2px)'; };
-      const toTopLeave = e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.transform = 'translateY(0)'; };
+      const toTopEnter = e => { const t = e.currentTarget.style; t.background = tweaks.accent; t.borderColor = tweaks.accent; t.color = '#fff'; t.transform = 'translateY(-2px)'; };
+      const toTopLeave = e => { const t = e.currentTarget.style; t.background = `${textColor}12`; t.borderColor = `${textColor}30`; t.color = textColor; t.transform = 'translateY(0)'; };
       const toTopTouchRef = useTouchHoverStyle(toTopEnter, toTopLeave);
       const navItems = [
+        { id: 'prosjekter', label: 'Prosjekter' },
         { id: 'om-meg', label: 'Om meg' },
         { id: 'utdanning', label: 'Utdanning' },
         { id: 'erfaring', label: 'Erfaring' },
-        { id: 'prosjekter', label: 'Prosjekter' },
         { id: 'skills', label: 'Skills' },
         { id: 'verv', label: 'Verv' },
         { id: 'kontakt', label: 'Kontakt' },
@@ -659,7 +659,8 @@
             const el = document.getElementById(id);
             if (el) {
               const rect = el.getBoundingClientRect();
-              if (rect.top <= 80 && rect.bottom > 0) current = id;
+              // A section counts as current once its top reaches the header
+              if (rect.top <= 110 && rect.bottom > 0) current = id;
             }
           });
           setActiveSection(current);
@@ -682,7 +683,7 @@
         <>
           <nav style={{
             position: 'fixed', top: 0, left: 0, right: 0, zIndex: 101,
-            padding: bp.isMobile ? '16px 24px' : '20px 48px',
+            padding: bp.isMobile ? '18px 24px' : '24px 48px',
             display: bp.isMobile ? 'flex' : 'grid',
             gridTemplateColumns: bp.isMobile ? undefined : '1fr auto 1fr',
             justifyContent: bp.isMobile ? 'space-between' : undefined,
@@ -692,7 +693,7 @@
             transition: 'background 0.4s ease, color 0.4s ease',
             borderBottom: scrolled && !menuOpen ? `1px solid ${textColor}18` : 'none'
           }}>
-            <a href="#hero" style={{ fontFamily: tweaks.fontHeading, fontSize: 18, letterSpacing: '-0.02em', color: menuOpen ? tweaks.bg : textColor, textDecoration: 'none', transition: 'color 0.4s ease', zIndex: 102 }}>
+            <a href="#hero" style={{ fontFamily: tweaks.fontHeading, fontSize: bp.isMobile ? 24 : 26, letterSpacing: '-0.02em', color: menuOpen ? tweaks.bg : textColor, textDecoration: 'none', transition: 'color 0.4s ease', zIndex: 102 }}>
               Oline<span style={{ color: tweaks.accent, fontStyle: 'italic' }}>.</span>
             </a>
             {bp.isMobile ? (
@@ -717,8 +718,10 @@
                 ))}
               </button>
             ) : (
-              <div style={{ display: 'flex', gap: bp.isTablet ? 6 : 10 }}>
+              <div style={{ display: 'flex', gap: bp.isTablet ? 6 : 12 }}>
                 {navItems.map((item, i) => {
+                  // The section in view stays lit in orange until the next one takes over
+                  const active = item.id === activeSection;
                   const pillEnter = e => {
                     e.target.style.background = tweaks.accent;
                     e.target.style.borderColor = tweaks.accent;
@@ -727,21 +730,22 @@
                     e.target.style.boxShadow = `0 8px 18px ${tweaks.accent}55`;
                   };
                   const pillLeave = e => {
-                    e.target.style.background = `${textColor}12`;
-                    e.target.style.borderColor = `${textColor}30`;
-                    e.target.style.color = textColor;
+                    e.target.style.background = active ? tweaks.accent : `${textColor}12`;
+                    e.target.style.borderColor = active ? tweaks.accent : `${textColor}30`;
+                    e.target.style.color = active ? '#fff' : textColor;
                     e.target.style.transform = 'translateY(0)';
                     e.target.style.boxShadow = 'none';
                   };
                   const pillTouchRef = useTouchHoverStyle(pillEnter, pillLeave);
                   return (
-                  <a key={item.id} ref={pillTouchRef} href={`#${item.id}`} style={{
-                    color: textColor, textDecoration: 'none', fontSize: 13,
-                    fontWeight: 500, letterSpacing: '0.04em',
-                    padding: bp.isTablet ? '7px 12px' : '8px 18px',
+                  <a key={item.id} ref={pillTouchRef} href={`#${item.id}`} aria-current={active ? 'location' : undefined} style={{
+                    color: active ? '#fff' : textColor, textDecoration: 'none', fontSize: bp.isTablet ? 13 : bp.width < 1280 ? 14 : 15,
+                    fontWeight: active ? 600 : 500, letterSpacing: '0.04em',
+                    // Roomier pills only where the full row still fits beside logo and arrow
+                    padding: bp.isTablet ? '7px 12px' : bp.width < 1280 ? '9px 16px' : '10px 22px',
                     borderRadius: 100,
-                    background: `${textColor}12`,
-                    border: `1.5px solid ${textColor}30`,
+                    background: active ? tweaks.accent : `${textColor}12`,
+                    border: `1.5px solid ${active ? tweaks.accent : `${textColor}30`}`,
                     transition: 'all 0.25s cubic-bezier(.16,1,.3,1)'
                   }}
                   onMouseEnter={pillEnter}
@@ -754,13 +758,18 @@
             {!bp.isMobile && (
               <a href="#hero" aria-label="Til toppen" ref={toTopTouchRef} style={{
                   justifySelf: 'end', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 32, height: 32, color: textColor, textDecoration: 'none', fontSize: 16,
-                  opacity: 0.6, transition: 'opacity 0.25s ease, transform 0.25s ease',
+                  width: 48, height: 48, borderRadius: '50%', color: textColor, textDecoration: 'none',
+                  background: `${textColor}12`, border: `1.5px solid ${textColor}30`,
+                  transition: 'all 0.25s cubic-bezier(.16,1,.3,1)',
                   zIndex: 102
                 }}
                 onMouseEnter={toTopEnter}
                 onMouseLeave={toTopLeave}
-              >↑</a>
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
+                </svg>
+              </a>
             )}
           </nav>
           {bp.isMobile && (
@@ -780,8 +789,10 @@
                 return (
                 <a key={item.id} href={`#${item.id}`} ref={mobileNavTouchRef}
                   onClick={() => setMenuOpen(false)}
+                  aria-current={item.id === activeSection ? 'location' : undefined}
                   style={{
-                    color: tweaks.bg, textDecoration: 'none',
+                    color: item.id === activeSection ? tweaks.accent : tweaks.bg, textDecoration: 'none',
+                    fontStyle: item.id === activeSection ? 'italic' : 'normal',
                     fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 10vw, 52px)',
                     fontWeight: 400, letterSpacing: '-0.02em', opacity: 0.85,
                     transition: 'opacity 0.2s'
@@ -813,13 +824,42 @@
       blob: 'M560,92 C500,80 420,70 340,86 C220,110 150,170 190,212 C232,250 420,236 560,226 Z',
       line: 'M560,-6 C520,30 490,62 445,96 C372,148 262,182 168,238'
     };
+    // The SVG scales with its box (a 200-unit viewBox shown 70px wide on a
+    // phone), which would scale the thread's stroke too. `unit` is viewBox
+    // units per screen px, so ThreadStroke keeps the cord the same thickness
+    // here as on the page-wide pieces, whatever size the doodle renders at.
+    let twistIds = 0;
     function DoodleSvg({ shape, tweaks, onDark, threadId, side }) {
+      const svgRef = useRef(null);
+      const [unit, setUnit] = useState(1);
+      const twistId = useRef(`thread-twist-${++twistIds}`).current;
+      useLayoutEffect(() => {
+        const svg = svgRef.current;
+        if (!svg) return;
+        const vbW = svg.viewBox.baseVal.width;
+        const measure = () => { const w = svg.getBoundingClientRect().width; if (w > 0) setUnit(vbW / w); };
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(svg);
+        return () => ro.disconnect();
+      }, []);
       return (
-        <svg viewBox={shape.viewBox} style={{ display: 'block', width: '100%', height: 'auto', overflow: 'visible' }}>
+        <svg ref={svgRef} viewBox={shape.viewBox} style={{ display: 'block', width: '100%', height: 'auto', overflow: 'visible' }}>
+          <defs><ThreadTwist id={twistId} unit={unit} tweaks={tweaks} /></defs>
           <path className="doodle-blob" d={shape.blob} fill={onDark ? `${tweaks.bg}0a` : `${tweaks.dark}0c`} />
           <ThreadStroke className="doodle-line" d={shape.line} layer={`line:${threadId}`} tweaks={tweaks}
+            unit={unit} onDark={onDark} twistId={twistId}
             main={{ 'data-thread': threadId, 'data-side': side }} />
         </svg>
+      );
+    }
+
+    // Twisted-strand texture for ThreadStroke, sized in screen px via `unit`
+    function ThreadTwist({ id, unit = 1, tweaks }) {
+      return (
+        <pattern id={id} patternUnits="userSpaceOnUse" width={3.6 * unit} height={3.6 * unit} patternTransform="rotate(58)">
+          <rect width={1.3 * unit} height={3.6 * unit} fill={tweaks.dark} fillOpacity="0.3" />
+        </pattern>
       );
     }
 
@@ -827,14 +867,19 @@
     // strands (#thread-twist) and a thin sheen on top. Only the body carries
     // the data-* hooks that get measured; the other layers are found by
     // `data-thread-layer` and drawn on in step with it.
-    function ThreadStroke({ d, className, layer, main, tweaks }) {
+    // All widths are screen px times `unit` (see DoodleSvg). On a dark
+    // section the usual dark shadow would vanish and the cord look thinner
+    // than on light, so there it's a deeper black shadow instead.
+    function ThreadStroke({ d, className, layer, main, tweaks, unit = 1, onDark = false, twistId = 'thread-twist' }) {
       const common = { className, d, pathLength: 1, fill: 'none', strokeLinecap: 'round' };
+      const u = n => +(n * unit).toFixed(3);
       return (
         <>
-          <path {...common} data-thread-layer={layer} stroke={tweaks.dark} strokeOpacity="0.16" strokeWidth="3.8" transform="translate(0.5 1.4)" />
-          <path {...common} {...main} stroke={tweaks.accent} strokeWidth="2.8" />
-          <path {...common} data-thread-layer={layer} stroke="url(#thread-twist)" strokeWidth="2.8" />
-          <path {...common} data-thread-layer={layer} stroke="#fff" strokeOpacity="0.28" strokeWidth="0.7" transform="translate(0 -0.6)" />
+          <path {...common} data-thread-layer={layer} stroke={onDark ? '#000' : tweaks.dark} strokeOpacity={onDark ? 0.4 : 0.16}
+            strokeWidth={u(3.8)} transform={`translate(${u(0.5)} ${u(1.4)})`} />
+          <path {...common} {...main} stroke={tweaks.accent} strokeWidth={u(2.8)} />
+          <path {...common} data-thread-layer={layer} stroke={`url(#${twistId})`} strokeWidth={u(2.8)} />
+          <path {...common} data-thread-layer={layer} stroke="#fff" strokeOpacity="0.28" strokeWidth={u(0.7)} transform={`translate(0 ${u(-0.6)})`} />
         </>
       );
     }
@@ -871,7 +916,7 @@
       const ref = useRef(null);
       const inView = useInViewOnce(ref);
       return (
-        <div ref={ref} aria-hidden="true" data-doodle-layer={threadId} style={{
+        <div ref={ref} aria-hidden="true" data-doodle-layer={threadId} data-on-dark={onDark ? '' : undefined} style={{
           position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: -1
         }}>
           {!bare && (
@@ -1151,7 +1196,7 @@
           onMouseLeave={() => setHov(false)}
           onFocus={() => setHov(true)}
           onBlur={() => setHov(false)}
-          style={{ padding: '14px 0', borderBottom: `1px solid ${tweaks.dark}12`, position: 'relative' }}
+          style={{ padding: '11px 0', borderBottom: `1px solid ${tweaks.dark}12`, position: 'relative' }}
         >
           {HOBBY_DOODLES[h.label] && <HobbyDoodle doodle={HOBBY_DOODLES[h.label]} active={hov} tweaks={tweaks} />}
           <div style={{ fontSize: 17, fontWeight: 500, color: tweaks.dark }}>{h.label}</div>
@@ -1448,6 +1493,24 @@
         }, 110);
       };
 
+      // Auto-advance every few seconds. Re-armed on every photo change, so a
+      // manual step restarts the clock; paused while the pointer/focus is on
+      // the frame, while it is off-screen, and for reduced motion.
+      const [paused, setPaused] = useState(false);
+      const [inView, setInView] = useState(false);
+      useEffect(() => {
+        const el = wrapRef.current;
+        if (!el) return;
+        const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.4 });
+        io.observe(el);
+        return () => io.disconnect();
+      }, []);
+      useEffect(() => {
+        if (reducedMotion || paused || !inView) return;
+        const t = window.setTimeout(() => go(1), 4500);
+        return () => window.clearTimeout(t);
+      }, [dispIdx, paused, inView, reducedMotion]);
+
       // Under object-fit: cover a photo renders at whichever is larger: the
       // frame's width, or its height scaled by the photo's aspect ratio
       const frameW = Math.min(width, maxWidth);
@@ -1467,7 +1530,15 @@
 
       const card = cards[dispIdx];
       return (
-        <div ref={wrapRef} className="reveal" style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}>
+        <div
+          ref={wrapRef}
+          className="reveal"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onFocus={() => setPaused(true)}
+          onBlur={() => setPaused(false)}
+          style={{ marginBottom: 24, position: 'relative', width: Math.min(width, maxWidth) }}
+        >
           <div
             data-thread-anchor="carousel"
             role="group"
@@ -1552,7 +1623,13 @@
                 </p>
               </div>
 
-              <div className="reveal reveal-delay-2" style={{ marginTop: bp.isMobile ? 0 : -14 }}>
+              <div className="reveal reveal-delay-2">
+                {/* Top aligns with the photo frame's top edge on desktop */}
+                <h2 data-thread-anchor="hobbies" style={{
+                  fontFamily: tweaks.fontHeading,
+                  fontSize: bp.isMobile ? 'clamp(28px, 8vw, 38px)' : 'clamp(36px, 4vw, 52px)',
+                  lineHeight: 1.15, letterSpacing: '-0.02em', fontWeight: 400, marginBottom: 20
+                }}>Hobbyar</h2>
                 {HOBBIES.map(h => <HobbyRow key={h.label} h={h} tweaks={tweaks} />)}
               </div>
             </div>
@@ -1690,12 +1767,24 @@
       );
     }
 
+    // Project categories: every book in a category shares its hue (UX books
+    // are all blue, and so on), so the shelf reads at a glance. The legend
+    // above the shelf doubles as a filter.
+    const PROJECT_CATEGORIES = [
+      { id: 'ux', label: 'UX-design', color: '#3E6390' },
+      { id: 'kode', label: 'Utvikling', color: '#B0512E' },
+      { id: 'kreativ', label: 'Kreativt', color: '#6A8A5C' },
+      { id: 'forsking', label: 'Forsking', color: '#7B4B8A' },
+    ];
+    const categoryOf = p => PROJECT_CATEGORIES.find(c => c.id === p.category);
+
     // Projects
     const projects = [
       {
         // The "hovudbok": how this very portfolio was made. Stands out on the
         // shelf (see Book's `featured`) and lists its steps in the modal.
         num: '00',
+        category: 'ux',
         featured: true,
         title: 'Slik ble denne porteføljen til',
         spineTitle: 'Bak porteføljen',
@@ -1723,17 +1812,35 @@
       },
       {
         num: '01',
+        category: 'kode',
         title: 'EU Digital Wallet',
+        sketches: [
+          { src: 'uploads/bilete/prosjekt/wallet/skisser.webp', caption: 'Tidlege skisser av lommeboka' },
+          { src: 'uploads/bilete/prosjekt/wallet/flyt-lofi.webp', caption: 'Brukarflyt i låg detaljgrad' },
+          { src: 'uploads/bilete/prosjekt/wallet/digilommebok.webp', caption: 'DigiLommebok: deling av kort' },
+          { src: 'uploads/bilete/prosjekt/wallet/sekvens.webp', caption: 'Sekvensdiagram for utferding' },
+          { src: 'uploads/bilete/prosjekt/wallet/sekvens-verifier.webp', caption: 'Sekvensdiagram for verifisering' },
+        ],
         subtitle: 'Digdir — Sommerstudent 2024',
         desc: 'Implementerte ein credential-utsteder-teneste basert på EU eIDAS 2.0-standarden. Løysinga let tilsette ta med seg verifiserbare digitale identitetskort i si eiga wallet-app — via Mattr API, ansattporten og OAuth2.',
         tags: ['Java', 'Spring Boot', 'OAuth2', 'UX', 'eIDAS 2.0'],
         url: 'https://github.com/felleslosninger/dc24-eu-wallet',
         extraLinks: [{ label: 'Sluttrapport', url: 'uploads/dokument/Sluttrapport___Digdir_sommercamp_2024.pdf' }],
-        color: '#C04B22',
+        color: '#A8452A',
       },
       {
         num: '02',
+        category: 'ux',
         title: 'Snarveg',
+        sketches: [
+          { src: 'uploads/bilete/prosjekt/snarveg/papirskisser.webp', caption: 'Papirskisser frå idéfasen' },
+          { src: 'uploads/bilete/prosjekt/snarveg/affinitetsdiagram.webp', caption: 'Affinitetsdiagram frå brukarinnsikta' },
+          { src: 'uploads/bilete/prosjekt/snarveg/wireframe.webp', caption: 'Wireframe av hovudskjermen' },
+          { src: 'uploads/bilete/prosjekt/snarveg/onboarding.webp', caption: 'Onboarding: spørsmål om reisevanar' },
+          { src: 'uploads/bilete/prosjekt/snarveg/hovudskjerm.webp', caption: 'Hovudskjermen med favorittstader' },
+          { src: 'uploads/bilete/prosjekt/snarveg/reiserute.webp', caption: 'Reiseruta' },
+          { src: 'uploads/bilete/prosjekt/snarveg/navigasjon.webp', caption: 'Navigasjon' },
+        ],
         subtitle: 'Medieteknologi — Universitetet i Bergen',
         desc: 'Ein webapp som hjelper studentar å navigere studiekvardagen smartare — rask tilgang til viktige ressursar, varslar og verktøy samla på éin stad. Bygd med fokus på enkel navigasjon og låg kognitiv last. Eksamen i faget var eit akademisk essay om det vi hadde laga: gjennom Actor-Network Theory analyserte eg korleis appen vart til i samspelet mellom mange aktørar — oss som designarar, KI-verktøy, skisser og kode — og kva det betyr for makt, ansvar og kontroll når ein utviklar med KI.',
         tags: ['React', 'UX Design', 'Prototyping', 'Figma', 'Actor-Network Theory'],
@@ -1742,49 +1849,68 @@
           { label: 'Bransjerapport', url: 'uploads/dokument/Prototype%20description_%20Snarveg.pdf' },
           { label: 'Essay', url: 'uploads/dokument/Exam_MIX301.pdf' },
         ],
-        color: '#8A5B7C',
+        color: '#3E6390',
       },
       {
         num: '03',
+        category: 'kreativ',
         title: 'Digitale bursdagskort',
         subtitle: 'Kreative mini-prosjekt',
         desc: 'Når vennene mine har bursdag, lagar eg interaktive digitale bursdagskort som mini-prosjekt — animasjonar, minner og personlege bodskap koda frå botn av. Eitt av dei fekk til og med sitt eige vercel-domene!',
         tags: ['HTML', 'CSS', 'JavaScript', 'Creative Coding'],
         url: 'https://ida24.vercel.app',
-        color: '#7A8E6F',
+        color: '#5F7F52',
       },
       {
         num: '04',
+        category: 'ux',
         title: 'AI-treet',
+        sketches: [
+          { src: 'uploads/bilete/prosjekt/aitreet/storyboard.webp', caption: 'Storyboard' },
+          { src: 'uploads/bilete/prosjekt/aitreet/personas.webp', caption: 'Personas: Geir og Jenny' },
+          { src: 'uploads/bilete/prosjekt/aitreet/dashbord.webp', caption: 'Treet i studentdashbordet' },
+          { src: 'uploads/bilete/prosjekt/aitreet/tre-friskt.webp', caption: 'Treet ved god AI-bruk' },
+          { src: 'uploads/bilete/prosjekt/aitreet/toppliste.webp', caption: 'Toppliste mellom lærestader' },
+        ],
         subtitle: 'Introduksjon til innovasjon og entreprenørskap — Media City Bergen',
         desc: 'Var interaksjonsdesignar i gruppa og utvikla prototypen. Eit innovasjonsprosjekt der vi bygde eit verdiforslag frå idé til pitch — med lean canvas, personas (Jenny og Geir) og storyboarding som strukturerande verktøy undervegs.',
         tags: ['Interaksjonsdesign', 'Prototyping', 'Lean Canvas', 'Personas'],
         url: 'https://ai-treet.vercel.app',
         extraLinks: [{ label: 'Bransjerapport', url: 'uploads/dokument/AiTreet.pdf' }],
-        color: '#9B7B5E',
+        color: '#5A82B0',
       },
       {
         num: '05',
+        category: 'kode',
         title: 'Portfolio',
         subtitle: 'Web Design 1 — Universitetet i Bergen',
         desc: 'Mi førre portefølje, koda heilt åleine for hand i 2024 — utan bruk av KI-verktøy — og levert med A i faget Web Design 1. Hovudvekt på HTML og CSS, med fokus på responsivt design, tilgjengelegheit og kreative frontend-løysingar, bygd på fagstoff frå «Learning Web Design», «Accessibility for Everyone», «White Space Is Not Your Enemy» og «The Design of Everyday Things».',
         tags: ['HTML', 'CSS', 'JavaScript', 'Tilgjengelegheit'],
         url: 'https://olinekleiven.github.io/Portfolio/',
         extraLinks: [{ label: 'Essay', url: 'uploads/dokument/Webdesign_essay.pdf' }],
-        color: '#5B7C8A',
+        color: '#C26A3F',
       },
       {
         num: '06',
+        category: 'kreativ',
         title: 'Cookie Care',
+        sketches: [
+          { src: 'uploads/bilete/prosjekt/cookie/intro-1.webp', caption: 'Introscene: brevet frå bestemor' },
+          { src: 'uploads/bilete/prosjekt/cookie/intro-2.webp', caption: 'Introscene: kaféen' },
+          { src: 'uploads/bilete/prosjekt/cookie/intro-3.webp', caption: 'Introscene: døra opnar seg' },
+          { src: 'uploads/bilete/prosjekt/cookie/kjokken.webp', caption: 'Kjøkkenet der cookiane blir laga' },
+          { src: 'uploads/bilete/prosjekt/cookie/kafe.webp', caption: 'Kaféen med kundar' },
+        ],
         subtitle: 'Dataspelforteljingar (MIX333) — Universitetet i Bergen',
         desc: '«Cookie Care» er eit 2D management- og simuleringsspel der spelaren driv ein liten cookie-kafé arva frå bestemora si. Spelaren bakar og serverer cookies til éin kunde om gongen, og «matchar» deig, toppings, farge og steiketid til kunden sin emosjonelle tilstand — glad, trist, sint, stressa eller einsam — i staden for å følgje ei fast oppskrift. Rundt 20 faste kundar går igjen gjennom spelet med genererte historier som endrar seg over tid, og spelaren lærer meir om dei gjennom dialog, kroppsspråk og ein notatbok som lagrar tidlegare møte. Vi utvikla konseptet frå elevator pitch og designprinsipp — empati gjennom baking, ein roleg atmosfære inspirert av Stardew Valley, og «små historier over tid» — til eit fullt game design document med gameplay-loop, score-system og progresjon. Prosessen inkluderte òg prototyping av startcutscenen, spelromma (kjøkken og spiserom) og logoen, med fokus på forteljeteknikkar, sjangerkonvensjonar og forholdet mellom spelar og avatar.',
         tags: ['Spelkonsept', 'Narrativt design', 'MIX333'],
         url: 'uploads/dokument/MIX333_Cookie_care.pdf',
         video: 'uploads/video/cookiecare_introscene.mov',
-        color: '#3F7A78',
+        color: '#7A9468',
       },
       {
         num: '07',
+        category: 'forsking',
         title: 'Erfaring, vanskegrad og prompting',
         subtitle: 'INFO361 — Universitetet i Bergen',
         desc: '«How does difficulty and prior experience impact solution quality, time, and prompts in AI-assisted coding?». Gruppeprosjekt der vi gjennomførte ein workshop med 10 deltakarar, frå nybegynnarar til erfarne programmerarar. Deltakarane løyste to programmeringsoppgåver med ChatGPT som hjelpemiddel: først reparasjon og vidareutvikling av ein eksisterande «House Manager»-app, deretter utvikling av ein ny matvare- og handlelisteapp med backend, database og API-integrasjon. Vi samla inn ChatGPT-samtalar, kode, prompts, tidsbruk og spørjeskjemasvar for å undersøkje korleis programmeringserfaring og oppgåvevanskegrad påverkar prompting, AI-avhengigheit og løysingskvalitet.',
@@ -1800,7 +1926,7 @@
     const PAGE_EDGE = '#F3E9D8';
     const BOOK_GOLD = '#E2C27D';
 
-    function Book({ project, index, tweaks, mobile, onOpen }) {
+    function Book({ project, index, tweaks, mobile, onOpen, dim }) {
       const [hov, setHov] = useState(false);
       const [bookTouchRef, bookTouchHover] = useTouchHover();
       useEffect(() => { setHov(bookTouchHover); }, [bookTouchHover]);
@@ -1820,18 +1946,34 @@
           onMouseLeave={() => setHov(false)}
           onFocus={() => setHov(true)}
           onBlur={() => setHov(false)}
-          aria-label={`Opne prosjektet ${project.title}`}
+          aria-label={`Opne prosjektet ${project.title}${categoryOf(project) ? ` (${categoryOf(project).label})` : ''}`}
           style={{
             width: w, height: h, flexShrink: 0,
+            opacity: dim ? 0.28 : 1,
             border: 'none', borderRadius: '2px 4px 4px 2px', padding: 0, cursor: 'pointer',
             background: `linear-gradient(90deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.16) 6%, transparent 16%, transparent 88%), ${project.color}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative', transformOrigin: 'bottom center', zIndex: hov ? 5 : 1,
             transform: hov ? `rotate(${tilt * 0.45}deg) translateY(-9px)` : `rotate(${tilt}deg) translateY(0)`,
             boxShadow: hov ? '5px 12px 20px rgba(20,15,10,0.4)' : '2px 6px 10px rgba(20,15,10,0.28)',
-            transition: 'transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease'
+            transition: 'transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, opacity 0.3s ease'
           }}
         >
+          {/* The spine title runs sideways, so on hover/focus the title is
+              also shown upright above the book, with its category */}
+          <span aria-hidden="true" style={{
+            position: 'absolute', bottom: '100%', left: '50%', marginBottom: 10,
+            transform: `translateX(-50%) translateY(${hov ? 0 : 6}px) rotate(${-tilt * 0.45}deg)`,
+            background: '#FBF6EC', color: '#2A2620', borderRadius: 8, padding: '6px 10px',
+            boxShadow: '0 6px 16px rgba(0,0,0,0.3)', whiteSpace: 'nowrap', textAlign: 'center',
+            opacity: hov ? 1 : 0, pointerEvents: 'none', zIndex: 6,
+            transition: 'opacity 0.2s ease, transform 0.25s cubic-bezier(.16,1,.3,1)'
+          }}>
+            <span style={{ display: 'block', fontSize: mobile ? 13 : 14, fontWeight: 600 }}>{project.title}</span>
+            {categoryOf(project) && (
+              <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: categoryOf(project).color, marginTop: 2 }}>{categoryOf(project).label}</span>
+            )}
+          </span>
           {/* page block, visible on the right edge of the spine */}
           <div style={{
             position: 'absolute', top: 2, right: 0, bottom: 2, width: pageW,
@@ -1855,7 +1997,8 @@
             <span aria-hidden="true" style={{
               position: 'absolute', bottom: '100%', left: '50%', transform: 'translate(-50%, -14px) rotate(-6deg)',
               fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: mobile ? 18 : 21,
-              color: BOOK_GOLD, whiteSpace: 'nowrap', pointerEvents: 'none'
+              color: BOOK_GOLD, whiteSpace: 'nowrap', pointerEvents: 'none',
+              opacity: hov ? 0 : 1, transition: 'opacity 0.2s ease'
             }}>Start her!</span>
           )}
           <span style={{
@@ -1871,12 +2014,20 @@
 
     function BookModal({ project, onClose, tweaks, mobile }) {
       const [shown, setShown] = useState(false);
+      // Enlarged sketch (index into project.sketches); Escape closes it first
+      const [zoom, setZoom] = useState(null);
+      const zoomRef = useRef(null);
+      zoomRef.current = zoom;
+      const cat = categoryOf(project);
       const closeBtnEnter = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.16)'; };
       const closeBtnLeave = e => { e.currentTarget.style.background = 'rgba(42,38,32,0.08)'; };
       const closeBtnTouchRef = useTouchHoverStyle(closeBtnEnter, closeBtnLeave);
       useEffect(() => {
         const raf = requestAnimationFrame(() => setShown(true));
-        const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+        const onKey = (e) => {
+          if (e.key !== 'Escape') return;
+          if (zoomRef.current !== null) setZoom(null); else onClose();
+        };
         window.addEventListener('keydown', onKey);
         const prevOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
@@ -1929,7 +2080,14 @@
                 borderBottom: mobile ? `1px solid ${project.color}20` : 'none'
               }}>
                 <span style={{ fontFamily: tweaks.fontHeading, fontSize: 44, color: project.color + '40', fontWeight: 400, lineHeight: 1 }}>{project.num}</span>
-                <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600, color: project.color, marginTop: 16, marginBottom: 8 }}>{project.subtitle}</p>
+                {cat && (
+                  <span style={{
+                    display: 'inline-block', marginTop: 16, marginLeft: 12, verticalAlign: 'top',
+                    padding: '4px 12px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+                    background: cat.color, color: '#fff'
+                  }}>{cat.label}</span>
+                )}
+                <p style={{ fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600, color: project.color, marginTop: 16, marginBottom: 8 }}>{project.subtitle}</p>
                 <h3 style={{ fontFamily: tweaks.fontHeading, fontStyle: 'italic', fontSize: mobile ? 26 : 38, color: '#2A2620', marginBottom: 20, lineHeight: 1.15 }}>{project.title}</h3>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {project.url && (
@@ -1952,7 +2110,7 @@
                 </div>
                 {project.note && (
                   <div style={{ marginTop: 4, paddingLeft: 16, borderLeft: `2px solid ${project.color}30` }}>
-                    <p style={{ fontSize: 15, lineHeight: 1.75, color: '#2A2620', opacity: 0.75 }}>{project.note}</p>
+                    <p style={{ fontSize: mobile ? 16 : 17, lineHeight: 1.75, color: '#2A2620', opacity: 0.8 }}>{project.note}</p>
                     {project.noteHand && (
                       <p style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: mobile ? 24 : 28, color: tweaks.accent, marginTop: 10, transform: 'rotate(-2deg)', transformOrigin: 'left center' }}>{project.noteHand}</p>
                     )}
@@ -1961,13 +2119,36 @@
               </div>
 
               <div style={{ flex: mobile ? 'none' : 1, padding: mobile ? '4px 24px 36px' : '56px 48px' }}>
+                {project.sketches && (
+                  <div style={{ marginBottom: 28 }}>
+                    <p style={{ fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600, color: project.color, marginBottom: 12 }}>Skisser og bilete frå prosessen</p>
+                    <button onClick={() => setZoom(0)} aria-label={`Forstørr: ${project.sketches[0].caption}`} style={{
+                      display: 'block', width: '100%', padding: 0, marginBottom: 10, cursor: 'zoom-in',
+                      border: `1px solid ${project.color}25`, borderRadius: 10, overflow: 'hidden', background: '#fff'
+                    }}>
+                      <img src={project.sketches[0].src} alt={project.sketches[0].caption} decoding="async"
+                        style={{ width: '100%', maxHeight: 320, objectFit: 'contain', display: 'block' }} />
+                    </button>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 8 }}>
+                      {project.sketches.map((sk, i) => i === 0 ? null : (
+                        <button key={sk.src} onClick={() => setZoom(i)} aria-label={`Forstørr: ${sk.caption}`} style={{
+                          padding: 0, border: `1px solid ${project.color}25`, borderRadius: 8, overflow: 'hidden',
+                          background: '#fff', cursor: 'zoom-in', aspectRatio: '1 / 1', display: 'block'
+                        }}>
+                          <img src={sk.src} alt="" loading="lazy" decoding="async"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {project.video && (
                   <video controls preload="metadata" playsInline
                     style={{ width: '100%', borderRadius: 10, marginBottom: 24, display: 'block', background: '#000' }}>
                     <source src={project.video} />
                   </video>
                 )}
-                <p style={{ fontSize: 15, lineHeight: 1.75, color: '#2A2620', opacity: 0.75, marginBottom: 24 }}>{project.desc}</p>
+                <p style={{ fontSize: mobile ? 16 : 17, lineHeight: 1.75, color: '#2A2620', opacity: 0.8, marginBottom: 24 }}>{project.desc}</p>
                 {project.steps && (
                   <ol style={{ listStyle: 'none', padding: 0, margin: '0 0 28px' }}>
                     {project.steps.map((st, i) => (
@@ -1979,8 +2160,8 @@
                           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600
                         }}>{i + 1}</span>
                         <div style={{ paddingTop: 3 }}>
-                          <p style={{ fontSize: 15, fontWeight: 600, color: '#2A2620', marginBottom: 4 }}>{st.title}</p>
-                          <p style={{ fontSize: 14, lineHeight: 1.7, color: '#2A2620', opacity: 0.75 }}>{st.text}</p>
+                          <p style={{ fontSize: 16, fontWeight: 600, color: '#2A2620', marginBottom: 4 }}>{st.title}</p>
+                          <p style={{ fontSize: 15, lineHeight: 1.7, color: '#2A2620', opacity: 0.8 }}>{st.text}</p>
                         </div>
                       </li>
                     ))}
@@ -1998,14 +2179,59 @@
               </div>
             </div>
           </div>
+          {zoom !== null && project.sketches && (() => {
+            const sk = project.sketches[zoom], n = project.sketches.length;
+            const step = d => e => { e.stopPropagation(); setZoom((zoom + d + n) % n); };
+            const navBtn = { width: 44, height: 44, borderRadius: '50%', border: 'none', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.18)', color: '#fff', fontSize: 20, flexShrink: 0 };
+            return (
+              <div role="dialog" aria-label={sk.caption} onClick={e => { e.stopPropagation(); setZoom(null); }} style={{
+                position: 'fixed', inset: 0, zIndex: 210, background: 'rgba(15,11,8,0.88)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: mobile ? 12 : 32, gap: 14, cursor: 'zoom-out'
+              }}>
+                <img src={sk.src} alt={sk.caption} onClick={e => e.stopPropagation()} style={{
+                  maxWidth: '100%', maxHeight: 'calc(100vh - 140px)', objectFit: 'contain', borderRadius: 8,
+                  background: '#fff', cursor: 'default'
+                }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: '#fff' }}>
+                  {n > 1 && <button onClick={step(-1)} aria-label="Førre bilete" style={navBtn}>‹</button>}
+                  <span style={{ fontSize: 15, textAlign: 'center' }}>{sk.caption} <span style={{ opacity: 0.6 }}>· {zoom + 1}/{n}</span></span>
+                  {n > 1 && <button onClick={step(1)} aria-label="Neste bilete" style={navBtn}>›</button>}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       );
     }
 
     function Bookshelf({ projects, tweaks, mobile }) {
       const [openProject, setOpenProject] = useState(null);
+      const [activeCat, setActiveCat] = useState(null);
       return (
         <>
+          {/* Legend: the colour of each category, and a filter that fades the rest */}
+          <div className="reveal reveal-delay-1" role="group" aria-label="Filtrer prosjekt etter kategori" style={{
+            display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20, justifyContent: mobile ? 'flex-start' : 'center'
+          }}>
+            {PROJECT_CATEGORIES.map(c => {
+              const on = activeCat === c.id;
+              return (
+                <button key={c.id} onClick={() => setActiveCat(on ? null : c.id)} aria-pressed={on} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                  padding: '7px 14px', borderRadius: 100, fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+                  border: `1.5px solid ${on ? c.color : tweaks.bg + '30'}`,
+                  background: on ? c.color : 'transparent', color: tweaks.bg,
+                  opacity: activeCat && !on ? 0.6 : 1,
+                  transition: 'background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease'
+                }}>
+                  <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: c.color, boxShadow: `0 0 0 1.5px ${tweaks.bg}40` }} />
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
           <div className="reveal reveal-delay-1" style={{
             position: 'relative', borderRadius: 14,
             padding: mobile ? '14px 16px 0' : '20px 44px 0',
@@ -2024,13 +2250,19 @@
             </div>
             <div style={{
               display: 'flex', alignItems: 'flex-end', justifyContent: mobile ? 'flex-start' : 'center',
-              gap: mobile ? 14 : 22, overflowX: 'auto', overflowY: 'visible',
-              position: 'relative', zIndex: 1, paddingTop: mobile ? 60 : 64, paddingBottom: 2,
+              // Sideways scroll only (when the books don't fit): with overflowY
+              // left 'visible' it computes to auto and a stray vertical
+              // scrollbar showed up at the shelf's right end
+              gap: mobile ? 14 : 22, overflowX: 'auto', overflowY: 'hidden',
+              // Headroom for the upright title label shown over a hovered book
+              position: 'relative', zIndex: 1, paddingTop: mobile ? 76 : 84, paddingBottom: 2,
+              paddingLeft: mobile ? 28 : 0, paddingRight: mobile ? 28 : 0,
               WebkitOverflowScrolling: 'touch'
             }}>
               {projects.map((p, i) => (
                 // Featured books don't count, so the others keep their own sizes and tilts
-                <Book key={p.num} project={p} index={i - projects.slice(0, i).filter(q => q.featured).length} tweaks={tweaks} mobile={mobile} onOpen={setOpenProject} />
+                <Book key={p.num} project={p} index={i - projects.slice(0, i).filter(q => q.featured).length} tweaks={tweaks} mobile={mobile} onOpen={setOpenProject}
+                  dim={activeCat !== null && p.category !== activeCat} />
               ))}
             </div>
             <div style={{
@@ -2040,9 +2272,21 @@
               borderRadius: '0 0 10px 10px'
             }} />
           </div>
-          <p style={{ fontSize: 12, color: tweaks.bg, opacity: 0.6, marginTop: 16, textAlign: mobile ? 'left' : 'center' }}>
-            Klikk på ei bok for å opne prosjektet
-          </p>
+          {/* Plain, light instruction — deliberately not in the thread's
+              orange handwriting, so it isn't mistaken for part of the game */}
+          <div style={{ marginTop: 20, textAlign: mobile ? 'left' : 'center' }}>
+            <p style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: mobile ? '10px 16px' : '12px 22px', borderRadius: 100,
+              background: `${tweaks.bg}14`, border: `1.5px solid ${tweaks.bg}40`,
+              color: tweaks.bg, fontSize: mobile ? 15 : 17, fontWeight: 500, lineHeight: 1.3
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
+              </svg>
+              Klikk på ei bok for å opne prosjektet
+            </p>
+          </div>
           {/* Rendered on <body>: inside the section's stacking context it would
               sit under the thread game's notes and knots */}
           {openProject && ReactDOM.createPortal(
@@ -2061,15 +2305,18 @@
           padding: `${80 * tweaks.spacing}px ${narrow ? '24px' : '48px'}`,
           background: tweaks.dark,
           color: tweaks.bg,
-          minHeight: '115vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: `${140 * tweaks.spacing}px`
+          minHeight: '115vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: `${140 * tweaks.spacing}px`,
+          // Extra room under the shelf hint so the thread's corner doodle and
+          // the piece leaving for Om meg stay clear of it
+          paddingBottom: `${(narrow ? 130 : 220) * tweaks.spacing}px`
         }}>
           <Doodles tweaks={tweaks} bp={bp} side="left" onDark threadId="prosjekter" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 40 : 64, gap: narrow ? 8 : 0 }}>
               <div>
-                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Prosjekter</p>
+                <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Arbeidsarkivet</p>
                 <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.bg }}>
-                  Arbeidsarkivet
+                  Mine <span style={{ fontStyle: 'italic', color: tweaks.accent }}>prosjekter</span>
                 </h2>
               </div>
               <p className="reveal reveal-delay-2" style={{ fontSize: 14, color: tweaks.bg, opacity: 0.85, maxWidth: 200, textAlign: narrow ? 'left' : 'right', lineHeight: 1.6 }}>
@@ -3246,7 +3493,7 @@
     // it crosses, so it sits behind their content and each copy is clipped to
     // its own section — together they read as one line. Desktop/tablet only:
     // on a phone the single-column layout leaves no room for it to wander.
-    const THREAD_SECTIONS = ['hero', 'om-meg', 'utdanning', 'erfaring', 'prosjekter', 'skills', 'verv', 'kontakt'];
+    const THREAD_SECTIONS = ['hero', 'prosjekter', 'om-meg', 'utdanning', 'erfaring', 'skills', 'verv', 'kontakt'];
     // The thread game: "help me gather the thread, and untangle knots on the
     // way". Each knot sits on one thread piece (by its starting section) at a
     // fraction of its length; the drawing stops there until it's untied.
@@ -3420,10 +3667,15 @@
             const start = lineEnd(from);
             if (!start) continue;
             let end = null;
-            if (from === 'hero') {
-              // Above the carousel and out the left edge
+            if (to === 'om-meg') {
+              // Well above the carousel and the hobby list (its dip must not
+              // cross the "Hobbyar" heading), then out the opposite edge
               const frame = document.querySelector('[data-thread-anchor="carousel"]');
-              if (frame) end = { x: -10, y: restingRect(frame).top - 140 };
+              const hobbies = document.querySelector('[data-thread-anchor="hobbies"]');
+              if (frame) {
+                const clearTop = Math.min(restingRect(frame).top, hobbies ? restingRect(hobbies).top : Infinity);
+                end = { x: start.dir.x < 0 ? -10 : W + 10, y: clearTop - 230 };
+              }
             } else if (to === 'kontakt') {
               // Finale: sweep in over the top, loop all the way round the
               // contact content and come to rest on its left side — where the
@@ -3603,15 +3855,17 @@
           // A note that should hug the thread: try spots along it (`pt(f)`
           // for each fraction, preferred first) on either side, nearest
           // distance first, so a crowded spot moves the note along the
-          // thread instead of far away from it.
-          const snug = (pt, fractions, w, h) => {
+          // thread instead of far away from it. `tilt` overrides the note's
+          // angle (0 keeps it level) instead of following the thread.
+          const snug = (pt, fractions, w, h, tilt) => {
             for (let push = 12; push <= 64; push += 2) {
               for (const f of fractions) {
                 const a = along(pt(f), pt(f + 0.01), 0);
                 for (const sgn of [1, -1]) {
                   if (sgn < 0 && push < 24) continue;
                   const c = inView({ x: a.x + a.nx * push * sgn, y: a.y + a.ny * push * sgn }, w);
-                  if (clearOf(c, a.angle, w, h, [], 3)) return { ...c, angle: a.angle };
+                  const angle = tilt ?? a.angle;
+                  if (clearOf(c, angle, w, h, [], 3)) return { ...c, angle };
                 }
               }
             }
@@ -3636,23 +3890,19 @@
             // Label goes on the side of the thread facing away from the
             // nearest section seam, so it never straddles light and dark.
             const sec = sectionAt(pt.y);
-            let below = false, bg = tweaks.bg;
+            let below = false;
             if (sec) {
               const r = sec.getBoundingClientRect(), top = r.top + window.scrollY;
               below = pt.y - top < (top + r.height - pt.y);
-              bg = getComputedStyle(sec).backgroundColor;
             }
             let tx = nx.x - pt.x, ty = nx.y - pt.y;
             const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
             let ux = -ty, uy = tx; if ((uy > 0) !== below) { ux = -ux; uy = -uy; }
             // Keep clear of the thread and of the knot's own scribble (r≈26)
             const scribble = Array.from({ length: 24 }, (_, i) => ({ x: pt.x + Math.cos(i / 24 * Math.PI * 2) * 26, y: pt.y + Math.sin(i / 24 * Math.PI * 2) * 26 }));
-            const w = Math.max(textW('Knute!', noteSize), textW('klikk for å nøste den opp', noteSize * 0.8));
+            const w = Math.max(textW('Knute!', noteSize), textW('klikk for fiks', noteSize * 0.8));
             const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, noteSize * 2.1, scribble, 40);
-            // Halo matches wherever the label ended up, which may be the other section
-            const labelSec = sectionAt(c.y);
-            if (labelSec) bg = getComputedStyle(labelSec).backgroundColor;
-            return { ...k, at, x: pt.x, y: pt.y, label: { dx: c.x - pt.x, dy: c.y - pt.y }, bg };
+            return { ...k, at, x: pt.x, y: pt.y, label: { dx: c.x - pt.x, dy: c.y - pt.y } };
           }).filter(Boolean);
           const notes = {};
           // A placed note becomes an obstacle for the next one
@@ -3681,13 +3931,14 @@
             const svg = heroLine.ownerSVGElement, vb = svg.viewBox.baseVal, r = restingRect(svg);
             const k = (r.bottom - r.top) / vb.height, len = heroLine.getTotalLength();
             const at = l => { const q = heroLine.getPointAtLength(l); return { x: r.left + (q.x - vb.x) * k, y: r.top + (q.y - vb.y) * k }; };
-            const w1 = textW('Hjelp meg å samle tråden!', noteSize);
+            const w1 = textW('Hjelp meg å samle tråden', noteSize);
             // Where content crowds the curve (on phones the buttons sit right
             // above it), slide along the curve to a spot close to the thread
             // rather than pushing the note far away from it
             const a1 = along(at(len * 0.64), at(len * 0.66), 20);
-            notes.intro1 = snug(f => at(len * f), [0.64, 0.7, 0.58, 0.76, 0.52, 0.82, 0.46, 0.88, 0.4], w1, noteSize * 1.2)
-              || { ...placeClear(a1, { x: a1.nx, y: a1.ny }, a1.angle, w1, noteSize * 1.2, [], 20), angle: a1.angle };
+            // Kept level (not tilted with the curve) so the invitation reads at a glance
+            notes.intro1 = snug(f => at(len * f), [0.64, 0.7, 0.58, 0.76, 0.52, 0.82, 0.46, 0.88, 0.4], w1, noteSize * 1.2, 0)
+              || { ...placeClear(a1, { x: a1.nx, y: a1.ny }, 0, w1, noteSize * 1.2, [], 20), angle: 0 };
           }
           const finale = out.find(o => o.finale);
           if (finale) notes.ball = finale.ball;
@@ -3907,7 +4158,7 @@
         <div key="game" style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, zIndex: 50 }}>
           {notes.intro1 && (
             <div className="thread-note" data-thread-note="intro1" style={{ left: notes.intro1.x, top: notes.intro1.y, '--tilt': `${notes.intro1.angle}deg` }}>
-              Hjelp meg å samle tråden!
+              Hjelp meg å samle tråden
             </div>
           )}
           {notes.intro2 && (
@@ -3917,10 +4168,10 @@
           )}
           {(threads.knots || []).map(k => (
             <div key={k.key} className="knot" data-untied={game.untied[k.key] ? '' : undefined} data-knot={k.key} style={{ left: k.x, top: k.y }}>
-              <div className="knot-inner" style={{ '--halo': k.bg }}>
+              <div className="knot-inner">
                 <div className="thread-note knot-ask" style={{ left: 37 + k.label.dx, top: 37 + k.label.dy }}>
                   Knute!
-                  <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 500 }}>klikk for å nøste den opp</span>
+                  <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 500 }}>klikk for fiks</span>
                 </div>
                 <button className="knot-btn" aria-label="Løs opp knuten på tråden"
                   onClick={() => untie(k.key)} onMouseEnter={pointerOn} onMouseLeave={pointerOff}>
@@ -3961,7 +4212,7 @@
             position: 'absolute', top: -threads.tops[sec], left: 0, width: 1, height: 1, overflow: 'visible'
           }}>
             <ThreadStroke className="doodle-line scroll-line" d={t.d} layer={`piece:${t.key}`} tweaks={tweaks}
-              main={{ 'data-thread-piece': t.key }} />
+              onDark={layer.hasAttribute('data-on-dark')} main={{ 'data-thread-piece': t.key }} />
           </svg>,
           layer
         );
@@ -3991,17 +4242,15 @@
         <>
           {/* Twisted-strand texture for the thread (ThreadStroke) */}
           <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
-            <pattern id="thread-twist" patternUnits="userSpaceOnUse" width="3.6" height="3.6" patternTransform="rotate(58)">
-              <rect width="1.3" height="3.6" fill={tweaks.dark} fillOpacity="0.3" />
-            </pattern>
+            <ThreadTwist id="thread-twist" tweaks={tweaks} />
           </svg>
           <Cursor />
           <Nav tweaks={tweaks} bp={bp} />
           <Hero tweaks={tweaks} bp={bp} />
+          <Projects tweaks={tweaks} bp={bp} />
           <AboutMe tweaks={tweaks} bp={bp} />
           <Education tweaks={tweaks} bp={bp} />
           <Experience tweaks={tweaks} bp={bp} />
-          <Projects tweaks={tweaks} bp={bp} />
           <Skills tweaks={tweaks} bp={bp} />
           <Volunteer tweaks={tweaks} bp={bp} />
           <Contact tweaks={tweaks} bp={bp} />
