@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    { "source": "/uploads/Oline_Kleiven_CV.pdf", "destination": "/uploads/dokument/Oline_Kleiven_CV.pdf", "permanent": true },
+    { "source": "/uploads/Bachelorgrad_vitnemal.pdf", "destination": "/uploads/dokument/Bachelorgrad_vitnemal.pdf", "permanent": true },
+    { "source": "/uploads/AiTreet.pdf", "destination": "/uploads/dokument/AiTreet.pdf", "permanent": true },
+    { "source": "/uploads/Webdesign_essay.pdf", "destination": "/uploads/dokument/Webdesign_essay.pdf", "permanent": true },
+    { "source": "/uploads/MIX333_Cookie_care.pdf", "destination": "/uploads/dokument/MIX333_Cookie_care.pdf", "permanent": true },
+    { "source": "/uploads/INFO361.pdf", "destination": "/uploads/dokument/INFO361.pdf", "permanent": true }
+  ]
+}
