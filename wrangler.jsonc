@@ -1,0 +1,9 @@
+// Cloudflare Workers: serves the site as static files (no server code).
+// The repo root is the site; .assetsignore keeps tooling files out of it.
+{
+  "name": "portfolio-oline",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "."
+  }
+}

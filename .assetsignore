@@ -1,0 +1,15 @@
+# Files in the repo that are not part of the website
+.git
+.claude
+node_modules
+package.json
+package-lock.json
+README.md
+vercel.json
+wrangler.jsonc
+.gitignore
+.assetsignore
+.DS_Store
+uploads/arkiv
+uploads/MatLyst
+uploads/bilete/original
