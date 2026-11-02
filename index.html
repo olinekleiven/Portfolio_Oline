@@ -224,7 +224,19 @@
     }
     .knot-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
     .knot-scribble { transform-box: view-box; transform-origin: 37px 37px; animation: knotWobble 2.4s ease-in-out infinite; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); }
-    .knot-btn:hover .knot-scribble, .knot-btn:focus-visible .knot-scribble { animation-play-state: paused; transform: scale(1.12) rotate(8deg); }
+    /* No "click me" text: on hover/focus the knot gets tugged — a quick,
+       jittery twist-and-swell — so it reads as something you can pull loose */
+    .knot-btn:hover .knot-scribble, .knot-btn:focus-visible .knot-scribble { animation: knotTug 0.45s ease-in-out infinite; }
+    @keyframes knotTug {
+      0%, 100% { transform: rotate(0deg) scale(1.1); }
+      20% { transform: rotate(-11deg) scale(1.16); }
+      45% { transform: rotate(9deg) scale(1.08); }
+      70% { transform: rotate(-6deg) scale(1.15); }
+      85% { transform: rotate(4deg) scale(1.11); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .knot-btn:hover .knot-scribble, .knot-btn:focus-visible .knot-scribble { animation: none; transform: scale(1.12); }
+    }
     @keyframes knotWobble { 0%, 100% { transform: rotate(-5deg) scale(1); } 50% { transform: rotate(5deg) scale(1.05); } }
     .knot-loop { transform-box: view-box; transform-origin: 37px 37px; transition: transform 0.55s cubic-bezier(.6,0,.4,1), opacity 0.45s ease; }
     .knot[data-untied] .knot-loop { transform: rotate(var(--spin)) scale(0); opacity: 0; }
@@ -1596,7 +1608,8 @@
       return (
         <section id="om-meg" style={{
           position: 'relative', isolation: 'isolate',
-          padding: `${80 * tweaks.spacing}px ${sidePad}`,
+          // Taller top padding leaves a clear band for the thread to leave through
+          padding: `${(bp.isMobile ? 80 : 140) * tweaks.spacing}px ${sidePad} ${80 * tweaks.spacing}px`,
           background: tweaks.bg, color: tweaks.dark,
           minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center'
         }}>
@@ -1926,11 +1939,10 @@
     const PAGE_EDGE = '#F3E9D8';
     const BOOK_GOLD = '#E2C27D';
 
-    function Book({ project, index, tweaks, mobile, onOpen, dim }) {
+    function Book({ project, index, tweaks, mobile, onOpen, dim, scale = 1 }) {
       const [hov, setHov] = useState(false);
       const [bookTouchRef, bookTouchHover] = useTouchHover();
       useEffect(() => { setHov(bookTouchHover); }, [bookTouchHover]);
-      const scale = mobile ? 0.8 : 1;
       // The featured book is bigger, stands up straight and is gold-tooled
       const featured = !!project.featured;
       const w = Math.round((featured ? 104 : BOOK_WIDTHS[index % BOOK_WIDTHS.length]) * scale);
@@ -2209,11 +2221,21 @@
     function Bookshelf({ projects, tweaks, mobile }) {
       const [openProject, setOpenProject] = useState(null);
       const [activeCat, setActiveCat] = useState(null);
+      // Books shrink on shorter screens so that, jumping here from the nav,
+      // the heading, the whole shelf and the hint under it fit in one view
+      // (≈490px of the screen goes to everything but the books themselves)
+      const [vh, setVh] = useState(window.innerHeight);
+      useEffect(() => {
+        const onResize = () => setVh(window.innerHeight);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+      }, []);
+      const bookScale = mobile ? 0.8 : Math.max(0.6, Math.min(1, (vh - 490) / 372));
       return (
         <>
           {/* Legend: the colour of each category, and a filter that fades the rest */}
           <div className="reveal reveal-delay-1" role="group" aria-label="Filtrer prosjekt etter kategori" style={{
-            display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20, justifyContent: mobile ? 'flex-start' : 'center'
+            display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, justifyContent: mobile ? 'flex-start' : 'center'
           }}>
             {PROJECT_CATEGORIES.map(c => {
               const on = activeCat === c.id;
@@ -2255,13 +2277,13 @@
               // scrollbar showed up at the shelf's right end
               gap: mobile ? 14 : 22, overflowX: 'auto', overflowY: 'hidden',
               // Headroom for the upright title label shown over a hovered book
-              position: 'relative', zIndex: 1, paddingTop: mobile ? 76 : 84, paddingBottom: 2,
+              position: 'relative', zIndex: 1, paddingTop: mobile ? 76 : 70, paddingBottom: 2,
               paddingLeft: mobile ? 28 : 0, paddingRight: mobile ? 28 : 0,
               WebkitOverflowScrolling: 'touch'
             }}>
               {projects.map((p, i) => (
                 // Featured books don't count, so the others keep their own sizes and tilts
-                <Book key={p.num} project={p} index={i - projects.slice(0, i).filter(q => q.featured).length} tweaks={tweaks} mobile={mobile} onOpen={setOpenProject}
+                <Book key={p.num} project={p} index={i - projects.slice(0, i).filter(q => q.featured).length} tweaks={tweaks} mobile={mobile} onOpen={setOpenProject} scale={bookScale}
                   dim={activeCat !== null && p.category !== activeCat} />
               ))}
             </div>
@@ -2274,7 +2296,7 @@
           </div>
           {/* Plain, light instruction — deliberately not in the thread's
               orange handwriting, so it isn't mistaken for part of the game */}
-          <div style={{ marginTop: 20, textAlign: mobile ? 'left' : 'center' }}>
+          <div style={{ marginTop: 16, textAlign: mobile ? 'left' : 'center' }}>
             <p style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: mobile ? '10px 16px' : '12px 22px', borderRadius: 100,
@@ -2305,14 +2327,14 @@
           padding: `${80 * tweaks.spacing}px ${narrow ? '24px' : '48px'}`,
           background: tweaks.dark,
           color: tweaks.bg,
-          minHeight: '115vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: `${140 * tweaks.spacing}px`,
-          // Extra room under the shelf hint so the thread's corner doodle and
-          // the piece leaving for Om meg stay clear of it
-          paddingBottom: `${(narrow ? 130 : 220) * tweaks.spacing}px`
+          // Hugs its content (no forced screen height), with just enough room
+          // under the shelf hint for the thread's corner doodle to pass clear
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: `${(narrow ? 140 : 112) * tweaks.spacing}px`,
+          paddingBottom: `${(narrow ? 100 : 150) * tweaks.spacing}px`
         }}>
           <Doodles tweaks={tweaks} bp={bp} side="left" onDark threadId="prosjekter" />
           <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-            <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 40 : 64, gap: narrow ? 8 : 0 }}>
+            <div style={{ display: 'flex', flexDirection: narrow ? 'column' : 'row', justifyContent: 'space-between', alignItems: narrow ? 'flex-start' : 'flex-end', marginBottom: narrow ? 32 : 28, gap: narrow ? 8 : 0 }}>
               <div>
                 <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: tweaks.accent, marginBottom: 16, fontWeight: 500 }}>Arbeidsarkivet</p>
                 <h2 className="reveal reveal-delay-1" style={{ fontFamily: tweaks.fontHeading, fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.1, letterSpacing: '-0.02em', fontWeight: 400, color: tweaks.bg }}>
@@ -3668,13 +3690,15 @@
             if (!start) continue;
             let end = null;
             if (to === 'om-meg') {
-              // Well above the carousel and the hobby list (its dip must not
-              // cross the "Hobbyar" heading), then out the opposite edge
+              // Down across the seam into Om meg and out the opposite edge in
+              // the gap above the photo and "Hobbyar" (never through them), so
+              // it visibly slips into the page as Om meg scrolls up
               const frame = document.querySelector('[data-thread-anchor="carousel"]');
               const hobbies = document.querySelector('[data-thread-anchor="hobbies"]');
-              if (frame) {
+              const T = top(to);
+              if (frame && T !== null) {
                 const clearTop = Math.min(restingRect(frame).top, hobbies ? restingRect(hobbies).top : Infinity);
-                end = { x: start.dir.x < 0 ? -10 : W + 10, y: clearTop - 230 };
+                end = { x: start.dir.x < 0 ? -10 : W + 10, y: Math.max(start.p.y + 80, Math.min(T + 60, clearTop - 70)) };
               }
             } else if (to === 'kontakt') {
               // Finale: sweep in over the top, loop all the way round the
@@ -3855,17 +3879,15 @@
           // A note that should hug the thread: try spots along it (`pt(f)`
           // for each fraction, preferred first) on either side, nearest
           // distance first, so a crowded spot moves the note along the
-          // thread instead of far away from it. `tilt` overrides the note's
-          // angle (0 keeps it level) instead of following the thread.
-          const snug = (pt, fractions, w, h, tilt) => {
+          // thread instead of far away from it.
+          const snug = (pt, fractions, w, h) => {
             for (let push = 12; push <= 64; push += 2) {
               for (const f of fractions) {
                 const a = along(pt(f), pt(f + 0.01), 0);
                 for (const sgn of [1, -1]) {
                   if (sgn < 0 && push < 24) continue;
                   const c = inView({ x: a.x + a.nx * push * sgn, y: a.y + a.ny * push * sgn }, w);
-                  const angle = tilt ?? a.angle;
-                  if (clearOf(c, angle, w, h, [], 3)) return { ...c, angle };
+                  if (clearOf(c, a.angle, w, h, [], 3)) return { ...c, angle: a.angle };
                 }
               }
             }
@@ -3900,18 +3922,11 @@
             let ux = -ty, uy = tx; if ((uy > 0) !== below) { ux = -ux; uy = -uy; }
             // Keep clear of the thread and of the knot's own scribble (r≈26)
             const scribble = Array.from({ length: 24 }, (_, i) => ({ x: pt.x + Math.cos(i / 24 * Math.PI * 2) * 26, y: pt.y + Math.sin(i / 24 * Math.PI * 2) * 26 }));
-            const w = Math.max(textW('Knute!', noteSize), textW('klikk for fiks', noteSize * 0.8));
-            const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, noteSize * 2.1, scribble, 40);
+            const w = textW('Knute!', noteSize);
+            const c = placeClear({ x: pt.x + ux * 40, y: pt.y + uy * 40 }, { x: ux, y: uy }, -3, w, noteSize * 1.2, scribble, 40);
             return { ...k, at, x: pt.x, y: pt.y, label: { dx: c.x - pt.x, dy: c.y - pt.y } };
           }).filter(Boolean);
           const notes = {};
-          // A placed note becomes an obstacle for the next one
-          const reserve = (n, w) => {
-            const t = Math.abs(n.angle) * Math.PI / 180, hw = (w * Math.cos(t) + noteSize * Math.sin(t)) / 2, hh = (w * Math.sin(t) + noteSize * Math.cos(t)) / 2 + 6;
-            contentRects.push({ left: n.x - hw, right: n.x + hw, top: n.y - hh, bottom: n.y + hh });
-          };
-          // The dip in the thread has few spots that fit, so its note goes first
-          // and the curve's note (with many spots to choose from) makes room
           const heroThread = out.find(o => o.key === 'hero');
           if (heroThread) {
             // Where the thread bows down lowest before heading off the left edge
@@ -3923,22 +3938,6 @@
             const fr = [0, 0.06, -0.06, 0.12, -0.12, 0.18, -0.18, 0.24, -0.24].map(d => best + d).filter(f => f > 0.08 && f < 0.92);
             notes.intro2 = snug(f => pointOn(heroThread.d, f), fr, w2, noteSize * 1.2)
               || { ...placeClear(a2, { x: a2.nx, y: a2.ny }, a2.angle, w2, noteSize * 1.2, [], 20), angle: a2.angle };
-            reserve(notes.intro2, w2);
-          }
-          const heroLine = document.querySelector('[data-thread="hero"]');
-          if (heroLine) {
-            // Along the hero's bottom-right curve, past its midpoint (clear of the portrait)
-            const svg = heroLine.ownerSVGElement, vb = svg.viewBox.baseVal, r = restingRect(svg);
-            const k = (r.bottom - r.top) / vb.height, len = heroLine.getTotalLength();
-            const at = l => { const q = heroLine.getPointAtLength(l); return { x: r.left + (q.x - vb.x) * k, y: r.top + (q.y - vb.y) * k }; };
-            const w1 = textW('Hjelp meg å samle tråden', noteSize);
-            // Where content crowds the curve (on phones the buttons sit right
-            // above it), slide along the curve to a spot close to the thread
-            // rather than pushing the note far away from it
-            const a1 = along(at(len * 0.64), at(len * 0.66), 20);
-            // Kept level (not tilted with the curve) so the invitation reads at a glance
-            notes.intro1 = snug(f => at(len * f), [0.64, 0.7, 0.58, 0.76, 0.52, 0.82, 0.46, 0.88, 0.4], w1, noteSize * 1.2, 0)
-              || { ...placeClear(a1, { x: a1.nx, y: a1.ny }, 0, w1, noteSize * 1.2, [], 20), angle: 0 };
           }
           const finale = out.find(o => o.finale);
           if (finale) notes.ball = finale.ball;
@@ -4034,7 +4033,6 @@
           return { ...k, idx, tipY: p.ys[0] + e, el: document.querySelector(`[data-knot="${k.key}"]`) };
         }).filter(Boolean) : [];
         const noteEls = {
-          intro1: document.querySelector('[data-thread-note="intro1"]'),
           intro2: document.querySelector('[data-thread-note="intro2"]'),
         };
         const chip = document.querySelector('[data-thread-chip]');
@@ -4080,10 +4078,15 @@
             const off = String(frac <= 0 ? 1.01 : 1 - frac);
             p.els.forEach(e => { e.style.strokeDashoffset = off; });
           });
-          // Knots pop in as the drawing reaches them
-          knots.forEach(k => { if (k.el) k.el.classList.toggle('reached', g.gathered === null && tip >= k.tipY - 20); });
+          // Knots pop in as the drawing reaches them — and the drawing stops
+          // at every knot still tied, so a later knot never shows up before
+          // the ones above it have been undone
+          knots.forEach((k, i) => {
+            if (!k.el) return;
+            const drawnTo = limits.slice(0, i).reduce((m, l) => Math.min(m, l), tip);
+            k.el.classList.toggle('reached', g.gathered === null && drawnTo >= k.tipY - 20);
+          });
           const n = threads.notes || {};
-          if (noteEls.intro1) noteEls.intro1.classList.toggle('shown', playing && g.gathered === null && introState.value > 0.6);
           if (noteEls.intro2 && n.intro2) noteEls.intro2.classList.toggle('shown', playing && g.gathered === null && tip >= n.intro2.y - 40);
           // Scrolled well past a knot still tied? Offer a way back up.
           // …but not once they've reached Kontakt: the ordinary ending is a
@@ -4156,11 +4159,6 @@
       const notes = threads.notes || {};
       const overlay = !reducedMotion && (
         <div key="game" style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, zIndex: 50 }}>
-          {notes.intro1 && (
-            <div className="thread-note" data-thread-note="intro1" style={{ left: notes.intro1.x, top: notes.intro1.y, '--tilt': `${notes.intro1.angle}deg` }}>
-              Hjelp meg å samle tråden
-            </div>
-          )}
           {notes.intro2 && (
             <div className="thread-note" data-thread-note="intro2" style={{ left: notes.intro2.x, top: notes.intro2.y, '--tilt': `${notes.intro2.angle}deg` }}>
               …knuter kan oppstå
@@ -4171,7 +4169,6 @@
               <div className="knot-inner">
                 <div className="thread-note knot-ask" style={{ left: 37 + k.label.dx, top: 37 + k.label.dy }}>
                   Knute!
-                  <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 500 }}>klikk for fiks</span>
                 </div>
                 <button className="knot-btn" aria-label="Løs opp knuten på tråden"
                   onClick={() => untie(k.key)} onMouseEnter={pointerOn} onMouseLeave={pointerOff}>
