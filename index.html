@@ -2623,6 +2623,17 @@
         why: 'Gir ferdige løysingar for vanlege behov, som innlogging og databasehandtering.',
         how: 'Min praktiske kompetanse her er frå faget «Web Science», der vi laga eit innloggingssystem for å låne bibliotekbøker.',
         project: { label: 'UiB — Web Science', url: null } },
+      { id: 'double-diamond', name: 'Double Diamond', icon: '💎', category: 'Prosess', color: '#8A5B7C',
+        what: 'Ein designprosessmodell i fire fasar fordelt på to diamantar: først finn ein rett problem, så lagar ein rett løysing. Kvar diamant opnar seg (divergent tenking) før han snevrar seg inn (konvergent tenking).',
+        why: 'Hindrar at ein hoppar rett til løysinga. Ein brukar tid på å forstå problemet før ein bestemmer seg, og testar fleire idear før ein går for éi.',
+        how: 'Eg brukar Double Diamond-modellen mykje. I Snarveg-prosjektet brukte eg han gjennom heile prosessen: frå brukarinnsikt og affinitetsdiagram, via papirskisser og wireframes, til prototypar og brukartesting.',
+        phases: [
+          { diamond: 0, name: 'Discover', mode: 'Divergent', goal: 'Forstå kjerneproblemet.', act: 'Brukarintervju, observasjon, datainnsamling og gjennomgang av dagens prosessar.' },
+          { diamond: 0, name: 'Define', mode: 'Konvergent', goal: 'Samle innsikta i ein klar problemformulering.', act: 'Filtrere research, kartleggje brukarreiser, finne smertepunkt og skrive eit «Korleis kan vi …?»-spørsmål.' },
+          { diamond: 1, name: 'Develop', mode: 'Divergent', goal: 'Idémyldre og byggje moglege løysingar.', act: 'Co-design, skisser, prototypar og testing av idear mot ønskelegheit og gjennomførbarheit.' },
+          { diamond: 1, name: 'Deliver', mode: 'Konvergent', goal: 'Teste, ferdigstille og lansere den beste løysinga.', act: 'Brukartesting i liten skala, finpussing, forkasting av idear som ikkje held, og utrulling.' },
+        ],
+        project: { label: 'Snarveg', url: 'https://snarveg-emzo.vercel.app' } },
       { id: 'claude', name: 'Claude', iconImg: 'uploads/ikon/claude.png', category: 'Prosess', color: '#8A5B7C',
         what: 'Eit AI-verktøy for koding og design — Claude Code — som eg har brukt til å byggje heile denne porteføljen saman med Claude.',
         why: 'Å meistre nye verktøy som dette er ein sentral del av å vere ein moderne designar/utviklar i dag. Det endrar korleis ein jobbar, ikkje berre kva ein til slutt lagar.',
@@ -2634,7 +2645,7 @@
       { x: 18, y: 18, rot: -14, scale: 0.85 }, { x: 34, y: 22, rot: 9, scale: 0.95 }, { x: 50, y: 16, rot: -5, scale: 0.82 }, { x: 66, y: 22, rot: 13, scale: 0.92 }, { x: 82, y: 18, rot: -10, scale: 0.88 },
       { x: 8, y: 50, rot: 8, scale: 1.0 }, { x: 28, y: 50, rot: -16, scale: 0.85 }, { x: 50, y: 50, rot: 4, scale: 1.05 }, { x: 72, y: 50, rot: -9, scale: 0.88 }, { x: 92, y: 50, rot: 15, scale: 0.95 },
       { x: 20, y: 80, rot: -11, scale: 0.88 }, { x: 36, y: 78, rot: 6, scale: 1.0 }, { x: 50, y: 84, rot: -18, scale: 0.8 }, { x: 64, y: 78, rot: 10, scale: 0.95 }, { x: 80, y: 80, rot: -7, scale: 0.85 },
-      { x: 44, y: 34, rot: 5, scale: 0.9 },
+      { x: 44, y: 34, rot: 5, scale: 0.9 }, { x: 57, y: 64, rot: -6, scale: 0.86 },
     ];
 
     function usePrefersReducedMotion() {
@@ -2941,6 +2952,46 @@
 
               <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Kvifor er det viktig?</p>
               <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: 18 }}>{tool.why}</p>
+
+              {tool.phases && (
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 8 }}>Dei fire fasane</p>
+                  {/* The two diamonds: each opens out (divergent) and narrows in (convergent) */}
+                  <svg viewBox="0 0 400 120" style={{ width: '100%', display: 'block', marginBottom: 12 }} role="img"
+                    aria-label="To diamantar: Discover og Define i den første, Develop og Deliver i den andre">
+                    {[0, 1].map(d => (
+                      <g key={d} transform={`translate(${d * 196 + 4} 0)`}>
+                        <polygon points="0,60 96,8 192,60 96,112" fill={d ? `${tweaks.accent}1f` : `${tweaks.dark}12`} stroke={d ? tweaks.accent : tweaks.dark} strokeOpacity={d ? 0.8 : 0.45} strokeWidth="1.5" />
+                        <line x1="96" y1="8" x2="96" y2="112" stroke={d ? tweaks.accent : tweaks.dark} strokeOpacity="0.3" strokeDasharray="3 4" />
+                        {tool.phases.filter(ph => ph.diamond === d).map((ph, i) => (
+                          <text key={ph.name} x={i ? 140 : 52} y="64" textAnchor="middle" fontSize="15" fontWeight="600" fill={tweaks.dark}>{ph.name}</text>
+                        ))}
+                      </g>
+                    ))}
+                  </svg>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: tweaks.dark, opacity: 0.6, marginBottom: 14, padding: '0 4px' }}>
+                    <span>Designe rett ting <em>(problemet)</em></span>
+                    <span>Designe tinga rett <em>(løysinga)</em></span>
+                  </div>
+                  <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+                    {tool.phases.map((ph, i) => (
+                      <li key={ph.name} style={{ display: 'flex', gap: 12 }}>
+                        <span aria-hidden="true" style={{
+                          flexShrink: 0, width: 26, height: 26, borderRadius: '50%', fontSize: 12, fontWeight: 600,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: ph.diamond ? tweaks.accent : tweaks.dark, color: '#fff'
+                        }}>{i + 1}</span>
+                        <div>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: tweaks.dark }}>
+                            {ph.name} <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.55 }}>· {ph.mode}</span>
+                          </p>
+                          <p style={{ fontSize: 14, lineHeight: 1.55, color: tweaks.dark, opacity: 0.8 }}>{ph.goal} {ph.act}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
 
               <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: tweaks.dark, opacity: 0.4, marginBottom: 4 }}>Korleis eg brukar det</p>
               <p style={{ fontSize: 15, lineHeight: 1.6, color: tweaks.dark, opacity: 0.8, marginBottom: tool.project ? 20 : 0 }}>{tool.how}</p>
